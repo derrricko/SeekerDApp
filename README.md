@@ -1,4 +1,4 @@
-# Solana Mobile dApp Scaffold
+clear# Solana Mobile dApp Scaffold
 
 A ready-to-go template Solana React Native dApp with dependencies installed and basic React UI components.
 It provides an interface to connect to locally installed wallet apps (that are MWA-compatible), view your account balance on devnet, and request an airdrop of SOL.
