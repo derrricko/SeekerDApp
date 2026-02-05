@@ -1,5 +1,6 @@
 import React, {ReactNode} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
+import {Colors} from './Colors';
 
 export const Section: React.FC<{
   children?: ReactNode;
@@ -22,12 +23,12 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 8,
     paddingHorizontal: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.cardBg,
     borderWidth: 3,
-    borderColor: '#000000',
+    borderColor: Colors.border,
     padding: 20,
-    shadowColor: '#000000',
-    shadowOffset: {width: 4, height: 4},
+    shadowColor: Colors.border,
+    shadowOffset: {width: 8, height: 8},
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 0,
@@ -39,7 +40,7 @@ const styles = StyleSheet.create({
     fontFamily: 'CourierPrime-Bold',
     fontSize: 18,
     fontWeight: '900',
-    color: '#000000',
+    color: Colors.textDark,
     textTransform: 'uppercase',
     letterSpacing: 2,
   },
@@ -48,7 +49,7 @@ const styles = StyleSheet.create({
     fontFamily: 'CourierPrime-Regular',
     fontSize: 14,
     fontWeight: '400',
-    color: '#4A4A4A',
+    color: Colors.textLight,
     lineHeight: 22,
   },
 });

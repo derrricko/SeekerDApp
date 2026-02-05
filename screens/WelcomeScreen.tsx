@@ -7,29 +7,18 @@ import {
   TouchableWithoutFeedback,
   Dimensions,
 } from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {Colors} from '../components/Colors';
 
 const {width, height} = Dimensions.get('window');
-
-// Neo Brutalist Color Palette
-const Colors = {
-  white: '#FFFEF0',
-  offWhite: '#FFFEF0',
-  warmGray: '#E5E5E5',
-  mediumGray: '#4A4A4A',
-  darkGray: '#1A1A1A',
-  charcoal: '#000000',
-  nearBlack: '#000000',
-  deepBlue: '#000000',
-  primary: '#FFDE59',
-  accent: '#4ECDC4',
-  border: '#000000',
-};
 
 interface WelcomeScreenProps {
   onContinue: () => void;
 }
 
 export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
+  const insets = useSafeAreaInsets();
+
   // Animation values
   const brandOpacity = useRef(new Animated.Value(0)).current;
   const brandTranslateY = useRef(new Animated.Value(12)).current;
@@ -261,6 +250,7 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
             {
               opacity: footerOpacity,
               transform: [{translateY: footerTranslateY}],
+              bottom: 36 + insets.bottom,
             },
           ]}>
           <Text style={styles.footerRef}>Matthew 6 : 3</Text>
@@ -284,7 +274,7 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -306,13 +296,13 @@ const styles = StyleSheet.create({
   },
   brandContainer: {
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderWidth: 3,
     borderColor: Colors.border,
     shadowColor: Colors.border,
-    shadowOffset: {width: 6, height: 6},
+    shadowOffset: {width: 12, height: 12},
     shadowOpacity: 1,
     shadowRadius: 0,
   },
@@ -321,7 +311,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
     letterSpacing: 12,
     textTransform: 'uppercase',
-    color: Colors.nearBlack,
+    color: Colors.cardBg,
     fontWeight: '900',
   },
   brandLine: {
@@ -345,7 +335,7 @@ const styles = StyleSheet.create({
   tagline: {
     fontFamily: 'CourierPrime-Bold',
     fontSize: 13,
-    color: Colors.nearBlack,
+    color: Colors.textDark,
     textAlign: 'center',
     lineHeight: 24,
     letterSpacing: 1,
@@ -361,29 +351,28 @@ const styles = StyleSheet.create({
     height: 24,
     borderRightWidth: 3,
     borderBottomWidth: 3,
-    borderColor: Colors.nearBlack,
+    borderColor: Colors.cardBg,
     marginBottom: 12,
   },
   tapText: {
     fontFamily: 'CourierPrime-Bold',
     fontSize: 11,
-    color: Colors.nearBlack,
+    color: Colors.cardBg,
     letterSpacing: 3,
     textTransform: 'uppercase',
   },
   footerContainer: {
     position: 'absolute',
-    bottom: 36,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderWidth: 2,
     borderColor: Colors.border,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
   },
   footerRef: {
     fontFamily: 'CourierPrime-Regular',
     fontSize: 11,
-    color: Colors.darkGray,
+    color: Colors.textLight,
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
@@ -393,6 +382,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
   },
 });

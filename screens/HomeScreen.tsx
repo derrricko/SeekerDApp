@@ -11,52 +11,9 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import NeedsDetailScreen from './NeedsDetailScreen';
+import {Colors} from '../components/Colors';
 
 const {width} = Dimensions.get('window');
-
-// Neo Brutalist Color Palette - High Contrast, Bold, No Blur
-const Colors = {
-  // Backgrounds
-  cream: '#FFFEF0',             // Warm off-white - main bg
-  paper: '#FFFFFF',             // Pure white
-  cardBg: '#FFFFFF',            // Clean white cards
-
-  // Primary Colors - Bold & Saturated
-  primary: '#FFDE59',           // Bright yellow - primary action
-  secondary: '#FF6B6B',         // Coral red - accent
-  accent: '#4ECDC4',            // Teal - links/highlights
-  purple: '#A855F7',            // Purple accent
-
-  // Text - High Contrast
-  textDark: '#000000',          // Pure black
-  textMedium: '#1A1A1A',        // Near black
-  textLight: '#4A4A4A',         // Dark gray
-
-  // Borders - Always Black
-  border: '#000000',            // Solid black borders
-  borderWidth: 3,               // Standard border width
-
-  // Shadow offset (hard, no blur)
-  shadowOffset: 4,
-
-  // Legacy (keeping for compatibility)
-  white: '#FFFFFF',
-  offWhite: '#FFFEF0',
-  warmGray: '#E5E5E5',
-  mediumGray: '#9CA3AF',
-  darkGray: '#4B5563',
-  charcoal: '#1F2937',
-  nearBlack: '#000000',
-  deepBlue: '#1E3A8A',
-  goldSubtle: '#FCD34D',
-  goldWarm: '#F59E0B',
-
-  // Mapped for backwards compat
-  softOrange: '#000000',
-  gentleGreen: '#4ECDC4',
-  borderLight: '#000000',
-  borderWarm: '#000000',
-};
 
 // Tier data
 const TIERS = [
@@ -313,15 +270,22 @@ function TierCard({tier, index, onPress, onDonate}: TierCardProps) {
   );
 }
 
-// Real Need Mini Card
+// Real Need Mini Card with press state
 interface RealNeedCardProps {
   need: typeof REAL_NEEDS[0];
   onPress: () => void;
 }
 
 function RealNeedCard({need, onPress}: RealNeedCardProps) {
+  const [isPressed, setIsPressed] = useState(false);
+
   return (
-    <TouchableOpacity style={styles.needCard} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity
+      style={[styles.needCard, isPressed && styles.needCardPressed]}
+      onPress={onPress}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+      activeOpacity={1}>
       <Text style={styles.needAmount}>{need.amount}</Text>
       <Text style={styles.needTitle}>{need.title}</Text>
       <Text style={styles.needRecipient}>{need.recipient}</Text>
@@ -378,7 +342,7 @@ function RealNeedsSection({onNeedPress}: RealNeedsSectionProps) {
   );
 }
 
-// Custom Card - minimal, curiosity-sparking
+// Custom Card - minimal, curiosity-sparking with press state
 interface CustomCardProps {
   onPress: () => void;
 }
@@ -386,6 +350,7 @@ interface CustomCardProps {
 function CustomCard({onPress}: CustomCardProps) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(20)).current;
+  const [isPressed, setIsPressed] = useState(false);
 
   useEffect(() => {
     Animated.parallel([
@@ -406,7 +371,12 @@ function CustomCard({onPress}: CustomCardProps) {
 
   return (
     <Animated.View style={[styles.customCard, {opacity, transform: [{translateY}]}]}>
-      <TouchableOpacity style={styles.customCardInner} onPress={onPress} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={[styles.customCardInner, isPressed && styles.customCardInnerPressed]}
+        onPress={onPress}
+        onPressIn={() => setIsPressed(true)}
+        onPressOut={() => setIsPressed(false)}
+        activeOpacity={1}>
         <View>
           <Text style={styles.customTitle}>{CUSTOM_TIER.title}</Text>
           <Text style={styles.customSubtitle}>{CUSTOM_TIER.subtitle}</Text>
@@ -419,13 +389,13 @@ function CustomCard({onPress}: CustomCardProps) {
   );
 }
 
-// Nav icons - Blue Theme
+// Nav icons - Neo Brutalist
 const GiveNavIcon = ({active}: {active: boolean}) => (
   <View style={navIconStyles.container}>
     <View
       style={[
         navIconStyles.heart,
-        {borderColor: active ? Colors.softOrange : Colors.textLight},
+        {borderColor: active ? Colors.textDark : Colors.inactive},
       ]}
     />
   </View>
@@ -436,7 +406,7 @@ const GlimpsesNavIcon = ({active}: {active: boolean}) => (
     <View
       style={[
         navIconStyles.rect,
-        {borderColor: active ? Colors.softOrange : Colors.textLight},
+        {borderColor: active ? Colors.textDark : Colors.inactive},
       ]}
     />
   </View>
@@ -447,7 +417,7 @@ const BoardNavIcon = ({active}: {active: boolean}) => (
     <View
       style={[
         navIconStyles.line,
-        {backgroundColor: active ? Colors.softOrange : Colors.textLight},
+        {backgroundColor: active ? Colors.textDark : Colors.inactive},
       ]}
     />
   </View>
@@ -455,27 +425,27 @@ const BoardNavIcon = ({active}: {active: boolean}) => (
 
 const navIconStyles = StyleSheet.create({
   container: {
-    width: 24,
-    height: 24,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
   heart: {
-    width: 16,
-    height: 16,
+    width: 20,
+    height: 20,
     borderWidth: 2,
     borderRadius: 0,
     transform: [{rotate: '45deg'}],
   },
   rect: {
-    width: 16,
-    height: 16,
+    width: 20,
+    height: 20,
     borderWidth: 2,
     borderRadius: 0,
   },
   line: {
-    width: 16,
-    height: 3,
+    width: 20,
+    height: 4,
     borderRadius: 0,
   },
 });
@@ -489,6 +459,7 @@ export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) 
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState('give');
   const [showNeedsDetail, setShowNeedsDetail] = useState(false);
+  const [pressedNav, setPressedNav] = useState<string | null>(null);
 
   const handleTierPress = (tierId: string) => {
     if (onTierPress) {
@@ -558,8 +529,11 @@ export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) 
       {/* Bottom Navigation */}
       <View style={[styles.bottomNav, {paddingBottom: insets.bottom}]}>
         <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => setActiveTab('give')}>
+          style={[styles.navItem, pressedNav === 'give' && styles.navItemPressed]}
+          onPress={() => setActiveTab('give')}
+          onPressIn={() => setPressedNav('give')}
+          onPressOut={() => setPressedNav(null)}
+          activeOpacity={1}>
           <View style={[styles.navIcon, activeTab === 'give' && styles.navIconActive]}>
             <GiveNavIcon active={activeTab === 'give'} />
           </View>
@@ -574,8 +548,11 @@ export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) 
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => setActiveTab('glimpses')}>
+          style={[styles.navItem, pressedNav === 'glimpses' && styles.navItemPressed]}
+          onPress={() => setActiveTab('glimpses')}
+          onPressIn={() => setPressedNav('glimpses')}
+          onPressOut={() => setPressedNav(null)}
+          activeOpacity={1}>
           <View style={styles.navIcon}>
             <GlimpsesNavIcon active={activeTab === 'glimpses'} />
           </View>
@@ -590,8 +567,11 @@ export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) 
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => setActiveTab('board')}>
+          style={[styles.navItem, pressedNav === 'board' && styles.navItemPressed]}
+          onPress={() => setActiveTab('board')}
+          onPressIn={() => setPressedNav('board')}
+          onPressOut={() => setPressedNav(null)}
+          activeOpacity={1}>
           <View style={styles.navIcon}>
             <BoardNavIcon active={activeTab === 'board'} />
           </View>
@@ -612,10 +592,10 @@ export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
+    backgroundColor: Colors.background,
   },
   header: {
-    backgroundColor: Colors.cream,
+    backgroundColor: Colors.headerBg,
     paddingHorizontal: 20,
     paddingBottom: 12,
     borderBottomWidth: 3,
@@ -647,9 +627,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     borderRadius: 0,
     padding: 20,
-    // Hard shadow - no blur
+    // Hard shadow - 8px
     shadowColor: Colors.border,
-    shadowOffset: {width: 4, height: 4},
+    shadowOffset: {width: 8, height: 8},
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 0,
@@ -711,9 +691,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     paddingVertical: 16,
     alignItems: 'center',
-    // Hard shadow on button
+    // Hard shadow on button - 6px
     shadowColor: Colors.border,
-    shadowOffset: {width: 3, height: 3},
+    shadowOffset: {width: 6, height: 6},
     shadowOpacity: 1,
     shadowRadius: 0,
   },
@@ -759,7 +739,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
     shadowColor: Colors.border,
-    shadowOffset: {width: 3, height: 3},
+    shadowOffset: {width: 6, height: 6},
     shadowOpacity: 1,
     shadowRadius: 0,
   },
@@ -785,7 +765,7 @@ const styles = StyleSheet.create({
     fontFamily: 'CourierPrime-Bold',
     fontSize: 14,
     fontWeight: '900',
-    color: Colors.textDark,
+    color: Colors.cardBg,
     marginBottom: 2,
     textTransform: 'uppercase',
     letterSpacing: 2,
@@ -794,7 +774,7 @@ const styles = StyleSheet.create({
     fontFamily: 'CourierPrime-Regular',
     fontSize: 12,
     fontWeight: '400',
-    color: Colors.textLight,
+    color: Colors.light,
   },
   needsScrollContent: {
     paddingHorizontal: 20,
@@ -807,12 +787,16 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     borderRadius: 0,
     padding: 16,
-    // Hard shadow
+    // Hard shadow - 8px
     shadowColor: Colors.border,
-    shadowOffset: {width: 4, height: 4},
+    shadowOffset: {width: 8, height: 8},
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 0,
+  },
+  needCardPressed: {
+    shadowOffset: {width: 0, height: 0},
+    transform: [{translateX: 8}, {translateY: 8}],
   },
   needAmount: {
     fontFamily: 'CourierPrime-Bold',
@@ -857,9 +841,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     shadowColor: Colors.border,
-    shadowOffset: {width: 4, height: 4},
+    shadowOffset: {width: 8, height: 8},
     shadowOpacity: 1,
     shadowRadius: 0,
+  },
+  customCardInnerPressed: {
+    shadowOffset: {width: 0, height: 0},
+    transform: [{translateX: 8}, {translateY: 8}],
   },
   customTitle: {
     fontFamily: 'CourierPrime-Bold',
@@ -897,7 +885,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 76,
-    backgroundColor: Colors.cardBg,
+    backgroundColor: Colors.headerBg,
     borderTopWidth: 3,
     borderTopColor: Colors.border,
     flexDirection: 'row',
@@ -908,11 +896,14 @@ const styles = StyleSheet.create({
   navItem: {
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 4,
+    paddingVertical: 12,
+  },
+  navItemPressed: {
+    opacity: 0.7,
   },
   navIcon: {
-    width: 28,
-    height: 28,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0.3,
@@ -925,7 +916,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1,
     textTransform: 'uppercase',
-    color: Colors.textLight,
+    color: Colors.inactive,
     marginTop: 4,
   },
   navLabelActive: {

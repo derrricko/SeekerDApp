@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {Section} from '../components/Section';
 import ConnectButton from '../components/ConnectButton';
@@ -11,8 +12,10 @@ import {
 import {useConnection} from '../components/providers/ConnectionProvider';
 import SignMessageButton from '../components/SignMessageButton';
 import SignTransactionButton from '../components/SignTransactionButton';
+import {Colors} from '../components/Colors';
 
 export default function MainScreen() {
+  const insets = useSafeAreaInsets();
   const {connection} = useConnection();
   const {selectedAccount} = useAuthorization();
   const [balance, setBalance] = useState<number | null>(null);
@@ -36,7 +39,7 @@ export default function MainScreen() {
 
   return (
     <View style={styles.mainContainer}>
-      <View style={styles.header}>
+      <View style={[styles.header, {paddingTop: insets.top + 16}]}>
         <Text style={styles.headerTitle}>SOLANA WALLET</Text>
       </View>
       <ScrollView
@@ -68,7 +71,7 @@ export default function MainScreen() {
           </View>
         )}
       </ScrollView>
-      <View style={styles.footer}>
+      <View style={[styles.footer, {paddingBottom: insets.bottom + 12}]}>
         <Text style={styles.clusterText}>
           CLUSTER: {connection.rpcEndpoint.includes('devnet') ? 'DEVNET' : 'MAINNET'}
         </Text>
@@ -80,12 +83,12 @@ export default function MainScreen() {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#FFFEF0',
+    backgroundColor: Colors.background,
   },
   header: {
-    backgroundColor: '#FFFEF0',
+    backgroundColor: Colors.headerBg,
     borderBottomWidth: 3,
-    borderBottomColor: '#000000',
+    borderBottomColor: Colors.border,
     paddingVertical: 16,
     paddingHorizontal: 20,
   },
@@ -93,7 +96,7 @@ const styles = StyleSheet.create({
     fontFamily: 'CourierPrime-Bold',
     fontSize: 18,
     fontWeight: '900',
-    color: '#000000',
+    color: Colors.textDark,
     textAlign: 'center',
     letterSpacing: 4,
     textTransform: 'uppercase',
@@ -103,13 +106,13 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   connectContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.cardBg,
     borderWidth: 3,
-    borderColor: '#000000',
+    borderColor: Colors.border,
     padding: 24,
     marginTop: 40,
-    shadowColor: '#000000',
-    shadowOffset: {width: 6, height: 6},
+    shadowColor: Colors.border,
+    shadowOffset: {width: 8, height: 8},
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 0,
@@ -118,7 +121,7 @@ const styles = StyleSheet.create({
     fontFamily: 'CourierPrime-Bold',
     fontSize: 22,
     fontWeight: '900',
-    color: '#000000',
+    color: Colors.textDark,
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 2,
@@ -126,7 +129,7 @@ const styles = StyleSheet.create({
   connectDescription: {
     fontFamily: 'CourierPrime-Regular',
     fontSize: 14,
-    color: '#4A4A4A',
+    color: Colors.textLight,
     lineHeight: 22,
     marginBottom: 24,
   },
@@ -135,14 +138,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#000000',
+    backgroundColor: Colors.background,
     paddingVertical: 12,
     paddingHorizontal: 20,
   },
   clusterText: {
     fontFamily: 'CourierPrime-Bold',
     fontSize: 11,
-    color: '#4ECDC4',
+    color: Colors.accent,
     textAlign: 'center',
     letterSpacing: 2,
     textTransform: 'uppercase',

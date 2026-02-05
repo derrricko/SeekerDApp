@@ -8,22 +8,9 @@ import {
   Dimensions,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {Colors} from '../components/Colors';
 
 const {width} = Dimensions.get('window');
-
-// Neo Brutalist Color Palette (matching HomeScreen)
-const Colors = {
-  cream: '#FFFEF0',
-  paper: '#FFFFFF',
-  cardBg: '#FFFFFF',
-  primary: '#FFDE59',
-  secondary: '#FF6B6B',
-  accent: '#4ECDC4',
-  textDark: '#000000',
-  textMedium: '#1A1A1A',
-  textLight: '#4A4A4A',
-  border: '#000000',
-};
 
 // Example completed donations
 const COMPLETED = [
@@ -90,12 +77,20 @@ interface NeedsDetailScreenProps {
 export default function NeedsDetailScreen({onBack, onDonate}: NeedsDetailScreenProps) {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<'needs' | 'completed'>('needs');
+  const [pressedBackButton, setPressedBackButton] = useState(false);
+  const [pressedTab, setPressedTab] = useState<string | null>(null);
+  const [pressedNeedCard, setPressedNeedCard] = useState<string | null>(null);
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, {paddingTop: insets.top + 12}]}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={onBack}
+          onPressIn={() => setPressedBackButton(true)}
+          onPressOut={() => setPressedBackButton(false)}
+          style={[styles.backButton, pressedBackButton && styles.backButtonPressed]}
+          activeOpacity={1}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Real Needs</Text>
@@ -124,15 +119,29 @@ export default function NeedsDetailScreen({onBack, onDonate}: NeedsDetailScreenP
         {/* Tab Switcher */}
         <View style={styles.tabContainer}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'needs' && styles.tabActive]}
-            onPress={() => setActiveTab('needs')}>
+            style={[
+              styles.tab,
+              activeTab === 'needs' && styles.tabActive,
+              pressedTab === 'needs' && styles.tabPressed,
+            ]}
+            onPress={() => setActiveTab('needs')}
+            onPressIn={() => setPressedTab('needs')}
+            onPressOut={() => setPressedTab(null)}
+            activeOpacity={1}>
             <Text style={[styles.tabText, activeTab === 'needs' && styles.tabTextActive]}>
               Current Needs
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'completed' && styles.tabActive]}
-            onPress={() => setActiveTab('completed')}>
+            style={[
+              styles.tab,
+              activeTab === 'completed' && styles.tabActive,
+              pressedTab === 'completed' && styles.tabPressed,
+            ]}
+            onPress={() => setActiveTab('completed')}
+            onPressIn={() => setPressedTab('completed')}
+            onPressOut={() => setPressedTab(null)}
+            activeOpacity={1}>
             <Text style={[styles.tabText, activeTab === 'completed' && styles.tabTextActive]}>
               Completed
             </Text>
@@ -148,8 +157,13 @@ export default function NeedsDetailScreen({onBack, onDonate}: NeedsDetailScreenP
             {CURRENT_NEEDS.map(need => (
               <TouchableOpacity
                 key={need.id}
-                style={styles.needCard}
-                activeOpacity={0.8}
+                style={[
+                  styles.needCard,
+                  pressedNeedCard === need.id && styles.needCardPressed,
+                ]}
+                activeOpacity={1}
+                onPressIn={() => setPressedNeedCard(need.id)}
+                onPressOut={() => setPressedNeedCard(null)}
                 onPress={() => onDonate(need.amount, need.title)}>
                 <View style={styles.needCardHeader}>
                   <Text style={styles.needCardTitle}>{need.title}</Text>
@@ -170,6 +184,10 @@ export default function NeedsDetailScreen({onBack, onDonate}: NeedsDetailScreenP
             </Text>
             {COMPLETED.map(item => (
               <View key={item.id} style={styles.completedCard}>
+                {/* FUNDED Badge */}
+                <View style={styles.fundedBadge}>
+                  <Text style={styles.fundedBadgeText}>FUNDED</Text>
+                </View>
                 <View style={styles.completedCardHeader}>
                   <Text style={styles.completedCardTitle}>{item.title}</Text>
                   <Text style={styles.completedCardAmount}>{item.amount}</Text>
@@ -196,10 +214,10 @@ export default function NeedsDetailScreen({onBack, onDonate}: NeedsDetailScreenP
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
+    backgroundColor: Colors.background,
   },
   header: {
-    backgroundColor: Colors.cream,
+    backgroundColor: Colors.headerBg,
     paddingHorizontal: 20,
     paddingBottom: 12,
     borderBottomWidth: 3,
@@ -210,11 +228,19 @@ const styles = StyleSheet.create({
   },
   backButton: {
     width: 80,
-    paddingVertical: 8,
+    paddingVertical: 14,
     paddingHorizontal: 12,
     backgroundColor: Colors.cardBg,
     borderWidth: 2,
     borderColor: Colors.border,
+    shadowColor: Colors.border,
+    shadowOffset: {width: 3, height: 3},
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
+  backButtonPressed: {
+    shadowOffset: {width: 0, height: 0},
+    transform: [{translateX: 3}, {translateY: 3}],
   },
   backButtonText: {
     fontFamily: 'CourierPrime-Bold',
@@ -236,7 +262,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 24,
   },
-  // Mission Section
+  // Mission Section - Hero shadow 12px
   missionSection: {
     marginBottom: 32,
     padding: 20,
@@ -244,7 +270,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: Colors.border,
     shadowColor: Colors.border,
-    shadowOffset: {width: 4, height: 4},
+    shadowOffset: {width: 12, height: 12},
     shadowOpacity: 1,
     shadowRadius: 0,
   },
@@ -281,13 +307,16 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: 14,
+    paddingVertical: 18,
     alignItems: 'center',
     borderRightWidth: 3,
     borderRightColor: Colors.border,
   },
   tabActive: {
     backgroundColor: Colors.primary,
+  },
+  tabPressed: {
+    opacity: 0.8,
   },
   tabText: {
     fontFamily: 'CourierPrime-Bold',
@@ -311,7 +340,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 22,
   },
-  // Need Card - Neo Brutalist
+  // Need Card - Neo Brutalist with 8px shadow
   needCard: {
     backgroundColor: Colors.cardBg,
     borderRadius: 0,
@@ -320,9 +349,13 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: Colors.border,
     shadowColor: Colors.border,
-    shadowOffset: {width: 4, height: 4},
+    shadowOffset: {width: 8, height: 8},
     shadowOpacity: 1,
     shadowRadius: 0,
+  },
+  needCardPressed: {
+    shadowOffset: {width: 0, height: 0},
+    transform: [{translateX: 8}, {translateY: 8}],
   },
   needCardHeader: {
     flexDirection: 'row',
@@ -369,7 +402,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     shadowColor: Colors.border,
-    shadowOffset: {width: 3, height: 3},
+    shadowOffset: {width: 6, height: 6},
     shadowOpacity: 1,
     shadowRadius: 0,
   },
@@ -380,7 +413,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
-  // Completed Card - Neo Brutalist
+  // Completed Card - Neo Brutalist with 8px shadow
   completedCard: {
     backgroundColor: Colors.cardBg,
     borderRadius: 0,
@@ -389,9 +422,28 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: Colors.border,
     shadowColor: Colors.border,
-    shadowOffset: {width: 4, height: 4},
+    shadowOffset: {width: 8, height: 8},
     shadowOpacity: 1,
     shadowRadius: 0,
+    position: 'relative',
+  },
+  // FUNDED Badge
+  fundedBadge: {
+    position: 'absolute',
+    top: -8,
+    right: 12,
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderWidth: 2,
+    borderColor: Colors.border,
+  },
+  fundedBadgeText: {
+    fontFamily: 'CourierPrime-Bold',
+    fontSize: 10,
+    color: Colors.textDark,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   completedCardHeader: {
     flexDirection: 'row',

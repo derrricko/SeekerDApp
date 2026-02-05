@@ -3,6 +3,7 @@ import {LAMPORTS_PER_SOL, PublicKey} from '@solana/web3.js';
 import {StyleSheet, View, Text} from 'react-native';
 import RequestAirdropButton from './RequestAirdropButton';
 import DisconnectButton from './DisconnectButton';
+import {Colors} from './Colors';
 
 interface Account {
   address: string;
@@ -59,15 +60,15 @@ export default function AccountInfo({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    // Removed padding - parent provides 20pt
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.cardBg,
     borderWidth: 3,
-    borderColor: '#000000',
+    borderColor: Colors.border,
     padding: 20,
-    shadowColor: '#000000',
-    shadowOffset: {width: 6, height: 6},
+    shadowColor: Colors.border,
+    shadowOffset: {width: 8, height: 8},
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 0,
@@ -75,34 +76,34 @@ const styles = StyleSheet.create({
   walletHeader: {
     fontFamily: 'CourierPrime-Bold',
     fontSize: 14,
-    color: '#000000',
+    color: Colors.textDark,
     letterSpacing: 3,
     marginBottom: 16,
     textTransform: 'uppercase',
   },
   balanceContainer: {
-    backgroundColor: '#FFDE59',
+    backgroundColor: Colors.primary,
     borderWidth: 3,
-    borderColor: '#000000',
+    borderColor: Colors.border,
     padding: 16,
     marginBottom: 16,
   },
   balanceLabel: {
     fontFamily: 'CourierPrime-Bold',
     fontSize: 11,
-    color: '#000000',
+    color: Colors.textDark,
     letterSpacing: 2,
     marginBottom: 4,
   },
   walletBalance: {
     fontFamily: 'CourierPrime-Bold',
     fontSize: 32,
-    color: '#000000',
+    color: Colors.textDark,
   },
   labelContainer: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: Colors.accent,
     borderWidth: 2,
-    borderColor: '#000000',
+    borderColor: Colors.border,
     paddingHorizontal: 12,
     paddingVertical: 6,
     alignSelf: 'flex-start',
@@ -111,13 +112,13 @@ const styles = StyleSheet.create({
   labelText: {
     fontFamily: 'CourierPrime-Bold',
     fontSize: 12,
-    color: '#000000',
+    color: Colors.textDark,
     textTransform: 'uppercase',
   },
   walletAddress: {
     fontFamily: 'CourierPrime-Regular',
     fontSize: 11,
-    color: '#4A4A4A',
+    color: Colors.textLight,
     marginBottom: 20,
   },
   buttonGroup: {

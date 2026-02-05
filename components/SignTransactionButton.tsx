@@ -10,6 +10,7 @@ import {Keypair, SystemProgram, Transaction} from '@solana/web3.js';
 import {useAuthorization} from './providers/AuthorizationProvider';
 import {useConnection} from './providers/ConnectionProvider';
 import {alertAndLog} from '../util/alertAndLog';
+import {Colors} from './Colors';
 
 export default function SignTransactionButton() {
   const {connection} = useConnection();
@@ -85,28 +86,28 @@ export default function SignTransactionButton() {
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#FFDE59',
+    backgroundColor: Colors.primary,
     borderWidth: 3,
-    borderColor: '#000000',
-    paddingVertical: 14,
+    borderColor: Colors.border,
+    paddingVertical: 18,
     paddingHorizontal: 24,
-    shadowColor: '#000000',
-    shadowOffset: {width: 4, height: 4},
+    shadowColor: Colors.border,
+    shadowOffset: {width: 6, height: 6},
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 0,
   },
   buttonPressed: {
-    shadowOffset: {width: 1, height: 1},
-    transform: [{translateX: 3}, {translateY: 3}],
+    shadowOffset: {width: 0, height: 0},
+    transform: [{translateX: 6}, {translateY: 6}],
   },
   buttonDisabled: {
-    backgroundColor: '#E5E5E5',
+    backgroundColor: Colors.headerBg,
   },
   buttonText: {
     fontFamily: 'CourierPrime-Bold',
     fontSize: 14,
-    color: '#000000',
+    color: Colors.textDark,
     textAlign: 'center',
     textTransform: 'uppercase',
     letterSpacing: 1,

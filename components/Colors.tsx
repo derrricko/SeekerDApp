@@ -1,23 +1,21 @@
-// Neo Brutalist Color Palette
+// Neo Brutalist Color Palette - Simplified to 2 accents
 export const Colors = {
-  // Primary colors - bold and saturated
-  primary: '#FFDE59',      // Bright yellow
-  secondary: '#FF6B6B',    // Coral red
-  accent: '#4ECDC4',       // Teal
-  purple: '#A855F7',       // Purple
+  // Simplified to 2 accents
+  primary: '#FFDE59',      // Yellow (CTAs)
+  accent: '#4ECDC4',       // Teal (secondary)
 
   // Backgrounds
-  white: '#FFFEF0',        // Warm off-white
-  cream: '#FFFEF0',
-  paper: '#FFFFFF',
+  background: '#000000',
+  cardBg: '#FFFFFF',
+  headerBg: '#E5E5E5',
 
-  // Grayscale - high contrast
-  lighter: '#E5E5E5',
-  light: '#9CA3AF',
-  dark: '#1A1A1A',
-  darker: '#000000',
-  black: '#000000',
+  // Text - IMPROVED CONTRAST
+  textDark: '#000000',
+  textMedium: '#1A1A1A',
+  textLight: '#CCCCCC',    // Improved from #4A4A4A for dark backgrounds
+  light: '#CCCCCC',        // Improved from #AAAAAA
+  inactive: '#888888',
 
-  // Border (always black for brutalist)
+  // Border
   border: '#000000',
 };
