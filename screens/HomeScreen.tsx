@@ -14,43 +14,48 @@ import NeedsDetailScreen from './NeedsDetailScreen';
 
 const {width} = Dimensions.get('window');
 
-// Soft Blue Color Palette - Light, Trustworthy, Calm
+// Neo Brutalist Color Palette - High Contrast, Bold, No Blur
 const Colors = {
-  // Light Blue Backgrounds
-  cream: '#F0F7FC',             // Very light blue - main bg
-  paper: '#F5FAFD',             // Softer blue tint
+  // Backgrounds
+  cream: '#FFFEF0',             // Warm off-white - main bg
+  paper: '#FFFFFF',             // Pure white
   cardBg: '#FFFFFF',            // Clean white cards
 
-  // Blue Tones
-  warmBrown: '#4A6B8B',         // Slate blue (for subtle text)
-  softOrange: '#1E3A5F',        // Deep navy - primary action button
-  goldenYellow: '#2D4A6F',      // Medium navy
-  gentleGreen: '#60A5FA',       // Light blue accent
-  softRose: '#93C5FD',          // Soft blue highlight
+  // Primary Colors - Bold & Saturated
+  primary: '#FFDE59',           // Bright yellow - primary action
+  secondary: '#FF6B6B',         // Coral red - accent
+  accent: '#4ECDC4',            // Teal - links/highlights
+  purple: '#A855F7',            // Purple accent
 
-  // Text
-  textDark: '#1E3A5F',          // Deep navy
-  textMedium: '#3D5A80',        // Medium blue-gray
-  textLight: '#6B8CAE',         // Light blue-gray
-  textAccent: '#1E3A5F',        // Navy accent
+  // Text - High Contrast
+  textDark: '#000000',          // Pure black
+  textMedium: '#1A1A1A',        // Near black
+  textLight: '#4A4A4A',         // Dark gray
 
-  // Borders & Lines
-  borderLight: '#DBEAFE',       // Soft blue border
-  borderWarm: '#BFDBFE',        // Slightly deeper blue border
+  // Borders - Always Black
+  border: '#000000',            // Solid black borders
+  borderWidth: 3,               // Standard border width
+
+  // Shadow offset (hard, no blur)
+  shadowOffset: 4,
 
   // Legacy (keeping for compatibility)
-  white: '#FAFAF8',
-  offWhite: '#F5F4F0',
-  warmGray: '#E8E6E1',
-  mediumGray: '#B8B5AD',
-  darkGray: '#6B6860',
-  charcoal: '#3A3835',
-  nearBlack: '#1A1917',
-  deepBlue: '#1B365D',
-  deepBlueSoft: 'rgba(27, 54, 93, 0.08)',
-  goldSubtle: '#C4A87C',
-  goldWarm: '#B8975A',
-  goldLine: 'rgba(196, 168, 124, 0.4)',
+  white: '#FFFFFF',
+  offWhite: '#FFFEF0',
+  warmGray: '#E5E5E5',
+  mediumGray: '#9CA3AF',
+  darkGray: '#4B5563',
+  charcoal: '#1F2937',
+  nearBlack: '#000000',
+  deepBlue: '#1E3A8A',
+  goldSubtle: '#FCD34D',
+  goldWarm: '#F59E0B',
+
+  // Mapped for backwards compat
+  softOrange: '#000000',
+  gentleGreen: '#4ECDC4',
+  borderLight: '#000000',
+  borderWarm: '#000000',
 };
 
 // Tier data
@@ -131,38 +136,38 @@ const CircleUserIcon = () => (
 
 const iconStyles = StyleSheet.create({
   container: {
-    width: 16,
-    height: 16,
+    width: 20,
+    height: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   heart: {
-    width: 12,
-    height: 12,
+    width: 14,
+    height: 14,
     backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: Colors.textMedium,
-    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: Colors.textDark,
+    borderRadius: 0,
     transform: [{rotate: '45deg'}],
   },
   plusH: {
     position: 'absolute',
-    width: 12,
-    height: 1.5,
-    backgroundColor: Colors.textMedium,
+    width: 14,
+    height: 2,
+    backgroundColor: Colors.textDark,
   },
   plusV: {
     position: 'absolute',
-    width: 1.5,
-    height: 12,
-    backgroundColor: Colors.textMedium,
+    width: 2,
+    height: 14,
+    backgroundColor: Colors.textDark,
   },
   circle: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: Colors.textMedium,
+    width: 16,
+    height: 16,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: Colors.textDark,
   },
 });
 
@@ -450,28 +455,28 @@ const BoardNavIcon = ({active}: {active: boolean}) => (
 
 const navIconStyles = StyleSheet.create({
   container: {
-    width: 22,
-    height: 22,
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
   heart: {
-    width: 14,
-    height: 14,
+    width: 16,
+    height: 16,
     borderWidth: 2,
-    borderRadius: 7,
+    borderRadius: 0,
     transform: [{rotate: '45deg'}],
   },
   rect: {
-    width: 14,
-    height: 14,
+    width: 16,
+    height: 16,
     borderWidth: 2,
-    borderRadius: 2,
+    borderRadius: 0,
   },
   line: {
-    width: 14,
-    height: 2,
-    borderRadius: 1,
+    width: 16,
+    height: 3,
+    borderRadius: 0,
   },
 });
 
@@ -613,15 +618,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cream,
     paddingHorizontal: 20,
     paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    borderBottomWidth: 3,
+    borderBottomColor: Colors.border,
   },
   headerBrand: {
     fontFamily: 'CourierPrime-Bold',
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 4,
-    color: Colors.textMedium,
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 6,
+    color: Colors.textDark,
     textTransform: 'uppercase',
     textAlign: 'center',
   },
@@ -632,21 +637,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 24,
   },
-  // Tier card styles - Sleek & Modern
+  // Tier card styles - Neo Brutalist
   tierCard: {
     marginBottom: 24,
   },
   tierCardInner: {
     backgroundColor: Colors.cardBg,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    borderRadius: 16,
+    borderWidth: 3,
+    borderColor: Colors.border,
+    borderRadius: 0,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    // Hard shadow - no blur
+    shadowColor: Colors.border,
+    shadowOffset: {width: 4, height: 4},
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 0,
   },
   tierTop: {
     flexDirection: 'row',
@@ -656,55 +662,68 @@ const styles = StyleSheet.create({
   },
   tierAmount: {
     fontFamily: 'CourierPrime-Bold',
-    fontSize: 32,
+    fontSize: 36,
     color: Colors.textDark,
+    fontWeight: '900',
   },
   tierAmountRange: {
-    fontSize: 24,
+    fontSize: 28,
   },
   tierAmountCustom: {
-    fontSize: 26,
+    fontSize: 28,
   },
   tierIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.cream,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    width: 44,
+    height: 44,
+    borderRadius: 0,
+    backgroundColor: Colors.primary,
+    borderWidth: 3,
+    borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tierTitle: {
     fontFamily: 'CourierPrime-Bold',
-    fontSize: 16,
+    fontSize: 18,
     color: Colors.textDark,
     marginBottom: 4,
-    lineHeight: 22,
+    lineHeight: 24,
+    textTransform: 'uppercase',
   },
   tierPartner: {
     fontFamily: 'CourierPrime-Regular',
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 0.5,
     color: Colors.textLight,
     marginBottom: 10,
   },
   tierCardExpanded: {
-    borderColor: Colors.textMedium,
+    borderColor: Colors.border,
+    shadowOffset: {width: 2, height: 2},
   },
   donateBlock: {
     marginTop: 16,
   },
   donateBlockButton: {
-    backgroundColor: Colors.softOrange,
-    borderRadius: 10,
-    paddingVertical: 14,
+    backgroundColor: Colors.primary,
+    borderRadius: 0,
+    borderWidth: 3,
+    borderColor: Colors.border,
+    paddingVertical: 16,
     alignItems: 'center',
+    // Hard shadow on button
+    shadowColor: Colors.border,
+    shadowOffset: {width: 3, height: 3},
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
   donateBlockButtonText: {
     fontFamily: 'CourierPrime-Bold',
-    fontSize: 14,
-    color: Colors.cardBg,
+    fontSize: 16,
+    color: Colors.textDark,
+    textTransform: 'uppercase',
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   tierExpandedContent: {
     overflow: 'hidden',
@@ -713,38 +732,46 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   tierDivider: {
-    height: 1,
-    backgroundColor: Colors.borderLight,
+    height: 3,
+    backgroundColor: Colors.border,
     marginBottom: 16,
   },
   tierExpandedText: {
     fontFamily: 'CourierPrime-Regular',
-    fontSize: 13,
+    fontSize: 14,
     color: Colors.textMedium,
-    lineHeight: 20,
+    lineHeight: 22,
     marginBottom: 6,
   },
   tierExpandedLink: {
     fontFamily: 'CourierPrime-Bold',
-    fontSize: 12,
-    color: Colors.gentleGreen,
+    fontSize: 14,
+    color: Colors.accent,
     marginBottom: 4,
+    textDecorationLine: 'underline',
   },
   tierDonateButton: {
-    backgroundColor: Colors.softOrange,
-    borderRadius: 10,
-    paddingVertical: 14,
+    backgroundColor: Colors.primary,
+    borderRadius: 0,
+    borderWidth: 3,
+    borderColor: Colors.border,
+    paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
+    shadowColor: Colors.border,
+    shadowOffset: {width: 3, height: 3},
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
   tierDonateButtonText: {
     fontFamily: 'CourierPrime-Bold',
-    fontSize: 14,
-    color: Colors.cardBg,
+    fontSize: 16,
+    color: Colors.textDark,
     textTransform: 'uppercase',
     letterSpacing: 1,
+    fontWeight: '900',
   },
-  // Real Needs Section - Sleek & Modern
+  // Real Needs Section - Neo Brutalist
   realNeedsSection: {
     marginTop: 8,
     marginBottom: 24,
@@ -755,116 +782,124 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   realNeedsTitle: {
-    fontFamily: 'System',
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textLight,
+    fontFamily: 'CourierPrime-Bold',
+    fontSize: 14,
+    fontWeight: '900',
+    color: Colors.textDark,
     marginBottom: 2,
     textTransform: 'uppercase',
-    letterSpacing: 1.5,
+    letterSpacing: 2,
   },
   realNeedsSubtitle: {
-    fontFamily: 'System',
-    fontSize: 11,
+    fontFamily: 'CourierPrime-Regular',
+    fontSize: 12,
     fontWeight: '400',
     color: Colors.textLight,
-    opacity: 0.7,
   },
   needsScrollContent: {
     paddingHorizontal: 20,
-    gap: 12,
+    gap: 16,
   },
   needCard: {
-    width: 156,
+    width: 160,
     backgroundColor: Colors.cardBg,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    borderRadius: 12,
+    borderWidth: 3,
+    borderColor: Colors.border,
+    borderRadius: 0,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    // Hard shadow
+    shadowColor: Colors.border,
+    shadowOffset: {width: 4, height: 4},
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 0,
   },
   needAmount: {
     fontFamily: 'CourierPrime-Bold',
-    fontSize: 20,
+    fontSize: 24,
     color: Colors.textDark,
     marginBottom: 6,
+    fontWeight: '900',
   },
   needTitle: {
     fontFamily: 'CourierPrime-Bold',
-    fontSize: 13,
+    fontSize: 14,
     color: Colors.textDark,
     marginBottom: 2,
     lineHeight: 18,
+    textTransform: 'uppercase',
   },
   needRecipient: {
     fontFamily: 'CourierPrime-Regular',
-    fontSize: 11,
+    fontSize: 12,
     color: Colors.textMedium,
     marginBottom: 6,
   },
   needDesc: {
     fontFamily: 'CourierPrime-Regular',
-    fontSize: 11,
+    fontSize: 12,
     color: Colors.textLight,
-    lineHeight: 15,
+    lineHeight: 16,
   },
-  // Custom Card - Small & Subtle
+  // Custom Card - Neo Brutalist
   customCard: {
     marginBottom: 16,
     marginTop: 8,
   },
   customCardInner: {
-    backgroundColor: 'transparent',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    borderStyle: 'dashed',
+    backgroundColor: Colors.accent,
+    borderRadius: 0,
+    borderWidth: 3,
+    borderColor: Colors.border,
+    borderStyle: 'solid',
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    shadowColor: Colors.border,
+    shadowOffset: {width: 4, height: 4},
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
   customTitle: {
     fontFamily: 'CourierPrime-Bold',
-    fontSize: 14,
-    color: Colors.textMedium,
+    fontSize: 16,
+    color: Colors.textDark,
     marginBottom: 2,
+    textTransform: 'uppercase',
   },
   customSubtitle: {
     fontFamily: 'CourierPrime-Regular',
-    fontSize: 12,
-    color: Colors.textLight,
+    fontSize: 14,
+    color: Colors.textDark,
   },
   customCta: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    backgroundColor: Colors.paper,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.borderWarm,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.cardBg,
+    borderRadius: 0,
+    borderWidth: 3,
+    borderColor: Colors.border,
   },
   customCtaText: {
-    fontFamily: 'CourierPrime-Regular',
-    fontSize: 11,
-    letterSpacing: 0.3,
-    color: Colors.textMedium,
+    fontFamily: 'CourierPrime-Bold',
+    fontSize: 12,
+    letterSpacing: 0.5,
+    color: Colors.textDark,
+    textTransform: 'uppercase',
   },
-  // Bottom nav - Sleek
+  // Bottom nav - Neo Brutalist
   bottomNav: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 72,
+    height: 76,
     backgroundColor: Colors.cardBg,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
+    borderTopWidth: 3,
+    borderTopColor: Colors.border,
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'flex-start',
@@ -876,31 +911,33 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   navIcon: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    opacity: 0.4,
+    opacity: 0.3,
   },
   navIconActive: {
     opacity: 1,
   },
   navLabel: {
-    fontFamily: 'CourierPrime-Regular',
-    fontSize: 10,
-    letterSpacing: 0.5,
+    fontFamily: 'CourierPrime-Bold',
+    fontSize: 11,
+    letterSpacing: 1,
     textTransform: 'uppercase',
     color: Colors.textLight,
     marginTop: 4,
   },
   navLabelActive: {
-    color: Colors.softOrange,
+    color: Colors.textDark,
   },
   navActiveDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: Colors.softOrange,
+    width: 8,
+    height: 8,
+    borderRadius: 0,
+    backgroundColor: Colors.primary,
+    borderWidth: 2,
+    borderColor: Colors.border,
     marginTop: 4,
   },
 });

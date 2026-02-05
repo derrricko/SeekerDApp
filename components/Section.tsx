@@ -1,45 +1,54 @@
 import React, {ReactNode} from 'react';
-import {StyleSheet, Text, useColorScheme, View} from 'react-native';
-import {Colors} from './Colors';
+import {StyleSheet, Text, View} from 'react-native';
 
 export const Section: React.FC<{
   children?: ReactNode;
   description?: string;
   title?: string;
 }> = ({children, description, title}) => {
-  const isDarkMode = useColorScheme() === 'dark';
-  const textColor = {color: isDarkMode ? Colors.lighter : Colors.darker};
   return (
     <View style={styles.sectionContainer}>
-      {title ? (
-        <Text style={[styles.sectionTitle, textColor]}>{title}</Text>
-      ) : null}
+      {title ? <Text style={styles.sectionTitle}>{title}</Text> : null}
       {description ? (
-        <Text style={[styles.sectionDescription, textColor]}>
-          {description}
-        </Text>
+        <Text style={styles.sectionDescription}>{description}</Text>
       ) : null}
-      <View style={[styles.sectionDescription]}>{children}</View>
+      <View style={styles.childrenContainer}>{children}</View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   sectionContainer: {
-    marginTop: 18,
-    paddingHorizontal: 24,
+    marginTop: 24,
+    marginBottom: 8,
+    paddingHorizontal: 0,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 3,
+    borderColor: '#000000',
+    padding: 20,
+    shadowColor: '#000000',
+    shadowOffset: {width: 4, height: 4},
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 0,
   },
   childrenContainer: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    marginTop: 16,
   },
   sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+    fontFamily: 'CourierPrime-Bold',
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#000000',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
   },
   sectionDescription: {
     marginTop: 8,
-    fontSize: 18,
+    fontFamily: 'CourierPrime-Regular',
+    fontSize: 14,
     fontWeight: '400',
+    color: '#4A4A4A',
+    lineHeight: 22,
   },
 });

@@ -1,5 +1,37 @@
 # Solana Mobile Development Guide
 
+## UI Design System — Neo Brutalist
+All UI/visual design must follow neo brutalist principles:
+- **Borders**: Solid black borders (2-4px), no rounded corners or minimal rounding
+- **Shadows**: Hard offset shadows (no blur), typically 4-8px offset in black
+- **Buttons**: Chunky, oversized, high-contrast with bold text
+- **Colors**: High contrast palette, primary colors, black/white base
+- **Typography**: Bold, sans-serif, often uppercase for headers
+- **No gradients, no blur, no soft shadows**
+- **Interactive states**: Shift shadow on press (shadow reduces/removes on tap)
+
+```typescript
+// Example Neo Brutalist button style
+const brutalistButton = {
+  backgroundColor: '#FFFF00', // Bold primary color
+  borderWidth: 3,
+  borderColor: '#000000',
+  shadowColor: '#000000',
+  shadowOffset: { width: 4, height: 4 },
+  shadowOpacity: 1,
+  shadowRadius: 0, // NO blur
+  elevation: 0,
+  paddingVertical: 16,
+  paddingHorizontal: 24,
+};
+
+const brutalistButtonPressed = {
+  ...brutalistButton,
+  shadowOffset: { width: 1, height: 1 }, // Reduced shadow on press
+  transform: [{ translateX: 3 }, { translateY: 3 }],
+};
+```
+
 ## Project Stack
 - Frontend: React Native + TypeScript
 - Wallet: Mobile Wallet Adapter (MWA) 2.0

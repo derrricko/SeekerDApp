@@ -1,5 +1,5 @@
 import React, {useState, useCallback} from 'react';
-import {Button} from 'react-native';
+import {TouchableOpacity, Text, StyleSheet} from 'react-native';
 import {fromUint8Array} from 'js-base64';
 import {
   transact,
@@ -15,18 +15,15 @@ export default function SignTransactionButton() {
   const {connection} = useConnection();
   const {authorizeSession} = useAuthorization();
   const [signingInProgress, setSigningInProgress] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
 
   const signTransaction = useCallback(async () => {
     return await transact(async (wallet: Web3MobileWallet) => {
-      // First, request for authorization from the wallet and fetch the latest
-      // blockhash for building the transaction.
       const [authorizationResult, latestBlockhash] = await Promise.all([
         authorizeSession(wallet),
         connection.getLatestBlockhash(),
       ]);
 
-      // Construct a transaction. This transaction uses web3.js `SystemProgram`
-      // to create a transfer that sends lamports to randomly generated address.
       const keypair = Keypair.generate();
       const randomTransferTransaction = new Transaction({
         ...latestBlockhash,
@@ -39,7 +36,6 @@ export default function SignTransactionButton() {
         }),
       );
 
-      // Sign a transaction and receive
       const signedTransactions = await wallet.signTransactions({
         transactions: [randomTransferTransaction],
       });
@@ -49,9 +45,16 @@ export default function SignTransactionButton() {
   }, [authorizeSession, connection]);
 
   return (
-    <Button
-      title="Sign Transaction"
+    <TouchableOpacity
+      style={[
+        styles.button,
+        isPressed && styles.buttonPressed,
+        signingInProgress && styles.buttonDisabled,
+      ]}
       disabled={signingInProgress}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+      activeOpacity={1}
       onPress={async () => {
         if (signingInProgress) {
           return;
@@ -72,7 +75,40 @@ export default function SignTransactionButton() {
         } finally {
           setSigningInProgress(false);
         }
-      }}
-    />
+      }}>
+      <Text style={styles.buttonText}>
+        {signingInProgress ? 'SIGNING...' : 'SIGN TRANSACTION'}
+      </Text>
+    </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    backgroundColor: '#FFDE59',
+    borderWidth: 3,
+    borderColor: '#000000',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    shadowColor: '#000000',
+    shadowOffset: {width: 4, height: 4},
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 0,
+  },
+  buttonPressed: {
+    shadowOffset: {width: 1, height: 1},
+    transform: [{translateX: 3}, {translateY: 3}],
+  },
+  buttonDisabled: {
+    backgroundColor: '#E5E5E5',
+  },
+  buttonText: {
+    fontFamily: 'CourierPrime-Bold',
+    fontSize: 14,
+    color: '#000000',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+});

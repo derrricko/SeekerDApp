@@ -1,6 +1,6 @@
 import {useConnection} from '../components/providers/ConnectionProvider';
 import React, {useState, useCallback} from 'react';
-import {Button} from 'react-native';
+import {TouchableOpacity, Text, StyleSheet, ViewStyle} from 'react-native';
 import {Account} from './providers/AuthorizationProvider';
 import {alertAndLog} from '../util/alertAndLog';
 import {LAMPORTS_PER_SOL} from '@solana/web3.js';
@@ -8,6 +8,7 @@ import {LAMPORTS_PER_SOL} from '@solana/web3.js';
 type Props = Readonly<{
   selectedAccount: Account;
   onAirdropComplete: (account: Account) => void;
+  style?: ViewStyle;
 }>;
 
 function convertLamportsToSOL(lamports: number) {
@@ -21,9 +22,12 @@ const LAMPORTS_PER_AIRDROP = 1000000000;
 export default function RequestAirdropButton({
   selectedAccount,
   onAirdropComplete,
+  style,
 }: Props) {
   const {connection} = useConnection();
   const [airdropInProgress, setAirdropInProgress] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
+
   const requestAirdrop = useCallback(async () => {
     const signature = await connection.requestAirdrop(
       selectedAccount.publicKey,
@@ -32,18 +36,26 @@ export default function RequestAirdropButton({
 
     return await connection.confirmTransaction(signature);
   }, [connection, selectedAccount]);
+
   return (
-    <Button
-      title="Request Airdrop"
+    <TouchableOpacity
+      style={[
+        styles.button,
+        isPressed && styles.buttonPressed,
+        airdropInProgress && styles.buttonDisabled,
+        style,
+      ]}
       disabled={airdropInProgress}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+      activeOpacity={1}
       onPress={async () => {
         if (airdropInProgress) {
           return;
         }
         setAirdropInProgress(true);
         try {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const result = await requestAirdrop();
+          await requestAirdrop();
           alertAndLog(
             'Funding successful:',
             String(convertLamportsToSOL(LAMPORTS_PER_AIRDROP)) +
@@ -59,7 +71,40 @@ export default function RequestAirdropButton({
         } finally {
           setAirdropInProgress(false);
         }
-      }}
-    />
+      }}>
+      <Text style={styles.buttonText}>
+        {airdropInProgress ? 'REQUESTING...' : 'REQUEST AIRDROP'}
+      </Text>
+    </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    backgroundColor: '#4ECDC4',
+    borderWidth: 3,
+    borderColor: '#000000',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    shadowColor: '#000000',
+    shadowOffset: {width: 4, height: 4},
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 0,
+  },
+  buttonPressed: {
+    shadowOffset: {width: 1, height: 1},
+    transform: [{translateX: 3}, {translateY: 3}],
+  },
+  buttonDisabled: {
+    backgroundColor: '#E5E5E5',
+  },
+  buttonText: {
+    fontFamily: 'CourierPrime-Bold',
+    fontSize: 14,
+    color: '#000000',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+});
