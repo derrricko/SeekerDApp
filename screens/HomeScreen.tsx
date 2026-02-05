@@ -7,10 +7,13 @@ import {
   TouchableOpacity,
   Animated,
   Linking,
+  TextInput,
+  Modal,
+  FlatList,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import NeedsDetailScreen from './NeedsDetailScreen';
 import {useTheme} from '../components/theme';
+import AboutContent from '../components/AboutContent';
 
 // Tier data
 const TIERS = [
@@ -27,44 +30,21 @@ const TIERS = [
   },
 ];
 
-// Real needs data
-const REAL_NEEDS = [
-  {
-    id: 'oil-change',
-    amount: '$450',
-    title: 'Safe Ride to Work',
-    recipient: 'For Maria',
-    description: 'New tires + oil change so she can keep her job.',
-  },
-  {
-    id: 'diapers',
-    amount: '$180',
-    title: '3 Months of Diapers',
-    recipient: 'Johnson Family',
-    description: 'Twins arrived early. A little help goes far.',
-  },
-  {
-    id: 'wardrobe',
-    amount: '$200',
-    title: 'Back to School',
-    recipient: 'For Marcus, 13',
-    description: 'New clothes for 8th grade. Confidence matters.',
-  },
-  {
-    id: 'groceries',
-    amount: '$150',
-    title: 'Full Fridge',
-    recipient: 'For Sandra',
-    description: 'Fresh start deserves fresh food.',
-  },
-];
-
 const CUSTOM_TIER = {
   id: 'custom',
   title: 'Something bigger?',
   subtitle: "Let's talk.",
   cta: 'Connect →',
 };
+
+// Direction options for custom giving
+const DIRECTIONS = [
+  {id: 'single-moms', label: 'Single moms'},
+  {id: 'low-income-kids', label: 'Low-income kids'},
+  {id: 'homeless', label: 'Neighbors experiencing homelessness'},
+  {id: 'recovery', label: 'People in recovery'},
+  {id: 'seniors', label: 'Seniors'},
+];
 
 // Theme toggle icon component
 function ThemeToggleIcon({mode}: {mode: 'light' | 'dark' | 'system'}) {
@@ -73,7 +53,9 @@ function ThemeToggleIcon({mode}: {mode: 'light' | 'dark' | 'system'}) {
   if (mode === 'light') {
     return (
       <View style={[iconStyles.sunOuter, {borderColor: colors.textPrimary}]}>
-        <View style={[iconStyles.sunInner, {backgroundColor: colors.textPrimary}]} />
+        <View
+          style={[iconStyles.sunInner, {backgroundColor: colors.textPrimary}]}
+        />
       </View>
     );
   }
@@ -86,8 +68,15 @@ function ThemeToggleIcon({mode}: {mode: 'light' | 'dark' | 'system'}) {
 
   return (
     <View style={iconStyles.systemIcon}>
-      <View style={[iconStyles.systemHalf, {backgroundColor: colors.textPrimary}]} />
-      <View style={[iconStyles.systemHalfOutline, {borderColor: colors.textPrimary}]} />
+      <View
+        style={[iconStyles.systemHalf, {backgroundColor: colors.textPrimary}]}
+      />
+      <View
+        style={[
+          iconStyles.systemHalfOutline,
+          {borderColor: colors.textPrimary},
+        ]}
+      />
     </View>
   );
 }
@@ -155,13 +144,13 @@ const simpleIconStyles = StyleSheet.create({
 });
 
 interface TierCardProps {
-  tier: typeof TIERS[0];
+  tier: (typeof TIERS)[0];
   index: number;
   onPress: () => void;
   onDonate?: () => void;
 }
 
-function TierCard({tier, index, onPress, onDonate}: TierCardProps) {
+function TierCard({tier, index, onPress: _onPress, onDonate}: TierCardProps) {
   const {colors} = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(20)).current;
@@ -250,7 +239,10 @@ function TierCard({tier, index, onPress, onDonate}: TierCardProps) {
           <View
             style={[
               styles.tierIcon,
-              {backgroundColor: colors.primaryLight, borderColor: colors.primary},
+              {
+                backgroundColor: colors.primaryLight,
+                borderColor: colors.primary,
+              },
             ]}>
             <CircleUserIcon color={colors.primary} />
           </View>
@@ -266,26 +258,38 @@ function TierCard({tier, index, onPress, onDonate}: TierCardProps) {
           style={[styles.donateButton, {backgroundColor: colors.primary}]}
           onPress={onDonate}
           activeOpacity={0.8}>
-          <Text style={[styles.donateButtonText, {color: colors.textOnPrimary}]}>
+          <Text
+            style={[styles.donateButtonText, {color: colors.textOnPrimary}]}>
             Donate {tier.amount}
           </Text>
         </TouchableOpacity>
 
-        <Animated.View style={{height: expandedContentHeight, overflow: 'hidden'}}>
+        <Animated.View
+          style={{height: expandedContentHeight, overflow: 'hidden'}}>
           <View style={styles.tierExpandedInner}>
-            <View style={[styles.tierDivider, {backgroundColor: colors.border}]} />
-            <Text style={[styles.tierExpandedText, {color: colors.textSecondary}]}>
+            <View
+              style={[styles.tierDivider, {backgroundColor: colors.border}]}
+            />
+            <Text
+              style={[styles.tierExpandedText, {color: colors.textSecondary}]}>
               BeHeard is a nonprofit serving the unhoused population.
             </Text>
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => Linking.openURL('https://www.instagram.com/beheard.mvmt/')}>
+              onPress={() =>
+                Linking.openURL('https://www.instagram.com/beheard.mvmt/')
+              }>
               <Text style={[styles.tierExpandedLink, {color: colors.primary}]}>
                 See what they do →
               </Text>
             </TouchableOpacity>
-            <Text style={[styles.tierExpandedText, {color: colors.textSecondary, marginTop: 12}]}>
-              There is no guarantee of a response, but you will be given a first name and last initial.
+            <Text
+              style={[
+                styles.tierExpandedText,
+                {color: colors.textSecondary, marginTop: 12},
+              ]}>
+              There is no guarantee of a response, but you will be given a first
+              name and last initial.
             </Text>
           </View>
         </Animated.View>
@@ -294,110 +298,7 @@ function TierCard({tier, index, onPress, onDonate}: TierCardProps) {
   );
 }
 
-interface RealNeedCardProps {
-  need: typeof REAL_NEEDS[0];
-  onPress: () => void;
-}
-
-function RealNeedCard({need, onPress}: RealNeedCardProps) {
-  const {colors} = useTheme();
-  const scale = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () => {
-    Animated.spring(scale, {
-      toValue: 0.96,
-      useNativeDriver: true,
-      speed: 50,
-      bounciness: 4,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scale, {
-      toValue: 1,
-      useNativeDriver: true,
-      speed: 50,
-      bounciness: 4,
-    }).start();
-  };
-
-  return (
-    <Animated.View style={{transform: [{scale}]}}>
-      <TouchableOpacity
-        style={[
-          styles.needCard,
-          {
-            backgroundColor: colors.card,
-            borderColor: colors.glassBorder,
-            shadowColor: colors.shadow,
-          },
-        ]}
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        activeOpacity={1}>
-        <Text style={[styles.needAmount, {color: colors.primary}]}>{need.amount}</Text>
-        <Text style={[styles.needTitle, {color: colors.textPrimary}]}>{need.title}</Text>
-        <Text style={[styles.needRecipient, {color: colors.textSecondary}]}>{need.recipient}</Text>
-        <Text style={[styles.needDesc, {color: colors.textTertiary}]} numberOfLines={2}>
-          {need.description}
-        </Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
-
-interface RealNeedsSectionProps {
-  onNeedPress: (needId: string) => void;
-}
-
-function RealNeedsSection({onNeedPress}: RealNeedsSectionProps) {
-  const {colors} = useTheme();
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(20)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 800,
-        delay: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 800,
-        delay: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
-
-  return (
-    <Animated.View style={[styles.realNeedsSection, {opacity, transform: [{translateY}]}]}>
-      <View style={styles.realNeedsHeader}>
-        <Text style={[styles.realNeedsTitle, {color: colors.textPrimary}]}>Real Needs</Text>
-        <Text style={[styles.realNeedsSubtitle, {color: colors.textSecondary}]}>
-          Verified stories, direct impact
-        </Text>
-      </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.needsScrollContent}>
-        {REAL_NEEDS.map(need => (
-          <RealNeedCard key={need.id} need={need} onPress={() => onNeedPress(need.id)} />
-        ))}
-      </ScrollView>
-    </Animated.View>
-  );
-}
-
-interface CustomCardProps {
-  onPress: () => void;
-}
-
-function CustomCard({onPress}: CustomCardProps) {
+function CustomCard() {
   const {colors} = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(20)).current;
@@ -438,8 +339,16 @@ function CustomCard({onPress}: CustomCardProps) {
     }).start();
   };
 
+  const openX = () => {
+    Linking.openURL('https://x.com/DerrickWKing');
+  };
+
   return (
-    <Animated.View style={[styles.customCard, {opacity, transform: [{translateY}, {scale}]}]}>
+    <Animated.View
+      style={[
+        styles.customCard,
+        {opacity, transform: [{translateY}, {scale}]},
+      ]}>
       <TouchableOpacity
         style={[
           styles.customCardInner,
@@ -449,40 +358,327 @@ function CustomCard({onPress}: CustomCardProps) {
             shadowColor: colors.accent,
           },
         ]}
-        onPress={onPress}
+        onPress={openX}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={1}>
-        <View>
-          <Text style={[styles.customTitle, {color: colors.textPrimary}]}>{CUSTOM_TIER.title}</Text>
-          <Text style={[styles.customSubtitle, {color: colors.textSecondary}]}>
-            {CUSTOM_TIER.subtitle}
-          </Text>
-        </View>
-        <View style={[styles.customCta, {backgroundColor: colors.accent}]}>
-          <Text style={[styles.customCtaText, {color: colors.textOnPrimary}]}>{CUSTOM_TIER.cta}</Text>
+        <View style={styles.customContent}>
+          <View style={styles.customTextWrap}>
+            <Text style={[styles.customTitle, {color: colors.textPrimary}]}>
+              {CUSTOM_TIER.title}
+            </Text>
+            <Text
+              style={[styles.customSubtitle, {color: colors.textSecondary}]}>
+              {CUSTOM_TIER.subtitle}
+            </Text>
+          </View>
+          <View style={[styles.customCta, {backgroundColor: colors.accent}]}>
+            <Text style={[styles.customCtaText, {color: colors.textOnPrimary}]}>
+              {CUSTOM_TIER.cta}
+            </Text>
+          </View>
         </View>
       </TouchableOpacity>
     </Animated.View>
   );
 }
 
+// Chevron icon for dropdown
+const ChevronDownIcon = ({color}: {color: string}) => (
+  <View style={chevronStyles.container}>
+    <View style={[chevronStyles.chevron, {borderColor: color}]} />
+  </View>
+);
+
+const chevronStyles = StyleSheet.create({
+  container: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chevron: {
+    width: 10,
+    height: 10,
+    borderRightWidth: 2,
+    borderBottomWidth: 2,
+    transform: [{rotate: '45deg'}, {translateY: -2}],
+  },
+});
+
+interface CustomGivingCardProps {
+  onDonate: (amount: number, direction: string) => void;
+}
+
+function CustomGivingCard({onDonate}: CustomGivingCardProps) {
+  const {colors, isDark} = useTheme();
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(20)).current;
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const [selectedDirection, setSelectedDirection] = useState(DIRECTIONS[0]);
+  const [amount, setAmount] = useState('25');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [validationError, setValidationError] = useState('');
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 800,
+        delay: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 800,
+        delay: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handleAmountChange = (text: string) => {
+    // Only allow numeric input
+    const numericValue = text.replace(/[^0-9]/g, '');
+    setAmount(numericValue);
+    setValidationError('');
+  };
+
+  const handleGiveNow = () => {
+    const numAmount = parseInt(amount, 10);
+    if (isNaN(numAmount) || numAmount < 10) {
+      setValidationError('Minimum donation is $10');
+      return;
+    }
+    setValidationError('');
+    onDonate(numAmount, selectedDirection.label);
+  };
+
+  const selectDirection = (direction: (typeof DIRECTIONS)[0]) => {
+    setSelectedDirection(direction);
+    setShowDropdown(false);
+  };
+
+  const numAmount = parseInt(amount, 10) || 0;
+  const isPooled = numAmount > 0 && numAmount < 100;
+
+  return (
+    <Animated.View
+      style={[
+        styles.customGivingCard,
+        {opacity, transform: [{translateY}, {scale}]},
+      ]}>
+      <View
+        style={[
+          styles.customGivingCardInner,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.glassBorder,
+            shadowColor: colors.shadow,
+          },
+        ]}>
+        <Text style={[styles.customGivingTitle, {color: colors.textPrimary}]}>
+          Give Your Way
+        </Text>
+
+        {/* Direction dropdown */}
+        <Text style={[styles.inputLabel, {color: colors.textSecondary}]}>
+          Direction
+        </Text>
+        <TouchableOpacity
+          style={[
+            styles.dropdown,
+            {
+              backgroundColor: isDark
+                ? colors.backgroundSecondary
+                : colors.background,
+              borderColor: colors.border,
+            },
+          ]}
+          onPress={() => setShowDropdown(true)}
+          activeOpacity={0.8}>
+          <Text style={[styles.dropdownText, {color: colors.textPrimary}]}>
+            {selectedDirection.label}
+          </Text>
+          <ChevronDownIcon color={colors.textSecondary} />
+        </TouchableOpacity>
+
+        {/* Amount input */}
+        <Text
+          style={[
+            styles.inputLabel,
+            {color: colors.textSecondary, marginTop: 16},
+          ]}>
+          Amount
+        </Text>
+        <View
+          style={[
+            styles.amountInputContainer,
+            {
+              backgroundColor: isDark
+                ? colors.backgroundSecondary
+                : colors.background,
+              borderColor: validationError ? colors.error : colors.border,
+            },
+          ]}>
+          <Text style={[styles.dollarSign, {color: colors.textSecondary}]}>
+            $
+          </Text>
+          <TextInput
+            style={[styles.amountInput, {color: colors.textPrimary}]}
+            value={amount}
+            onChangeText={handleAmountChange}
+            keyboardType="numeric"
+            placeholder="25"
+            placeholderTextColor={colors.textTertiary}
+          />
+        </View>
+        {validationError ? (
+          <Text style={[styles.errorText, {color: colors.error}]}>
+            {validationError}
+          </Text>
+        ) : (
+          <Text style={[styles.minimumText, {color: colors.textTertiary}]}>
+            Minimum $10
+          </Text>
+        )}
+
+        {/* Give Now button */}
+        <TouchableOpacity
+          style={[styles.giveNowButton, {backgroundColor: colors.primary}]}
+          onPress={handleGiveNow}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          activeOpacity={0.8}>
+          <Text
+            style={[styles.giveNowButtonText, {color: colors.textOnPrimary}]}>
+            Give Now
+          </Text>
+        </TouchableOpacity>
+
+        {/* Pooling message */}
+        {isPooled && (
+          <Text style={[styles.poolingText, {color: colors.textTertiary}]}>
+            Under $100? Your gift combines with others for bigger impact.
+          </Text>
+        )}
+
+        {/* Dropdown Modal */}
+        <Modal
+          visible={showDropdown}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowDropdown(false)}>
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowDropdown(false)}>
+            <View
+              style={[
+                styles.dropdownModal,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.glassBorder,
+                  shadowColor: colors.shadow,
+                },
+              ]}>
+              <FlatList
+                data={DIRECTIONS}
+                keyExtractor={item => item.id}
+                renderItem={({item}) => (
+                  <TouchableOpacity
+                    style={[
+                      styles.dropdownItem,
+                      item.id === selectedDirection.id && {
+                        backgroundColor: colors.primaryLight,
+                      },
+                    ]}
+                    onPress={() => selectDirection(item)}
+                    activeOpacity={0.7}>
+                    <Text
+                      style={[
+                        styles.dropdownItemText,
+                        {color: colors.textPrimary},
+                        item.id === selectedDirection.id && {
+                          color: colors.primary,
+                          fontWeight: '600',
+                        },
+                      ]}>
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      </View>
+    </Animated.View>
+  );
+}
+
 // Nav icons
+const AboutNavIcon = ({active, color}: {active: boolean; color: string}) => (
+  <View style={navIconStyles.container}>
+    <View
+      style={[
+        navIconStyles.infoCircle,
+        {borderColor: color, opacity: active ? 1 : 0.4},
+      ]}>
+      <View
+        style={[
+          navIconStyles.infoDot,
+          {backgroundColor: color, opacity: active ? 1 : 0.4},
+        ]}
+      />
+      <View
+        style={[
+          navIconStyles.infoLine,
+          {backgroundColor: color, opacity: active ? 1 : 0.4},
+        ]}
+      />
+    </View>
+  </View>
+);
+
 const GiveNavIcon = ({active, color}: {active: boolean; color: string}) => (
   <View style={navIconStyles.container}>
-    <View style={[navIconStyles.heart, {borderColor: color, opacity: active ? 1 : 0.4}]} />
+    <View
+      style={[
+        navIconStyles.heart,
+        {borderColor: color, opacity: active ? 1 : 0.4},
+      ]}
+    />
   </View>
 );
 
 const GlimpsesNavIcon = ({active, color}: {active: boolean; color: string}) => (
   <View style={navIconStyles.container}>
-    <View style={[navIconStyles.rect, {borderColor: color, opacity: active ? 1 : 0.4}]} />
-  </View>
-);
-
-const BoardNavIcon = ({active, color}: {active: boolean; color: string}) => (
-  <View style={navIconStyles.container}>
-    <View style={[navIconStyles.line, {backgroundColor: color, opacity: active ? 1 : 0.4}]} />
+    <View
+      style={[
+        navIconStyles.rect,
+        {borderColor: color, opacity: active ? 1 : 0.4},
+      ]}
+    />
   </View>
 );
 
@@ -492,6 +688,25 @@ const navIconStyles = StyleSheet.create({
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  infoCircle: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    marginBottom: 1,
+  },
+  infoLine: {
+    width: 2,
+    height: 6,
+    borderRadius: 1,
   },
   heart: {
     width: 18,
@@ -506,53 +721,22 @@ const navIconStyles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: 4,
   },
-  line: {
-    width: 18,
-    height: 3,
-    borderRadius: 2,
-  },
 });
 
 interface HomeScreenProps {
   onTierPress?: (tierId: string) => void;
-  onNeedPress?: (needId: string) => void;
 }
 
-export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) {
+export default function HomeScreen({onTierPress}: HomeScreenProps) {
   const insets = useSafeAreaInsets();
   const {colors, mode, toggleMode} = useTheme();
   const [activeTab, setActiveTab] = useState('give');
-  const [showNeedsDetail, setShowNeedsDetail] = useState(false);
 
   const handleTierPress = (tierId: string) => {
     if (onTierPress) {
       onTierPress(tierId);
     }
   };
-
-  const handleNeedPress = (needId: string) => {
-    setShowNeedsDetail(true);
-    if (onNeedPress) {
-      onNeedPress(needId);
-    }
-  };
-
-  const handleCustomPress = () => {
-    if (onTierPress) {
-      onTierPress('custom');
-    }
-  };
-
-  if (showNeedsDetail) {
-    return (
-      <NeedsDetailScreen
-        onBack={() => setShowNeedsDetail(false)}
-        onDonate={(amount, purpose) => {
-          console.log('Donate:', amount, purpose);
-        }}
-      />
-    );
-  }
 
   return (
     <View style={[styles.container, {backgroundColor: colors.background}]}>
@@ -566,7 +750,9 @@ export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) 
             borderBottomColor: colors.glassBorder,
           },
         ]}>
-        <Text style={[styles.headerBrand, {color: colors.textPrimary}]}>Glimpse</Text>
+        <Text style={[styles.headerBrand, {color: colors.textPrimary}]}>
+          Glimpse
+        </Text>
         <TouchableOpacity onPress={toggleMode} style={styles.themeToggle}>
           <ThemeToggleIcon mode={mode} />
         </TouchableOpacity>
@@ -575,21 +761,42 @@ export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) 
       {/* Content */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, {paddingBottom: 100 + insets.bottom}]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {paddingBottom: 100 + insets.bottom},
+        ]}
         showsVerticalScrollIndicator={false}>
-        {TIERS.map((tier, index) => (
-          <TierCard
-            key={tier.id}
-            tier={tier}
-            index={index}
-            onPress={() => handleTierPress(tier.id)}
-            onDonate={() => handleTierPress(tier.id)}
-          />
-        ))}
+        {activeTab === 'about' && <AboutContent />}
 
-        <RealNeedsSection onNeedPress={handleNeedPress} />
+        {activeTab === 'give' && (
+          <>
+            {TIERS.map((tier, index) => (
+              <TierCard
+                key={tier.id}
+                tier={tier}
+                index={index}
+                onPress={() => handleTierPress(tier.id)}
+                onDonate={() => handleTierPress(tier.id)}
+              />
+            ))}
 
-        <CustomCard onPress={handleCustomPress} />
+            <CustomGivingCard
+              onDonate={(amount, direction) => {
+                console.log('Custom donation:', amount, direction);
+              }}
+            />
+
+            <CustomCard />
+          </>
+        )}
+
+        {activeTab === 'glimpses' && (
+          <View style={styles.comingSoon}>
+            <Text style={[styles.comingSoonText, {color: colors.textTertiary}]}>
+              Glimpses coming soon
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Bottom Nav */}
@@ -603,9 +810,9 @@ export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) 
           },
         ]}>
         {[
+          {id: 'about', Icon: AboutNavIcon, label: 'About'},
           {id: 'give', Icon: GiveNavIcon, label: 'Give'},
           {id: 'glimpses', Icon: GlimpsesNavIcon, label: 'Glimpses'},
-          {id: 'board', Icon: BoardNavIcon, label: 'Board'},
         ].map(({id, Icon, label}) => (
           <TouchableOpacity
             key={id}
@@ -616,12 +823,17 @@ export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) 
             <Text
               style={[
                 styles.navLabel,
-                {color: activeTab === id ? colors.textPrimary : colors.textTertiary},
+                {
+                  color:
+                    activeTab === id ? colors.textPrimary : colors.textTertiary,
+                },
               ]}>
               {label}
             </Text>
             {activeTab === id && (
-              <View style={[styles.navActiveDot, {backgroundColor: colors.primary}]} />
+              <View
+                style={[styles.navActiveDot, {backgroundColor: colors.primary}]}
+              />
             )}
           </TouchableOpacity>
         ))}
@@ -729,56 +941,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 4,
   },
-  realNeedsSection: {
-    marginTop: 8,
-    marginBottom: 24,
-    marginHorizontal: -20,
-  },
-  realNeedsHeader: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  realNeedsTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  realNeedsSubtitle: {
-    fontSize: 14,
-  },
-  needsScrollContent: {
-    paddingHorizontal: 20,
-    gap: 16,
-  },
-  needCard: {
-    width: 160,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    shadowOffset: {width: 0, height: 6},
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 6,
-  },
-  needAmount: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  needTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 2,
-    lineHeight: 18,
-  },
-  needRecipient: {
-    fontSize: 12,
-    marginBottom: 6,
-  },
-  needDesc: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
   customCard: {
     marginBottom: 16,
     marginTop: 8,
@@ -787,13 +949,20 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     shadowOffset: {width: 0, height: 6},
     shadowOpacity: 0.2,
     shadowRadius: 16,
-    elevation: 6,
+    elevation: 0,
+  },
+  customContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'transparent',
+  },
+  customTextWrap: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   customTitle: {
     fontSize: 16,
@@ -840,5 +1009,124 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     marginTop: 4,
+  },
+  comingSoon: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 100,
+  },
+  comingSoonText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  // CustomGivingCard styles
+  customGivingCard: {
+    marginBottom: 24,
+  },
+  customGivingCardInner: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  customGivingTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  dropdown: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownText: {
+    fontSize: 16,
+    flex: 1,
+  },
+  amountInputContainer: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dollarSign: {
+    fontSize: 24,
+    fontWeight: '300',
+    marginRight: 4,
+  },
+  amountInput: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: '300',
+    paddingVertical: 10,
+  },
+  minimumText: {
+    fontSize: 12,
+    marginTop: 6,
+    fontStyle: 'italic',
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 6,
+    fontWeight: '500',
+  },
+  giveNowButton: {
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 20,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  giveNowButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  poolingText: {
+    fontSize: 13,
+    marginTop: 16,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+  },
+  dropdownModal: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  dropdownItem: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  dropdownItemText: {
+    fontSize: 16,
   },
 });
