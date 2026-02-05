@@ -87,9 +87,8 @@ export default function SignTransactionButton() {
             const signedTransaction = await signTransaction();
             alertAndLog(
               'Transaction signed',
-              'View SignTransactionButton.tsx for implementation.',
+              'Transaction: ' + fromUint8Array(signedTransaction.serialize()).slice(0, 20) + '...',
             );
-            console.log(fromUint8Array(signedTransaction.serialize()));
           } catch (err: any) {
             alertAndLog(
               'Error during signing',

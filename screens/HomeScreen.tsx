@@ -781,8 +781,8 @@ export default function HomeScreen({onTierPress}: HomeScreenProps) {
             ))}
 
             <CustomGivingCard
-              onDonate={(amount, direction) => {
-                console.log('Custom donation:', amount, direction);
+              onDonate={(_amount, _direction) => {
+                // TODO: Integrate wallet transaction for custom donation
               }}
             />
 
