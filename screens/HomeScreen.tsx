@@ -10,12 +10,15 @@ import {
   TextInput,
   Modal,
   FlatList,
+  Platform,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTheme} from '../components/theme';
 import AboutContent from '../components/AboutContent';
+const DISPLAY_FONT = Platform.OS === 'ios' ? 'Georgia' : 'serif';
+const HERO_FONT =
+  Platform.OS === 'ios' ? 'HelveticaNeue-CondensedBlack' : 'sans-serif-condensed';
 
-// Tier data
 const TIERS = [
   {
     id: 'be-heard',
@@ -37,7 +40,6 @@ const CUSTOM_TIER = {
   cta: 'Connect →',
 };
 
-// Direction options for custom giving
 const DIRECTIONS = [
   {id: 'single-moms', label: 'Single moms'},
   {id: 'low-income-kids', label: 'Low-income kids'},
@@ -46,7 +48,12 @@ const DIRECTIONS = [
   {id: 'seniors', label: 'Seniors'},
 ];
 
-// Theme toggle icon component
+const HIGHLIGHTS = [
+  {label: '0% platform fees', value: '100% to the need'},
+  {label: 'Verified gifts', value: 'Receipts + updates'},
+  {label: 'Fast impact', value: 'Usually 48 hours'},
+];
+
 function ThemeToggleIcon({mode}: {mode: 'light' | 'dark' | 'system'}) {
   const {colors} = useTheme();
 
@@ -121,7 +128,6 @@ const iconStyles = StyleSheet.create({
   },
 });
 
-// Simple icon components
 const CircleUserIcon = ({color}: {color: string}) => (
   <View style={simpleIconStyles.container}>
     <View style={[simpleIconStyles.circle, {borderColor: color}]} />
@@ -207,7 +213,7 @@ function TierCard({tier, index, onPress: _onPress, onDonate}: TierCardProps) {
 
   const expandedContentHeight = expandHeight.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 220],
+    outputRange: [0, 200],
   });
 
   return (
@@ -233,9 +239,12 @@ function TierCard({tier, index, onPress: _onPress, onDonate}: TierCardProps) {
           },
         ]}>
         <View style={styles.tierTop}>
-          <Text style={[styles.tierAmount, {color: colors.textPrimary}]}>
-            {tier.amount}
-          </Text>
+          <View>
+            <Text style={[styles.tierAmount, {color: colors.textPrimary}]}>$25</Text>
+            <View style={[styles.tierBadge, {backgroundColor: colors.primaryLight}]}>
+              <Text style={[styles.tierBadgeText, {color: colors.primary}]}>Most needed</Text>
+            </View>
+          </View>
           <View
             style={[
               styles.tierIcon,
@@ -253,6 +262,9 @@ function TierCard({tier, index, onPress: _onPress, onDonate}: TierCardProps) {
         <Text style={[styles.tierPartner, {color: colors.textSecondary}]}>
           {tier.partner}
         </Text>
+        <Text style={[styles.tierDescription, {color: colors.textSecondary}]}>
+          {tier.description}
+        </Text>
 
         <TouchableOpacity
           style={[styles.donateButton, {backgroundColor: colors.primary}]}
@@ -264,14 +276,14 @@ function TierCard({tier, index, onPress: _onPress, onDonate}: TierCardProps) {
           </Text>
         </TouchableOpacity>
 
-        <Animated.View
-          style={{height: expandedContentHeight, overflow: 'hidden'}}>
+        <View style={styles.detailsRow}>
+          <Text style={[styles.detailsText, {color: colors.textTertiary}]}>Tap for details</Text>
+        </View>
+
+        <Animated.View style={{height: expandedContentHeight, overflow: 'hidden'}}>
           <View style={styles.tierExpandedInner}>
-            <View
-              style={[styles.tierDivider, {backgroundColor: colors.border}]}
-            />
-            <Text
-              style={[styles.tierExpandedText, {color: colors.textSecondary}]}>
+            <View style={[styles.tierDivider, {backgroundColor: colors.border}]} />
+            <Text style={[styles.tierExpandedText, {color: colors.textSecondary}]}>
               BeHeard is a nonprofit serving the unhoused population.
             </Text>
             <TouchableOpacity
@@ -279,9 +291,7 @@ function TierCard({tier, index, onPress: _onPress, onDonate}: TierCardProps) {
               onPress={() =>
                 Linking.openURL('https://www.instagram.com/beheard.mvmt/')
               }>
-              <Text style={[styles.tierExpandedLink, {color: colors.primary}]}>
-                See what they do →
-              </Text>
+              <Text style={[styles.tierExpandedLink, {color: colors.primary}]}>See what they do →</Text>
             </TouchableOpacity>
             <Text
               style={[
@@ -355,7 +365,7 @@ function CustomCard() {
           {
             backgroundColor: colors.accentLight,
             borderColor: colors.glassBorder,
-            shadowColor: colors.accent,
+            shadowColor: colors.shadow,
           },
         ]}
         onPress={openX}
@@ -367,8 +377,7 @@ function CustomCard() {
             <Text style={[styles.customTitle, {color: colors.textPrimary}]}>
               {CUSTOM_TIER.title}
             </Text>
-            <Text
-              style={[styles.customSubtitle, {color: colors.textSecondary}]}>
+            <Text style={[styles.customSubtitle, {color: colors.textSecondary}]}>
               {CUSTOM_TIER.subtitle}
             </Text>
           </View>
@@ -383,7 +392,6 @@ function CustomCard() {
   );
 }
 
-// Chevron icon for dropdown
 const ChevronDownIcon = ({color}: {color: string}) => (
   <View style={chevronStyles.container}>
     <View style={[chevronStyles.chevron, {borderColor: color}]} />
@@ -457,7 +465,6 @@ function CustomGivingCard({onDonate}: CustomGivingCardProps) {
   };
 
   const handleAmountChange = (text: string) => {
-    // Only allow numeric input
     const numericValue = text.replace(/[^0-9]/g, '');
     setAmount(numericValue);
     setValidationError('');
@@ -496,14 +503,12 @@ function CustomGivingCard({onDonate}: CustomGivingCardProps) {
             shadowColor: colors.shadow,
           },
         ]}>
-        <Text style={[styles.customGivingTitle, {color: colors.textPrimary}]}>
-          Give Your Way
+        <Text style={[styles.customGivingTitle, {color: colors.textPrimary}]}>Give Your Way</Text>
+        <Text style={[styles.customGivingSub, {color: colors.textSecondary}]}>
+          Choose a direction and amount. We handle the rest.
         </Text>
 
-        {/* Direction dropdown */}
-        <Text style={[styles.inputLabel, {color: colors.textSecondary}]}>
-          Direction
-        </Text>
+        <Text style={[styles.inputLabel, {color: colors.textSecondary}]}>Direction</Text>
         <TouchableOpacity
           style={[
             styles.dropdown,
@@ -522,7 +527,6 @@ function CustomGivingCard({onDonate}: CustomGivingCardProps) {
           <ChevronDownIcon color={colors.textSecondary} />
         </TouchableOpacity>
 
-        {/* Amount input */}
         <Text
           style={[
             styles.inputLabel,
@@ -540,9 +544,7 @@ function CustomGivingCard({onDonate}: CustomGivingCardProps) {
               borderColor: validationError ? colors.error : colors.border,
             },
           ]}>
-          <Text style={[styles.dollarSign, {color: colors.textSecondary}]}>
-            $
-          </Text>
+          <Text style={[styles.dollarSign, {color: colors.textSecondary}]}>$</Text>
           <TextInput
             style={[styles.amountInput, {color: colors.textPrimary}]}
             value={amount}
@@ -562,7 +564,6 @@ function CustomGivingCard({onDonate}: CustomGivingCardProps) {
           </Text>
         )}
 
-        {/* Give Now button */}
         <TouchableOpacity
           style={[styles.giveNowButton, {backgroundColor: colors.primary}]}
           onPress={handleGiveNow}
@@ -575,14 +576,12 @@ function CustomGivingCard({onDonate}: CustomGivingCardProps) {
           </Text>
         </TouchableOpacity>
 
-        {/* Pooling message */}
         {isPooled && (
           <Text style={[styles.poolingText, {color: colors.textTertiary}]}>
             Under $100? Your gift combines with others for bigger impact.
           </Text>
         )}
 
-        {/* Dropdown Modal */}
         <Modal
           visible={showDropdown}
           transparent
@@ -636,7 +635,96 @@ function CustomGivingCard({onDonate}: CustomGivingCardProps) {
   );
 }
 
-// Nav icons
+
+function HeroSection() {
+  const {colors} = useTheme();
+
+  return (
+    <View style={styles.hero}>
+      <Text style={[styles.heroTitle, {color: colors.textPrimary}]}>GIVE VERIFIABLY</Text>
+      <Text style={[styles.heroSubtitle, {color: colors.textSecondary}]}>
+        Glimpse connects your generosity to real people, with receipts, updates,
+        and stories.
+      </Text>
+      <HeroGraphic />
+      <View style={styles.highlightRow}>
+        {HIGHLIGHTS.map(item => (
+          <View
+            key={item.label}
+            style={[styles.highlightPill, {backgroundColor: colors.primaryLight}]}>
+            <Text style={[styles.highlightLabel, {color: colors.primary}]}>
+              {item.label}
+            </Text>
+            <Text style={[styles.highlightValue, {color: colors.textPrimary}]}>
+              {item.value}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function TrustStrip() {
+  const {colors} = useTheme();
+  return (
+    <View
+      style={[
+        styles.trustStrip,
+        {backgroundColor: colors.card, borderColor: colors.glassBorder},
+      ]}>
+      <Text style={[styles.trustTitle, {color: colors.textPrimary}]}>Trust built in</Text>
+      <Text style={[styles.trustBody, {color: colors.textSecondary}]}>
+        Every gift is vetted, documented, and delivered with transparency.
+      </Text>
+      <View style={styles.trustTags}>
+        {['Verified partners', 'On-chain record', 'Direct impact'].map(tag => (
+          <View
+            key={tag}
+            style={[
+              styles.trustTag,
+              {backgroundColor: colors.backgroundSecondary},
+            ]}>
+            <Text style={[styles.trustTagText, {color: colors.textSecondary}]}>
+              {tag}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function HeroGraphic() {
+  const {colors} = useTheme();
+
+  return (
+    <View style={styles.heroGraphic}>
+      <View
+        style={[
+          styles.heroFrame,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.glassBorder,
+            shadowColor: colors.shadow,
+          },
+        ]}>
+        <View style={[styles.heroStripe, {backgroundColor: colors.primaryLight}]} />
+        <View style={styles.heroRow}>
+          <View style={[styles.heroDot, {backgroundColor: colors.primary}]} />
+          <View style={[styles.heroLine, {backgroundColor: colors.textTertiary}]} />
+        </View>
+        <View style={[styles.heroPill, {backgroundColor: colors.backgroundSecondary}]} />
+      </View>
+      <View style={[styles.heroBadge, {backgroundColor: colors.secondary}]}>
+        <Text style={[styles.heroBadgeText, {color: colors.textOnPrimary}]}>
+          Verified
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 const AboutNavIcon = ({active, color}: {active: boolean; color: string}) => (
   <View style={navIconStyles.container}>
     <View
@@ -730,7 +818,12 @@ interface HomeScreenProps {
 export default function HomeScreen({onTierPress}: HomeScreenProps) {
   const insets = useSafeAreaInsets();
   const {colors, mode, toggleMode} = useTheme();
-  const [activeTab, setActiveTab] = useState('give');
+  const scrollRef = useRef<ScrollView>(null);
+  const [glimpsesOffset, setGlimpsesOffset] = useState(0);
+  const [aboutOffset, setAboutOffset] = useState(0);
+  const [activeNav, setActiveNav] = useState<'give' | 'glimpses' | 'about'>(
+    'give',
+  );
 
   const handleTierPress = (tierId: string) => {
     if (onTierPress) {
@@ -739,104 +832,150 @@ export default function HomeScreen({onTierPress}: HomeScreenProps) {
   };
 
   return (
-    <View style={[styles.container, {backgroundColor: colors.background}]}>
-      {/* Header */}
+    <View style={[styles.container, {backgroundColor: colors.background}]}> 
       <View
         style={[
           styles.header,
           {
             paddingTop: insets.top + 12,
-            backgroundColor: colors.card,
-            borderBottomColor: colors.glassBorder,
+            backgroundColor: colors.background,
           },
         ]}>
-        <Text style={[styles.headerBrand, {color: colors.textPrimary}]}>
-          Glimpse
-        </Text>
-        <TouchableOpacity onPress={toggleMode} style={styles.themeToggle}>
+        <View />
+        <TouchableOpacity onPress={toggleMode} style={styles.themeToggle}> 
           <ThemeToggleIcon mode={mode} />
         </TouchableOpacity>
       </View>
 
-      {/* Content */}
       <ScrollView
+        ref={scrollRef}
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          {paddingBottom: 100 + insets.bottom},
+          {paddingBottom: 240 + insets.bottom},
         ]}
         showsVerticalScrollIndicator={false}>
-        {activeTab === 'about' && <AboutContent />}
+        <HeroSection />
+        <TrustStrip />
 
-        {activeTab === 'give' && (
-          <>
-            {TIERS.map((tier, index) => (
-              <TierCard
-                key={tier.id}
-                tier={tier}
-                index={index}
-                onPress={() => handleTierPress(tier.id)}
-                onDonate={() => handleTierPress(tier.id)}
-              />
-            ))}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, {color: colors.textPrimary}]}>Give today</Text>
+          <Text style={[styles.sectionSubtitle, {color: colors.textSecondary}]}>
+            Pick a gift and we will document the impact.
+          </Text>
+        </View>
 
-            <CustomGivingCard
-              onDonate={(_amount, _direction) => {
-                // TODO: Integrate wallet transaction for custom donation
-              }}
-            />
+        {TIERS.map((tier, index) => (
+          <TierCard
+            key={tier.id}
+            tier={tier}
+            index={index}
+            onPress={() => handleTierPress(tier.id)}
+            onDonate={() => handleTierPress(tier.id)}
+          />
+        ))}
 
-            <CustomCard />
-          </>
-        )}
+        <CustomGivingCard
+          onDonate={(_amount, _direction) => {
+            // TODO: Integrate wallet transaction for custom donation
+          }}
+        />
 
-        {activeTab === 'glimpses' && (
-          <View style={styles.comingSoon}>
-            <Text style={[styles.comingSoonText, {color: colors.textTertiary}]}>
-              Glimpses coming soon
-            </Text>
-          </View>
-        )}
+        <CustomCard />
+
+        <View
+          onLayout={event => setAboutOffset(event.nativeEvent.layout.y)}
+          style={styles.aboutSection}>
+          <Text style={[styles.sectionTitle, {color: colors.textPrimary}]}>
+            About Glimpse
+          </Text>
+          <Text style={[styles.sectionSubtitle, {color: colors.textSecondary}]}>
+            Why it exists, how it works, and what to expect.
+          </Text>
+          <AboutContent />
+        </View>
+
+        <View
+          onLayout={event => setGlimpsesOffset(event.nativeEvent.layout.y)}
+          style={[
+            styles.comingSoon,
+            {backgroundColor: colors.card, borderColor: colors.glassBorder},
+          ]}>
+          <Text style={[styles.comingSoonTitle, {color: colors.textPrimary}]}>
+            Glimpses are on the way
+          </Text>
+          <Text style={[styles.comingSoonText, {color: colors.textSecondary}]}>
+            We are building a feed of verified stories so you can see the
+            kindness unfolding.
+          </Text>
+        </View>
       </ScrollView>
 
-      {/* Bottom Nav */}
       <View
         style={[
-          styles.bottomNav,
+          styles.bottomShell,
           {
             paddingBottom: insets.bottom + 8,
             backgroundColor: colors.card,
             borderTopColor: colors.glassBorder,
           },
         ]}>
-        {[
-          {id: 'about', Icon: AboutNavIcon, label: 'About'},
-          {id: 'give', Icon: GiveNavIcon, label: 'Give'},
-          {id: 'glimpses', Icon: GlimpsesNavIcon, label: 'Glimpses'},
-        ].map(({id, Icon, label}) => (
-          <TouchableOpacity
-            key={id}
-            style={styles.navItem}
-            onPress={() => setActiveTab(id)}
-            activeOpacity={0.7}>
-            <Icon active={activeTab === id} color={colors.textPrimary} />
-            <Text
-              style={[
-                styles.navLabel,
-                {
-                  color:
-                    activeTab === id ? colors.textPrimary : colors.textTertiary,
-                },
-              ]}>
-              {label}
+        <View style={styles.bottomBanner}>
+          <View style={styles.bannerTextWrap}>
+            <Text style={[styles.bannerTitle, {color: colors.textPrimary}]}>
+              Glimpse, all in one place.
             </Text>
-            {activeTab === id && (
-              <View
-                style={[styles.navActiveDot, {backgroundColor: colors.primary}]}
-              />
-            )}
-          </TouchableOpacity>
-        ))}
+            <Text style={[styles.bannerSubtitle, {color: colors.textSecondary}]}>
+              Use the tabs to explore giving, about, and glimpses.
+            </Text>
+          </View>
+        </View>
+
+        <View style={[styles.bottomNav, {borderTopColor: colors.glassBorder}]}>
+          {[
+            {id: 'about', Icon: AboutNavIcon, label: 'About'},
+            {id: 'give', Icon: GiveNavIcon, label: 'Give'},
+            {id: 'glimpses', Icon: GlimpsesNavIcon, label: 'Glimpses'},
+          ].map(({id, Icon, label}) => (
+            <TouchableOpacity
+              key={id}
+              style={styles.navItem}
+              onPress={() => {
+                setActiveNav(id as 'about' | 'give' | 'glimpses');
+                if (id === 'about') {
+                  scrollRef.current?.scrollTo({
+                    y: Math.max(aboutOffset - 20, 0),
+                    animated: true,
+                  });
+                } else if (id === 'give') {
+                  scrollRef.current?.scrollTo({y: 0, animated: true});
+                } else if (id === 'glimpses') {
+                  scrollRef.current?.scrollTo({
+                    y: Math.max(glimpsesOffset - 20, 0),
+                    animated: true,
+                  });
+                }
+              }}
+              activeOpacity={0.7}>
+              <Icon active={activeNav === id} color={colors.textPrimary} />
+              <Text
+                style={[
+                  styles.navLabel,
+                  {
+                    color:
+                      activeNav === id ? colors.textPrimary : colors.textTertiary,
+                  },
+                ]}>
+                {label}
+              </Text>
+              {activeNav === id && (
+                <View
+                  style={[styles.navActiveDot, {backgroundColor: colors.primary}]}
+                />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -849,15 +988,21 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingBottom: 12,
-    borderBottomWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   headerBrand: {
-    fontSize: 24,
-    fontWeight: '300',
-    letterSpacing: 2,
+    fontSize: 26,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+    fontFamily: DISPLAY_FONT,
+  },
+  headerTagline: {
+    fontSize: 12,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    opacity: 0,
   },
   themeToggle: {
     padding: 8,
@@ -867,17 +1012,146 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingTop: 12,
+  },
+  hero: {
+    marginBottom: 28,
+  },
+  heroTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    marginTop: 6,
+    fontFamily: HERO_FONT,
+    letterSpacing: 1.2,
+  },
+  heroSubtitle: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginTop: 10,
+  },
+  heroGraphic: {
+    marginTop: 16,
+    marginBottom: 6,
+  },
+  heroFrame: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  heroStripe: {
+    height: 10,
+    borderRadius: 999,
+    marginBottom: 12,
+  },
+  heroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  heroDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 10,
+  },
+  heroLine: {
+    flex: 1,
+    height: 2,
+    borderRadius: 999,
+    opacity: 0.6,
+  },
+  heroPill: {
+    height: 12,
+    borderRadius: 999,
+  },
+  heroBadge: {
+    position: 'absolute',
+    top: -10,
+    right: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+  },
+  heroBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  highlightRow: {
+    marginTop: 18,
+    gap: 12,
+  },
+  highlightPill: {
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  highlightLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  highlightValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  trustStrip: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 18,
+    marginBottom: 28,
+  },
+  trustTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  trustBody: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginTop: 8,
+  },
+  trustTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  trustTag: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+  },
+  trustTagText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  sectionHeader: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginTop: 6,
   },
   tierCard: {
     marginBottom: 24,
   },
   tierCardInner: {
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 20,
     shadowOffset: {width: 0, height: 8},
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 8,
   },
@@ -889,7 +1163,20 @@ const styles = StyleSheet.create({
   },
   tierAmount: {
     fontSize: 36,
-    fontWeight: '300',
+    fontWeight: '400',
+    fontFamily: DISPLAY_FONT,
+  },
+  tierBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  tierBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.4,
   },
   tierIcon: {
     width: 44,
@@ -900,18 +1187,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tierTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
-    marginBottom: 4,
-    lineHeight: 24,
+    marginBottom: 6,
+    lineHeight: 26,
   },
   tierPartner: {
-    fontSize: 13,
+    fontSize: 12,
     letterSpacing: 0.3,
+    marginBottom: 10,
+    textTransform: 'uppercase',
+  },
+  tierDescription: {
+    fontSize: 14,
+    lineHeight: 22,
     marginBottom: 16,
   },
   donateButton: {
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
     shadowOffset: {width: 0, height: 4},
@@ -923,6 +1216,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     letterSpacing: 0.5,
+  },
+  detailsRow: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  detailsText: {
+    fontSize: 12,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   tierExpandedInner: {
     paddingTop: 16,
@@ -946,7 +1248,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   customCardInner: {
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
     padding: 16,
     shadowOffset: {width: 0, height: 6},
@@ -982,66 +1284,76 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3,
   },
-  bottomNav: {
+  bottomShell: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingTop: 12,
     borderTopWidth: 1,
+  },
+  bottomBanner: {
+    paddingTop: 12,
+    paddingHorizontal: 20,
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
+    gap: 16,
   },
-  navItem: {
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  bannerTextWrap: {
+    flex: 1,
   },
-  navLabel: {
-    fontSize: 11,
-    fontWeight: '500',
+  bannerTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  bannerSubtitle: {
+    fontSize: 12,
     marginTop: 4,
-    letterSpacing: 0.3,
   },
-  navActiveDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginTop: 4,
+  aboutSection: {
+    marginTop: 32,
   },
   comingSoon: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 100,
+    padding: 24,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  comingSoonTitle: {
+    fontSize: 18,
+    fontWeight: '600',
   },
   comingSoonText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 14,
+    lineHeight: 22,
+    marginTop: 10,
   },
-  // CustomGivingCard styles
   customGivingCard: {
     marginBottom: 24,
   },
   customGivingCardInner: {
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 20,
     shadowOffset: {width: 0, height: 8},
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 8,
   },
   customGivingTitle: {
     fontSize: 20,
     fontWeight: '600',
-    marginBottom: 20,
+  },
+  customGivingSub: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginTop: 6,
+    marginBottom: 18,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
     marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   dropdown: {
     borderRadius: 12,
@@ -1086,7 +1398,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   giveNowButton: {
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 20,
@@ -1109,7 +1421,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
     paddingHorizontal: 40,
   },
@@ -1128,5 +1440,31 @@ const styles = StyleSheet.create({
   },
   dropdownItemText: {
     fontSize: 16,
+  },
+  bottomNav: {
+    marginTop: 6,
+    borderTopWidth: 1,
+    paddingTop: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  navItem: {
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  navLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 4,
+    letterSpacing: 0.3,
+  },
+  navActiveDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 4,
   },
 });

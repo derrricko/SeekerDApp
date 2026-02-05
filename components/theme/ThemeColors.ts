@@ -1,83 +1,83 @@
 /**
- * iOS 18-style Glassmorphism Color System
- * Cool-toned palette with light/dark mode support
+ * Glimpse palette
+ * Warm, human tones with light/dark support
  */
 
 export const LightColors = {
   // Backgrounds
-  background: '#F0F4F8',
-  backgroundSecondary: '#E2E8F0',
+  background: '#F7F1E9',
+  backgroundSecondary: '#EFE3D5',
 
   // Glass effects
-  glass: 'rgba(255, 255, 255, 0.65)',
-  glassBorder: 'rgba(255, 255, 255, 0.3)',
-  glassHighlight: 'rgba(255, 255, 255, 0.8)',
+  glass: 'rgba(255, 255, 255, 0.7)',
+  glassBorder: 'rgba(72, 51, 38, 0.12)',
+  glassHighlight: 'rgba(255, 255, 255, 0.9)',
 
-  // Primary palette
-  primary: '#007AFF',
-  primaryLight: 'rgba(0, 122, 255, 0.15)',
-  accent: '#5856D6',
-  accentLight: 'rgba(88, 86, 214, 0.15)',
-  secondary: '#32D4DE',
-  secondaryLight: 'rgba(50, 212, 222, 0.15)',
+  // Primary palette (terracotta)
+  primary: '#D07A4F',
+  primaryLight: 'rgba(208, 122, 79, 0.18)',
+  accent: '#355C5A',
+  accentLight: 'rgba(53, 92, 90, 0.12)',
+  secondary: '#2F7B6D',
+  secondaryLight: 'rgba(47, 123, 109, 0.15)',
 
   // Semantic colors
-  success: '#34C759',
-  warning: '#FF9500',
-  error: '#FF3B30',
+  success: '#3A9B6E',
+  warning: '#E39A3B',
+  error: '#D35B4C',
 
   // Text colors
-  textPrimary: '#1A202C',
-  textSecondary: '#4A5568',
-  textTertiary: '#718096',
+  textPrimary: '#2A1C12',
+  textSecondary: '#5C4B40',
+  textTertiary: '#8B776B',
   textOnPrimary: '#FFFFFF',
 
   // Borders & Shadows
-  border: 'rgba(0, 0, 0, 0.08)',
-  shadow: 'rgba(0, 0, 0, 0.15)',
-  shadowStrong: 'rgba(0, 0, 0, 0.25)',
+  border: 'rgba(43, 30, 22, 0.08)',
+  shadow: 'rgba(43, 30, 22, 0.18)',
+  shadowStrong: 'rgba(43, 30, 22, 0.32)',
 
   // Cards
-  card: 'rgba(255, 255, 255, 0.75)',
-  cardBorder: 'rgba(255, 255, 255, 0.4)',
+  card: 'rgba(255, 255, 255, 0.9)',
+  cardBorder: 'rgba(255, 255, 255, 0.5)',
 };
 
 export const DarkColors = {
   // Backgrounds
-  background: '#0A1628',
-  backgroundSecondary: '#1A2744',
+  background: '#14110E',
+  backgroundSecondary: '#201A16',
 
   // Glass effects
-  glass: 'rgba(30, 41, 59, 0.65)',
-  glassBorder: 'rgba(255, 255, 255, 0.1)',
-  glassHighlight: 'rgba(255, 255, 255, 0.15)',
+  glass: 'rgba(32, 26, 22, 0.7)',
+  glassBorder: 'rgba(255, 255, 255, 0.08)',
+  glassHighlight: 'rgba(255, 255, 255, 0.12)',
 
-  // Primary palette
-  primary: '#0A84FF',
-  primaryLight: 'rgba(10, 132, 255, 0.2)',
-  accent: '#BF5AF2',
-  accentLight: 'rgba(191, 90, 242, 0.2)',
-  secondary: '#40E0D0',
-  secondaryLight: 'rgba(64, 224, 208, 0.2)',
+  // Primary palette (terracotta)
+  primary: '#E29A73',
+  primaryLight: 'rgba(226, 154, 115, 0.2)',
+  accent: '#89C2B5',
+  accentLight: 'rgba(137, 194, 181, 0.18)',
+  secondary: '#79B19F',
+  secondaryLight: 'rgba(121, 177, 159, 0.18)',
 
   // Semantic colors
-  success: '#30D158',
-  warning: '#FF9F0A',
-  error: '#FF453A',
+  success: '#52B788',
+  warning: '#F2B366',
+  error: '#E07A6A',
 
   // Text colors
-  textPrimary: '#F7FAFC',
-  textSecondary: '#A0AEC0',
-  textTertiary: '#718096',
-  textOnPrimary: '#FFFFFF',
+  textPrimary: '#F8F2EA',
+  textSecondary: '#C7B8AA',
+  textTertiary: '#9A887A',
+  textOnPrimary: '#1A120D',
 
   // Borders & Shadows
   border: 'rgba(255, 255, 255, 0.08)',
-  shadow: 'rgba(0, 0, 0, 0.4)',
+  shadow: 'rgba(0, 0, 0, 0.45)',
   shadowStrong: 'rgba(0, 0, 0, 0.6)',
 
   // Cards
-  card: 'rgba(30, 41, 59, 0.75)',
+  card: 'rgba(32, 26, 22, 0.86)',
   cardBorder: 'rgba(255, 255, 255, 0.12)',
 };
 

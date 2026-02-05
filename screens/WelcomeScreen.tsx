@@ -6,6 +6,7 @@ import {
   Animated,
   TouchableWithoutFeedback,
   Platform,
+  Image,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTheme} from '../components/theme';
@@ -13,6 +14,8 @@ import {useTheme} from '../components/theme';
 interface WelcomeScreenProps {
   onContinue: () => void;
 }
+
+const DISPLAY_FONT = Platform.OS === 'ios' ? 'Georgia' : 'serif';
 
 export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
   const insets = useSafeAreaInsets();
@@ -39,7 +42,6 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
   const whiteOverlay = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Brand reveal with scale
     Animated.parallel([
       Animated.timing(brandOpacity, {
         toValue: 1,
@@ -62,15 +64,13 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
       }),
     ]).start();
 
-    // Line expand
     Animated.timing(lineWidth, {
-      toValue: 80,
+      toValue: 84,
       duration: 1800,
       delay: 1400,
       useNativeDriver: false,
     }).start();
 
-    // Tagline
     Animated.parallel([
       Animated.timing(taglineOpacity, {
         toValue: 1,
@@ -86,7 +86,6 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
       }),
     ]).start();
 
-    // Tap hint
     Animated.parallel([
       Animated.timing(tapHintOpacity, {
         toValue: 1,
@@ -102,7 +101,6 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
       }),
     ]).start();
 
-    // Tap arrow pulse
     Animated.loop(
       Animated.sequence([
         Animated.timing(tapArrowPulse, {
@@ -119,7 +117,6 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
       ]),
     ).start();
 
-    // Footer
     Animated.parallel([
       Animated.timing(footerOpacity, {
         toValue: 1,
@@ -192,8 +189,43 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
   return (
     <TouchableWithoutFeedback onPress={handleTap}>
       <View style={[styles.container, {backgroundColor: colors.background}]}>
+        <View pointerEvents="none" style={styles.background}>
+          <View
+            style={[
+              styles.artFrame,
+              {
+                borderColor: colors.glassBorder,
+                shadowColor: colors.shadow,
+                backgroundColor: colors.card,
+              },
+            ]}>
+            <Image
+              source={require('../assets/creationofadam.jpg')}
+              style={styles.artImage}
+              resizeMode="cover"
+            />
+            <View
+              style={[
+                styles.artWash,
+                {backgroundColor: colors.background},
+              ]}
+            />
+            <View
+              style={[
+                styles.artTint,
+                {backgroundColor: colors.primaryLight},
+              ]}
+            />
+            <View
+              style={[
+                styles.artVignette,
+                {borderColor: colors.border},
+              ]}
+            />
+          </View>
+        </View>
+
         <View style={styles.content}>
-          {/* Brand */}
           <Animated.View
             style={[
               styles.brandContainer,
@@ -202,9 +234,7 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
                 transform: [{translateY: brandTranslateY}, {scale: brandScale}],
               },
             ]}>
-            <Text style={[styles.brand, {color: colors.textPrimary}]}>
-              GLIMPSE
-            </Text>
+            <Text style={[styles.brand, {color: colors.textPrimary}]}>Glimpse</Text>
             <Animated.View
               style={[
                 styles.brandLine,
@@ -213,7 +243,6 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
             />
           </Animated.View>
 
-          {/* Tagline */}
           <Animated.Text
             style={[
               styles.tagline,
@@ -223,11 +252,10 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
                 transform: [{translateY: taglineTranslateY}],
               },
             ]}>
-            DOCUMENTING KINDNESS.
+            documenting kindness
           </Animated.Text>
         </View>
 
-        {/* Scripture reference */}
         <Animated.View
           style={[
             styles.scriptureHint,
@@ -241,7 +269,6 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
           </Text>
         </Animated.View>
 
-        {/* Tap to continue */}
         <Animated.View
           style={[
             styles.tapContainer,
@@ -251,9 +278,7 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
               bottom: 36 + insets.bottom,
             },
           ]}>
-          <Text style={[styles.tapText, {color: colors.textTertiary}]}>
-            Tap to continue
-          </Text>
+          <Text style={[styles.tapText, {color: colors.textTertiary}]}>Tap to begin</Text>
           <Animated.View
             style={[
               styles.tapArrow,
@@ -266,7 +291,6 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
           />
         </Animated.View>
 
-        {/* Transition overlay */}
         <Animated.View
           style={[
             styles.overlay,
@@ -288,6 +312,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  background: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  artFrame: {
+    position: 'absolute',
+    top: 100,
+    left: 24,
+    right: 24,
+    height: 220,
+    borderRadius: 24,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowOffset: {width: 0, height: 16},
+    shadowOpacity: 0.14,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  artImage: {
+    position: 'absolute',
+    top: -30,
+    left: -30,
+    width: '120%',
+    height: '120%',
+    opacity: 0.95,
+  },
+  artWash: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0.25,
+  },
+  artTint: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0.12,
+  },
+  artVignette: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    right: 6,
+    bottom: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    opacity: 0.4,
+  },
   content: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -296,27 +375,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   brand: {
-    fontSize: 48,
-    fontWeight: '200',
-    letterSpacing: 6,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontSize: 52,
+    fontWeight: '500',
+    letterSpacing: 4,
+    fontFamily: DISPLAY_FONT,
   },
   brandLine: {
     height: 2,
-    marginTop: 12,
+    marginTop: 14,
     borderRadius: 1,
   },
   tagline: {
-    marginTop: 32,
-    fontSize: 13,
-    fontWeight: '400',
+    marginTop: 28,
+    fontSize: 14,
+    fontWeight: '500',
     textAlign: 'center',
-    letterSpacing: 3,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    letterSpacing: 2.5,
   },
   scriptureHint: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 110,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -330,9 +408,8 @@ const styles = StyleSheet.create({
   },
   scriptureText: {
     fontSize: 11,
-    fontWeight: '400',
+    fontWeight: '500',
     letterSpacing: 2,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   tapContainer: {
     position: 'absolute',
@@ -342,9 +419,8 @@ const styles = StyleSheet.create({
   },
   tapText: {
     fontSize: 11,
-    fontWeight: '400',
+    fontWeight: '500',
     letterSpacing: 2,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   overlay: {
     position: 'absolute',
