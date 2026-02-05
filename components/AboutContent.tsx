@@ -52,7 +52,7 @@ const HOW_CONTENT = {
     {
       number: "4",
       title: "See the impact",
-      description: "Photos. Receipts. The real story. Documented and delivered—proof that your generosity landed.",
+      description: "Photos. Receipts. The real story. Documented and delivered—proof that your generosity landed. Updates usually appear in the app within 48 hours.",
     },
   ],
   closing: "Think of us as your personal giving team. We do the legwork. You get the proof.",
