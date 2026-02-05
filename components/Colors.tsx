@@ -1,21 +1,34 @@
-// Neo Brutalist Color Palette - Simplified to 2 accents
+/**
+ * Colors - Backwards Compatibility Layer
+ * Re-exports theme colors for legacy component support
+ * New components should use useTheme() from theme/ThemeContext
+ */
+import {LightColors, DarkColors} from './theme/ThemeColors';
+
+// Legacy Colors export for backwards compatibility
+// These map to light mode by default
 export const Colors = {
-  // Simplified to 2 accents
-  primary: '#FFDE59',      // Yellow (CTAs)
-  accent: '#4ECDC4',       // Teal (secondary)
+  // Primary palette (now cool tones)
+  primary: LightColors.primary,
+  accent: LightColors.accent,
+  secondary: LightColors.secondary,
 
   // Backgrounds
-  background: '#000000',
-  cardBg: '#FFFFFF',
-  headerBg: '#E5E5E5',
+  background: LightColors.background,
+  cardBg: LightColors.card,
+  headerBg: LightColors.glass,
 
-  // Text - IMPROVED CONTRAST
-  textDark: '#000000',
-  textMedium: '#1A1A1A',
-  textLight: '#CCCCCC',    // Improved from #4A4A4A for dark backgrounds
-  light: '#CCCCCC',        // Improved from #AAAAAA
-  inactive: '#888888',
+  // Text
+  textDark: LightColors.textPrimary,
+  textMedium: LightColors.textSecondary,
+  textLight: LightColors.textTertiary,
+  light: LightColors.textTertiary,
+  inactive: LightColors.textTertiary,
 
   // Border
-  border: '#000000',
+  border: LightColors.border,
+
+  // Legacy colors (for old components still referencing these)
+  darker: DarkColors.background,
+  lighter: LightColors.background,
 };

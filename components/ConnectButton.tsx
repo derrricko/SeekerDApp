@@ -1,10 +1,10 @@
 import {transact} from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
-import React, {useState, useCallback} from 'react';
-import {TouchableOpacity, Text, StyleSheet, ViewStyle} from 'react-native';
+import React, {useState, useCallback, useRef} from 'react';
+import {TouchableOpacity, Text, StyleSheet, ViewStyle, Animated} from 'react-native';
 
 import {useAuthorization} from './providers/AuthorizationProvider';
 import {alertAndLog} from '../util/alertAndLog';
-import {Colors} from './Colors';
+import {useTheme} from './theme';
 
 type Props = Readonly<{
   title: string;
@@ -12,9 +12,28 @@ type Props = Readonly<{
 }>;
 
 export default function ConnectButton({title, style}: Props) {
+  const {colors} = useTheme();
   const {authorizeSession} = useAuthorization();
   const [authorizationInProgress, setAuthorizationInProgress] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
 
   const handleConnectPress = useCallback(async () => {
     try {
@@ -36,51 +55,44 @@ export default function ConnectButton({title, style}: Props) {
   }, [authorizationInProgress, authorizeSession]);
 
   return (
-    <TouchableOpacity
-      style={[
-        styles.button,
-        isPressed && styles.buttonPressed,
-        authorizationInProgress && styles.buttonDisabled,
-        style,
-      ]}
-      disabled={authorizationInProgress}
-      onPress={handleConnectPress}
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => setIsPressed(false)}
-      activeOpacity={1}>
-      <Text style={styles.buttonText}>
-        {authorizationInProgress ? 'CONNECTING...' : title}
-      </Text>
-    </TouchableOpacity>
+    <Animated.View style={{transform: [{scale: scaleAnim}]}}>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          {
+            backgroundColor: authorizationInProgress ? colors.textTertiary : colors.primary,
+            shadowColor: colors.primary,
+          },
+          style,
+        ]}
+        disabled={authorizationInProgress}
+        onPress={handleConnectPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}>
+        <Text style={[styles.buttonText, {color: colors.textOnPrimary}]}>
+          {authorizationInProgress ? 'Connecting...' : title}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: Colors.primary,
-    borderWidth: 3,
-    borderColor: Colors.border,
-    paddingVertical: 18,
+    borderRadius: 12,
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    shadowColor: Colors.border,
-    shadowOffset: {width: 6, height: 6},
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 0,
-  },
-  buttonPressed: {
-    shadowOffset: {width: 0, height: 0},
-    transform: [{translateX: 6}, {translateY: 6}],
-  },
-  buttonDisabled: {
-    backgroundColor: Colors.headerBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
   },
   buttonText: {
-    fontFamily: 'CourierPrime-Bold',
-    fontSize: 14,
-    color: Colors.textDark,
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
 });

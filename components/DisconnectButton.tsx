@@ -1,9 +1,9 @@
 import {transact} from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
-import React, {useState} from 'react';
-import {TouchableOpacity, Text, StyleSheet, ViewStyle} from 'react-native';
+import React, {useRef} from 'react';
+import {TouchableOpacity, Text, StyleSheet, ViewStyle, Animated} from 'react-native';
 
 import {useAuthorization} from './providers/AuthorizationProvider';
-import {Colors} from './Colors';
+import {useTheme} from './theme';
 
 type Props = Readonly<{
   title: string;
@@ -11,48 +11,68 @@ type Props = Readonly<{
 }>;
 
 export default function DisconnectButton({title, style}: Props) {
+  const {colors} = useTheme();
   const {deauthorizeSession} = useAuthorization();
-  const [isPressed, setIsPressed] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
 
   return (
-    <TouchableOpacity
-      style={[styles.button, isPressed && styles.buttonPressed, style]}
-      onPress={() => {
-        transact(async wallet => {
-          await deauthorizeSession(wallet);
-        });
-      }}
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => setIsPressed(false)}
-      activeOpacity={1}>
-      <Text style={styles.buttonText}>{title}</Text>
-    </TouchableOpacity>
+    <Animated.View style={{transform: [{scale: scaleAnim}]}}>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          {
+            backgroundColor: colors.secondary,
+            shadowColor: colors.secondary,
+          },
+          style,
+        ]}
+        onPress={() => {
+          transact(async wallet => {
+            await deauthorizeSession(wallet);
+          });
+        }}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}>
+        <Text style={[styles.buttonText, {color: colors.textOnPrimary}]}>{title}</Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: Colors.accent,
-    borderWidth: 3,
-    borderColor: Colors.border,
-    paddingVertical: 18,
+    borderRadius: 12,
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    shadowColor: Colors.border,
-    shadowOffset: {width: 6, height: 6},
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 0,
-  },
-  buttonPressed: {
-    shadowOffset: {width: 0, height: 0},
-    transform: [{translateX: 6}, {translateY: 6}],
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
   },
   buttonText: {
-    fontFamily: 'CourierPrime-Bold',
-    fontSize: 14,
-    color: Colors.textDark,
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
 });

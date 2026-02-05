@@ -1,55 +1,69 @@
 import React from 'react';
-import {
-  ImageBackground,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
-import {Colors} from './Colors';
+import {StyleSheet, Text, View, Platform} from 'react-native';
+import {BlurView} from '@react-native-community/blur';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useTheme} from './theme';
 
-export function Header() {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <ImageBackground
-      accessibilityRole="image"
-      testID="new-app-screen-header"
-      source={require('../img/background.png')}
-      style={[
-        styles.background,
-        {
-          backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-        },
-      ]}
-      imageStyle={styles.logo}>
-      <View>
-        <Text style={styles.title}>Solana</Text>
-        <Text style={styles.subtitle}>React Native</Text>
+interface HeaderProps {
+  title?: string;
+  subtitle?: string;
+}
+
+export function Header({title = 'Glimpse', subtitle}: HeaderProps) {
+  const insets = useSafeAreaInsets();
+  const {colors, isDark} = useTheme();
+
+  const headerStyle = {
+    paddingTop: insets.top + 16,
+    paddingBottom: 16,
+    paddingHorizontal: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.glassBorder,
+  };
+
+  const content = (
+    <View style={styles.content}>
+      <Text style={[styles.title, {color: colors.textPrimary}]}>{title}</Text>
+      {subtitle && (
+        <Text style={[styles.subtitle, {color: colors.textSecondary}]}>{subtitle}</Text>
+      )}
+    </View>
+  );
+
+  if (Platform.OS === 'ios') {
+    return (
+      <View style={headerStyle}>
+        <BlurView
+          style={[StyleSheet.absoluteFill, {zIndex: -1}]}
+          blurType={isDark ? 'dark' : 'light'}
+          blurAmount={20}
+          reducedTransparencyFallbackColor={colors.glass}
+        />
+        <View style={[StyleSheet.absoluteFill, {backgroundColor: colors.glass, zIndex: -1}]} />
+        {content}
       </View>
-    </ImageBackground>
+    );
+  }
+
+  return (
+    <View style={[headerStyle, {backgroundColor: colors.glass}]}>
+      {content}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    paddingBottom: 40,
-    paddingTop: 60,
-    paddingHorizontal: 32,
-  },
-  logo: {
-    overflow: 'visible',
-    resizeMode: 'cover',
-  },
-  subtitle: {
-    color: '#333',
-    fontSize: 24,
-    fontWeight: '500',
-    textAlign: 'center',
+  content: {
+    alignItems: 'center',
   },
   title: {
-    color: '#fff',
-    fontSize: 40,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontSize: 28,
+    fontWeight: '300',
+    letterSpacing: 2,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginTop: 4,
   },
 });

@@ -6,14 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
-  Dimensions,
   Linking,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import NeedsDetailScreen from './NeedsDetailScreen';
-import {Colors} from '../components/Colors';
-
-const {width} = Dimensions.get('window');
+import {useTheme} from '../components/theme';
 
 // Tier data
 const TIERS = [
@@ -30,7 +27,7 @@ const TIERS = [
   },
 ];
 
-// Real needs data for scrollable list
+// Real needs data
 const REAL_NEEDS = [
   {
     id: 'oil-change',
@@ -62,69 +59,98 @@ const REAL_NEEDS = [
   },
 ];
 
-// Custom tier (card 3) - minimal, curiosity-sparking
 const CUSTOM_TIER = {
   id: 'custom',
   title: 'Something bigger?',
-  subtitle: 'Let\'s talk.',
+  subtitle: "Let's talk.",
   cta: 'Connect →',
 };
 
+// Theme toggle icon component
+function ThemeToggleIcon({mode}: {mode: 'light' | 'dark' | 'system'}) {
+  const {colors} = useTheme();
 
-// Simple icon components
-const HeartIcon = () => (
-  <View style={iconStyles.container}>
-    <View style={iconStyles.heart} />
-  </View>
-);
+  if (mode === 'light') {
+    return (
+      <View style={[iconStyles.sunOuter, {borderColor: colors.textPrimary}]}>
+        <View style={[iconStyles.sunInner, {backgroundColor: colors.textPrimary}]} />
+      </View>
+    );
+  }
 
-const PlusIcon = () => (
-  <View style={iconStyles.container}>
-    <View style={iconStyles.plusH} />
-    <View style={iconStyles.plusV} />
-  </View>
-);
+  if (mode === 'dark') {
+    return (
+      <View style={[iconStyles.moon, {borderColor: colors.textPrimary}]} />
+    );
+  }
 
-const CircleUserIcon = () => (
-  <View style={iconStyles.container}>
-    <View style={iconStyles.circle} />
-  </View>
-);
+  return (
+    <View style={iconStyles.systemIcon}>
+      <View style={[iconStyles.systemHalf, {backgroundColor: colors.textPrimary}]} />
+      <View style={[iconStyles.systemHalfOutline, {borderColor: colors.textPrimary}]} />
+    </View>
+  );
+}
 
 const iconStyles = StyleSheet.create({
+  sunOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sunInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  moon: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderTopRightRadius: 0,
+  },
+  systemIcon: {
+    width: 20,
+    height: 20,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    borderRadius: 4,
+  },
+  systemHalf: {
+    width: 10,
+    height: 20,
+  },
+  systemHalfOutline: {
+    width: 8,
+    height: 18,
+    borderWidth: 2,
+    marginLeft: -2,
+  },
+});
+
+// Simple icon components
+const CircleUserIcon = ({color}: {color: string}) => (
+  <View style={simpleIconStyles.container}>
+    <View style={[simpleIconStyles.circle, {borderColor: color}]} />
+  </View>
+);
+
+const simpleIconStyles = StyleSheet.create({
   container: {
     width: 20,
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heart: {
-    width: 14,
-    height: 14,
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: Colors.textDark,
-    borderRadius: 0,
-    transform: [{rotate: '45deg'}],
-  },
-  plusH: {
-    position: 'absolute',
-    width: 14,
-    height: 2,
-    backgroundColor: Colors.textDark,
-  },
-  plusV: {
-    position: 'absolute',
-    width: 2,
-    height: 14,
-    backgroundColor: Colors.textDark,
-  },
   circle: {
     width: 16,
     height: 16,
-    borderRadius: 0,
+    borderRadius: 8,
     borderWidth: 2,
-    borderColor: Colors.textDark,
   },
 });
 
@@ -136,14 +162,14 @@ interface TierCardProps {
 }
 
 function TierCard({tier, index, onPress, onDonate}: TierCardProps) {
+  const {colors} = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(20)).current;
   const scale = useRef(new Animated.Value(1)).current;
-  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const expandHeight = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Card reveal starts at 0.3s
     const delay = 300 + index * 200;
     Animated.parallel([
       Animated.timing(opacity, {
@@ -162,18 +188,20 @@ function TierCard({tier, index, onPress, onDonate}: TierCardProps) {
   }, [index]);
 
   const handlePressIn = () => {
-    Animated.timing(scale, {
+    Animated.spring(scale, {
       toValue: 0.98,
-      duration: 100,
       useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
     }).start();
   };
 
   const handlePressOut = () => {
-    Animated.timing(scale, {
+    Animated.spring(scale, {
       toValue: 1,
-      duration: 200,
       useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
     }).start();
   };
 
@@ -188,22 +216,10 @@ function TierCard({tier, index, onPress, onDonate}: TierCardProps) {
     }).start();
   };
 
-  const renderIcon = () => {
-    switch (tier.icon) {
-      case 'heart':
-        return <HeartIcon />;
-      case 'plus':
-        return <PlusIcon />;
-      default:
-        return <CircleUserIcon />;
-    }
-  };
-
   const expandedContentHeight = expandHeight.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 220],
   });
-
 
   return (
     <Animated.View
@@ -219,50 +235,58 @@ function TierCard({tier, index, onPress, onDonate}: TierCardProps) {
         onPress={toggleExpand}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        style={[styles.tierCardInner, isExpanded && styles.tierCardExpanded]}>
+        style={[
+          styles.tierCardInner,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.glassBorder,
+            shadowColor: colors.shadow,
+          },
+        ]}>
         <View style={styles.tierTop}>
-          <Text
-            style={[
-              styles.tierAmount,
-              tier.isRange && styles.tierAmountRange,
-              tier.isCustom && styles.tierAmountCustom,
-            ]}>
+          <Text style={[styles.tierAmount, {color: colors.textPrimary}]}>
             {tier.amount}
           </Text>
-          <View style={styles.tierIcon}>{renderIcon()}</View>
-        </View>
-        <Text style={styles.tierTitle}>{tier.title}</Text>
-        <Text style={styles.tierPartner}>{tier.partner}</Text>
-
-        {/* Donate Block */}
-        <View style={styles.donateBlock}>
-          <View style={styles.donateBlockButton}>
-            <Text style={styles.donateBlockButtonText}>Donate {tier.amount}</Text>
+          <View
+            style={[
+              styles.tierIcon,
+              {backgroundColor: colors.primaryLight, borderColor: colors.primary},
+            ]}>
+            <CircleUserIcon color={colors.primary} />
           </View>
         </View>
+        <Text style={[styles.tierTitle, {color: colors.textPrimary}]}>
+          {tier.title}
+        </Text>
+        <Text style={[styles.tierPartner, {color: colors.textSecondary}]}>
+          {tier.partner}
+        </Text>
 
+        <TouchableOpacity
+          style={[styles.donateButton, {backgroundColor: colors.primary}]}
+          onPress={onDonate}
+          activeOpacity={0.8}>
+          <Text style={[styles.donateButtonText, {color: colors.textOnPrimary}]}>
+            Donate {tier.amount}
+          </Text>
+        </TouchableOpacity>
 
-        {/* Expanded Content */}
-        <Animated.View style={[styles.tierExpandedContent, {height: expandedContentHeight}]}>
+        <Animated.View style={{height: expandedContentHeight, overflow: 'hidden'}}>
           <View style={styles.tierExpandedInner}>
-            <View style={styles.tierDivider} />
-            <Text style={styles.tierExpandedText}>
+            <View style={[styles.tierDivider, {backgroundColor: colors.border}]} />
+            <Text style={[styles.tierExpandedText, {color: colors.textSecondary}]}>
               BeHeard is a nonprofit serving the unhoused population.
             </Text>
             <TouchableOpacity
               activeOpacity={0.7}
               onPress={() => Linking.openURL('https://www.instagram.com/beheard.mvmt/')}>
-              <Text style={styles.tierExpandedLink}>See what they do →</Text>
+              <Text style={[styles.tierExpandedLink, {color: colors.primary}]}>
+                See what they do →
+              </Text>
             </TouchableOpacity>
-            <Text style={[styles.tierExpandedText, {marginTop: 12}]}>
-              There is no guarantee of a response, but you will be given a first name and last initial. You may receive a text or video response. You will receive a receipt of your donation.
+            <Text style={[styles.tierExpandedText, {color: colors.textSecondary, marginTop: 12}]}>
+              There is no guarantee of a response, but you will be given a first name and last initial.
             </Text>
-            <TouchableOpacity
-              style={styles.tierDonateButton}
-              onPress={onDonate}
-              activeOpacity={0.8}>
-              <Text style={styles.tierDonateButtonText}>Donate $25</Text>
-            </TouchableOpacity>
           </View>
         </Animated.View>
       </TouchableOpacity>
@@ -270,36 +294,65 @@ function TierCard({tier, index, onPress, onDonate}: TierCardProps) {
   );
 }
 
-// Real Need Mini Card with press state
 interface RealNeedCardProps {
   need: typeof REAL_NEEDS[0];
   onPress: () => void;
 }
 
 function RealNeedCard({need, onPress}: RealNeedCardProps) {
-  const [isPressed, setIsPressed] = useState(false);
+  const {colors} = useTheme();
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.96,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
 
   return (
-    <TouchableOpacity
-      style={[styles.needCard, isPressed && styles.needCardPressed]}
-      onPress={onPress}
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => setIsPressed(false)}
-      activeOpacity={1}>
-      <Text style={styles.needAmount}>{need.amount}</Text>
-      <Text style={styles.needTitle}>{need.title}</Text>
-      <Text style={styles.needRecipient}>{need.recipient}</Text>
-      <Text style={styles.needDesc} numberOfLines={2}>{need.description}</Text>
-    </TouchableOpacity>
+    <Animated.View style={{transform: [{scale}]}}>
+      <TouchableOpacity
+        style={[
+          styles.needCard,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.glassBorder,
+            shadowColor: colors.shadow,
+          },
+        ]}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}>
+        <Text style={[styles.needAmount, {color: colors.primary}]}>{need.amount}</Text>
+        <Text style={[styles.needTitle, {color: colors.textPrimary}]}>{need.title}</Text>
+        <Text style={[styles.needRecipient, {color: colors.textSecondary}]}>{need.recipient}</Text>
+        <Text style={[styles.needDesc, {color: colors.textTertiary}]} numberOfLines={2}>
+          {need.description}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
-// Real Needs Section with scrollable list
 interface RealNeedsSectionProps {
   onNeedPress: (needId: string) => void;
 }
 
 function RealNeedsSection({onNeedPress}: RealNeedsSectionProps) {
+  const {colors} = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(20)).current;
 
@@ -323,34 +376,32 @@ function RealNeedsSection({onNeedPress}: RealNeedsSectionProps) {
   return (
     <Animated.View style={[styles.realNeedsSection, {opacity, transform: [{translateY}]}]}>
       <View style={styles.realNeedsHeader}>
-        <Text style={styles.realNeedsTitle}>Real Needs</Text>
-        <Text style={styles.realNeedsSubtitle}>Verified stories, direct impact</Text>
+        <Text style={[styles.realNeedsTitle, {color: colors.textPrimary}]}>Real Needs</Text>
+        <Text style={[styles.realNeedsSubtitle, {color: colors.textSecondary}]}>
+          Verified stories, direct impact
+        </Text>
       </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.needsScrollContent}>
         {REAL_NEEDS.map(need => (
-          <RealNeedCard
-            key={need.id}
-            need={need}
-            onPress={() => onNeedPress(need.id)}
-          />
+          <RealNeedCard key={need.id} need={need} onPress={() => onNeedPress(need.id)} />
         ))}
       </ScrollView>
     </Animated.View>
   );
 }
 
-// Custom Card - minimal, curiosity-sparking with press state
 interface CustomCardProps {
   onPress: () => void;
 }
 
 function CustomCard({onPress}: CustomCardProps) {
+  const {colors} = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(20)).current;
-  const [isPressed, setIsPressed] = useState(false);
+  const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -369,57 +420,69 @@ function CustomCard({onPress}: CustomCardProps) {
     ]).start();
   }, []);
 
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
   return (
-    <Animated.View style={[styles.customCard, {opacity, transform: [{translateY}]}]}>
+    <Animated.View style={[styles.customCard, {opacity, transform: [{translateY}, {scale}]}]}>
       <TouchableOpacity
-        style={[styles.customCardInner, isPressed && styles.customCardInnerPressed]}
+        style={[
+          styles.customCardInner,
+          {
+            backgroundColor: colors.accentLight,
+            borderColor: colors.glassBorder,
+            shadowColor: colors.accent,
+          },
+        ]}
         onPress={onPress}
-        onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         activeOpacity={1}>
         <View>
-          <Text style={styles.customTitle}>{CUSTOM_TIER.title}</Text>
-          <Text style={styles.customSubtitle}>{CUSTOM_TIER.subtitle}</Text>
+          <Text style={[styles.customTitle, {color: colors.textPrimary}]}>{CUSTOM_TIER.title}</Text>
+          <Text style={[styles.customSubtitle, {color: colors.textSecondary}]}>
+            {CUSTOM_TIER.subtitle}
+          </Text>
         </View>
-        <View style={styles.customCta}>
-          <Text style={styles.customCtaText}>{CUSTOM_TIER.cta}</Text>
+        <View style={[styles.customCta, {backgroundColor: colors.accent}]}>
+          <Text style={[styles.customCtaText, {color: colors.textOnPrimary}]}>{CUSTOM_TIER.cta}</Text>
         </View>
       </TouchableOpacity>
     </Animated.View>
   );
 }
 
-// Nav icons - Neo Brutalist
-const GiveNavIcon = ({active}: {active: boolean}) => (
+// Nav icons
+const GiveNavIcon = ({active, color}: {active: boolean; color: string}) => (
   <View style={navIconStyles.container}>
-    <View
-      style={[
-        navIconStyles.heart,
-        {borderColor: active ? Colors.textDark : Colors.inactive},
-      ]}
-    />
+    <View style={[navIconStyles.heart, {borderColor: color, opacity: active ? 1 : 0.4}]} />
   </View>
 );
 
-const GlimpsesNavIcon = ({active}: {active: boolean}) => (
+const GlimpsesNavIcon = ({active, color}: {active: boolean; color: string}) => (
   <View style={navIconStyles.container}>
-    <View
-      style={[
-        navIconStyles.rect,
-        {borderColor: active ? Colors.textDark : Colors.inactive},
-      ]}
-    />
+    <View style={[navIconStyles.rect, {borderColor: color, opacity: active ? 1 : 0.4}]} />
   </View>
 );
 
-const BoardNavIcon = ({active}: {active: boolean}) => (
+const BoardNavIcon = ({active, color}: {active: boolean; color: string}) => (
   <View style={navIconStyles.container}>
-    <View
-      style={[
-        navIconStyles.line,
-        {backgroundColor: active ? Colors.textDark : Colors.inactive},
-      ]}
-    />
+    <View style={[navIconStyles.line, {backgroundColor: color, opacity: active ? 1 : 0.4}]} />
   </View>
 );
 
@@ -431,22 +494,22 @@ const navIconStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   heart: {
-    width: 20,
-    height: 20,
+    width: 18,
+    height: 18,
     borderWidth: 2,
-    borderRadius: 0,
+    borderRadius: 4,
     transform: [{rotate: '45deg'}],
   },
   rect: {
-    width: 20,
-    height: 20,
+    width: 18,
+    height: 18,
     borderWidth: 2,
-    borderRadius: 0,
+    borderRadius: 4,
   },
   line: {
-    width: 20,
-    height: 4,
-    borderRadius: 0,
+    width: 18,
+    height: 3,
+    borderRadius: 2,
   },
 });
 
@@ -457,9 +520,9 @@ interface HomeScreenProps {
 
 export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) {
   const insets = useSafeAreaInsets();
+  const {colors, mode, toggleMode} = useTheme();
   const [activeTab, setActiveTab] = useState('give');
   const [showNeedsDetail, setShowNeedsDetail] = useState(false);
-  const [pressedNav, setPressedNav] = useState<string | null>(null);
 
   const handleTierPress = (tierId: string) => {
     if (onTierPress) {
@@ -480,35 +543,40 @@ export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) 
     }
   };
 
-  // Show Needs Detail Screen
   if (showNeedsDetail) {
     return (
       <NeedsDetailScreen
         onBack={() => setShowNeedsDetail(false)}
         onDonate={(amount, purpose) => {
           console.log('Donate:', amount, purpose);
-          // TODO: Wire up to payment flow
         }}
       />
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Sticky Header */}
-      <View style={[styles.header, {paddingTop: insets.top + 12}]}>
-        <Text style={styles.headerBrand}>GLIMPSE</Text>
+    <View style={[styles.container, {backgroundColor: colors.background}]}>
+      {/* Header */}
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top + 12,
+            backgroundColor: colors.card,
+            borderBottomColor: colors.glassBorder,
+          },
+        ]}>
+        <Text style={[styles.headerBrand, {color: colors.textPrimary}]}>Glimpse</Text>
+        <TouchableOpacity onPress={toggleMode} style={styles.themeToggle}>
+          <ThemeToggleIcon mode={mode} />
+        </TouchableOpacity>
       </View>
 
-      {/* Scrollable Content */}
+      {/* Content */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {paddingBottom: 88 + insets.bottom},
-        ]}
+        contentContainerStyle={[styles.scrollContent, {paddingBottom: 100 + insets.bottom}]}
         showsVerticalScrollIndicator={false}>
-        {/* Be Heard Card */}
         {TIERS.map((tier, index) => (
           <TierCard
             key={tier.id}
@@ -519,71 +587,44 @@ export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) 
           />
         ))}
 
-        {/* Real Needs - Scrollable List */}
         <RealNeedsSection onNeedPress={handleNeedPress} />
 
-        {/* Custom Card - Spark Curiosity */}
         <CustomCard onPress={handleCustomPress} />
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={[styles.bottomNav, {paddingBottom: insets.bottom}]}>
-        <TouchableOpacity
-          style={[styles.navItem, pressedNav === 'give' && styles.navItemPressed]}
-          onPress={() => setActiveTab('give')}
-          onPressIn={() => setPressedNav('give')}
-          onPressOut={() => setPressedNav(null)}
-          activeOpacity={1}>
-          <View style={[styles.navIcon, activeTab === 'give' && styles.navIconActive]}>
-            <GiveNavIcon active={activeTab === 'give'} />
-          </View>
-          <Text
-            style={[
-              styles.navLabel,
-              activeTab === 'give' && styles.navLabelActive,
-            ]}>
-            give
-          </Text>
-          {activeTab === 'give' && <View style={styles.navActiveDot} />}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.navItem, pressedNav === 'glimpses' && styles.navItemPressed]}
-          onPress={() => setActiveTab('glimpses')}
-          onPressIn={() => setPressedNav('glimpses')}
-          onPressOut={() => setPressedNav(null)}
-          activeOpacity={1}>
-          <View style={styles.navIcon}>
-            <GlimpsesNavIcon active={activeTab === 'glimpses'} />
-          </View>
-          <Text
-            style={[
-              styles.navLabel,
-              activeTab === 'glimpses' && styles.navLabelActive,
-            ]}>
-            glimpses
-          </Text>
-          {activeTab === 'glimpses' && <View style={styles.navActiveDot} />}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.navItem, pressedNav === 'board' && styles.navItemPressed]}
-          onPress={() => setActiveTab('board')}
-          onPressIn={() => setPressedNav('board')}
-          onPressOut={() => setPressedNav(null)}
-          activeOpacity={1}>
-          <View style={styles.navIcon}>
-            <BoardNavIcon active={activeTab === 'board'} />
-          </View>
-          <Text
-            style={[
-              styles.navLabel,
-              activeTab === 'board' && styles.navLabelActive,
-            ]}>
-            board
-          </Text>
-          {activeTab === 'board' && <View style={styles.navActiveDot} />}
-        </TouchableOpacity>
+      {/* Bottom Nav */}
+      <View
+        style={[
+          styles.bottomNav,
+          {
+            paddingBottom: insets.bottom + 8,
+            backgroundColor: colors.card,
+            borderTopColor: colors.glassBorder,
+          },
+        ]}>
+        {[
+          {id: 'give', Icon: GiveNavIcon, label: 'Give'},
+          {id: 'glimpses', Icon: GlimpsesNavIcon, label: 'Glimpses'},
+          {id: 'board', Icon: BoardNavIcon, label: 'Board'},
+        ].map(({id, Icon, label}) => (
+          <TouchableOpacity
+            key={id}
+            style={styles.navItem}
+            onPress={() => setActiveTab(id)}
+            activeOpacity={0.7}>
+            <Icon active={activeTab === id} color={colors.textPrimary} />
+            <Text
+              style={[
+                styles.navLabel,
+                {color: activeTab === id ? colors.textPrimary : colors.textTertiary},
+              ]}>
+              {label}
+            </Text>
+            {activeTab === id && (
+              <View style={[styles.navActiveDot, {backgroundColor: colors.primary}]} />
+            )}
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );
@@ -592,23 +633,22 @@ export default function HomeScreen({onTierPress, onNeedPress}: HomeScreenProps) 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
-    backgroundColor: Colors.headerBg,
     paddingHorizontal: 20,
     paddingBottom: 12,
-    borderBottomWidth: 3,
-    borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerBrand: {
-    fontFamily: 'CourierPrime-Bold',
-    fontSize: 16,
-    fontWeight: '900',
-    letterSpacing: 6,
-    color: Colors.textDark,
-    textTransform: 'uppercase',
-    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: '300',
+    letterSpacing: 2,
+  },
+  themeToggle: {
+    padding: 8,
   },
   scrollView: {
     flex: 1,
@@ -617,22 +657,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 24,
   },
-  // Tier card styles - Neo Brutalist
   tierCard: {
     marginBottom: 24,
   },
   tierCardInner: {
-    backgroundColor: Colors.cardBg,
-    borderWidth: 3,
-    borderColor: Colors.border,
-    borderRadius: 0,
+    borderRadius: 16,
+    borderWidth: 1,
     padding: 20,
-    // Hard shadow - 8px
-    shadowColor: Colors.border,
-    shadowOffset: {width: 8, height: 8},
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 0,
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
   },
   tierTop: {
     flexDirection: 'row',
@@ -641,117 +676,59 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   tierAmount: {
-    fontFamily: 'CourierPrime-Bold',
     fontSize: 36,
-    color: Colors.textDark,
-    fontWeight: '900',
-  },
-  tierAmountRange: {
-    fontSize: 28,
-  },
-  tierAmountCustom: {
-    fontSize: 28,
+    fontWeight: '300',
   },
   tierIcon: {
     width: 44,
     height: 44,
-    borderRadius: 0,
-    backgroundColor: Colors.primary,
-    borderWidth: 3,
-    borderColor: Colors.border,
+    borderRadius: 22,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tierTitle: {
-    fontFamily: 'CourierPrime-Bold',
     fontSize: 18,
-    color: Colors.textDark,
+    fontWeight: '600',
     marginBottom: 4,
     lineHeight: 24,
-    textTransform: 'uppercase',
   },
   tierPartner: {
-    fontFamily: 'CourierPrime-Regular',
-    fontSize: 12,
-    letterSpacing: 0.5,
-    color: Colors.textLight,
-    marginBottom: 10,
+    fontSize: 13,
+    letterSpacing: 0.3,
+    marginBottom: 16,
   },
-  tierCardExpanded: {
-    borderColor: Colors.border,
-    shadowOffset: {width: 2, height: 2},
-  },
-  donateBlock: {
-    marginTop: 16,
-  },
-  donateBlockButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 0,
-    borderWidth: 3,
-    borderColor: Colors.border,
+  donateButton: {
+    borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
-    // Hard shadow on button - 6px
-    shadowColor: Colors.border,
-    shadowOffset: {width: 6, height: 6},
-    shadowOpacity: 1,
-    shadowRadius: 0,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  donateBlockButtonText: {
-    fontFamily: 'CourierPrime-Bold',
+  donateButtonText: {
     fontSize: 16,
-    color: Colors.textDark,
-    textTransform: 'uppercase',
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  tierExpandedContent: {
-    overflow: 'hidden',
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   tierExpandedInner: {
     paddingTop: 16,
   },
   tierDivider: {
-    height: 3,
-    backgroundColor: Colors.border,
+    height: 1,
     marginBottom: 16,
   },
   tierExpandedText: {
-    fontFamily: 'CourierPrime-Regular',
     fontSize: 14,
-    color: Colors.textMedium,
     lineHeight: 22,
     marginBottom: 6,
   },
   tierExpandedLink: {
-    fontFamily: 'CourierPrime-Bold',
     fontSize: 14,
-    color: Colors.accent,
+    fontWeight: '600',
     marginBottom: 4,
-    textDecorationLine: 'underline',
   },
-  tierDonateButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 0,
-    borderWidth: 3,
-    borderColor: Colors.border,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-    shadowColor: Colors.border,
-    shadowOffset: {width: 6, height: 6},
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
-  tierDonateButtonText: {
-    fontFamily: 'CourierPrime-Bold',
-    fontSize: 16,
-    color: Colors.textDark,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    fontWeight: '900',
-  },
-  // Real Needs Section - Neo Brutalist
   realNeedsSection: {
     marginTop: 8,
     marginBottom: 24,
@@ -762,19 +739,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   realNeedsTitle: {
-    fontFamily: 'CourierPrime-Bold',
-    fontSize: 14,
-    fontWeight: '900',
-    color: Colors.cardBg,
-    marginBottom: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 2,
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
   },
   realNeedsSubtitle: {
-    fontFamily: 'CourierPrime-Regular',
-    fontSize: 12,
-    fontWeight: '400',
-    color: Colors.light,
+    fontSize: 14,
   },
   needsScrollContent: {
     paddingHorizontal: 20,
@@ -782,153 +752,93 @@ const styles = StyleSheet.create({
   },
   needCard: {
     width: 160,
-    backgroundColor: Colors.cardBg,
-    borderWidth: 3,
-    borderColor: Colors.border,
-    borderRadius: 0,
+    borderRadius: 16,
+    borderWidth: 1,
     padding: 16,
-    // Hard shadow - 8px
-    shadowColor: Colors.border,
-    shadowOffset: {width: 8, height: 8},
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 0,
-  },
-  needCardPressed: {
-    shadowOffset: {width: 0, height: 0},
-    transform: [{translateX: 8}, {translateY: 8}],
+    shadowOffset: {width: 0, height: 6},
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 6,
   },
   needAmount: {
-    fontFamily: 'CourierPrime-Bold',
     fontSize: 24,
-    color: Colors.textDark,
+    fontWeight: '600',
     marginBottom: 6,
-    fontWeight: '900',
   },
   needTitle: {
-    fontFamily: 'CourierPrime-Bold',
     fontSize: 14,
-    color: Colors.textDark,
+    fontWeight: '600',
     marginBottom: 2,
     lineHeight: 18,
-    textTransform: 'uppercase',
   },
   needRecipient: {
-    fontFamily: 'CourierPrime-Regular',
     fontSize: 12,
-    color: Colors.textMedium,
     marginBottom: 6,
   },
   needDesc: {
-    fontFamily: 'CourierPrime-Regular',
     fontSize: 12,
-    color: Colors.textLight,
     lineHeight: 16,
   },
-  // Custom Card - Neo Brutalist
   customCard: {
     marginBottom: 16,
     marginTop: 8,
   },
   customCardInner: {
-    backgroundColor: Colors.accent,
-    borderRadius: 0,
-    borderWidth: 3,
-    borderColor: Colors.border,
-    borderStyle: 'solid',
+    borderRadius: 16,
+    borderWidth: 1,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: Colors.border,
-    shadowOffset: {width: 8, height: 8},
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
-  customCardInnerPressed: {
-    shadowOffset: {width: 0, height: 0},
-    transform: [{translateX: 8}, {translateY: 8}],
+    shadowOffset: {width: 0, height: 6},
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 6,
   },
   customTitle: {
-    fontFamily: 'CourierPrime-Bold',
     fontSize: 16,
-    color: Colors.textDark,
+    fontWeight: '600',
     marginBottom: 2,
-    textTransform: 'uppercase',
   },
   customSubtitle: {
-    fontFamily: 'CourierPrime-Regular',
     fontSize: 14,
-    color: Colors.textDark,
   },
   customCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 16,
-    backgroundColor: Colors.cardBg,
-    borderRadius: 0,
-    borderWidth: 3,
-    borderColor: Colors.border,
+    borderRadius: 10,
   },
   customCtaText: {
-    fontFamily: 'CourierPrime-Bold',
-    fontSize: 12,
-    letterSpacing: 0.5,
-    color: Colors.textDark,
-    textTransform: 'uppercase',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
-  // Bottom nav - Neo Brutalist
   bottomNav: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 76,
-    backgroundColor: Colors.headerBg,
-    borderTopWidth: 3,
-    borderTopColor: Colors.border,
+    paddingTop: 12,
+    borderTopWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems: 'flex-start',
-    paddingTop: 10,
+    alignItems: 'center',
   },
   navItem: {
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  navItemPressed: {
-    opacity: 0.7,
-  },
-  navIcon: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    opacity: 0.3,
-  },
-  navIconActive: {
-    opacity: 1,
+    paddingVertical: 8,
   },
   navLabel: {
-    fontFamily: 'CourierPrime-Bold',
     fontSize: 11,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    color: Colors.inactive,
+    fontWeight: '500',
     marginTop: 4,
-  },
-  navLabelActive: {
-    color: Colors.textDark,
+    letterSpacing: 0.3,
   },
   navActiveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 0,
-    backgroundColor: Colors.primary,
-    borderWidth: 2,
-    borderColor: Colors.border,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
     marginTop: 4,
   },
 });

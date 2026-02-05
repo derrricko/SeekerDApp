@@ -1,35 +1,77 @@
 # Solana Mobile Development Guide
 
-## UI Design System — Neo Brutalist
-All UI/visual design must follow neo brutalist principles:
-- **Borders**: Solid black borders (2-4px), no rounded corners or minimal rounding
-- **Shadows**: Hard offset shadows (no blur), typically 4-8px offset in black
-- **Buttons**: Chunky, oversized, high-contrast with bold text
-- **Colors**: High contrast palette, primary colors, black/white base
-- **Typography**: Bold, sans-serif, often uppercase for headers
-- **No gradients, no blur, no soft shadows**
-- **Interactive states**: Shift shadow on press (shadow reduces/removes on tap)
+## UI Design System — iOS 18 Glassmorphism
+All UI/visual design follows iOS 18-style glassmorphism with dark/light mode support:
+- **Borders**: Subtle 1px rgba borders with transparency
+- **Shadows**: Soft shadows with blur (shadowRadius: 16-24px)
+- **Rounded Corners**: 12-20px border radius
+- **Blur Effects**: @react-native-community/blur for frosted glass
+- **Colors**: Cool-toned palette (blues, teals, purples)
+- **Typography**: System font, title case, light/medium weights
+- **Interactive states**: Scale animation (0.98) on press
 
+### Color Palette
 ```typescript
-// Example Neo Brutalist button style
-const brutalistButton = {
-  backgroundColor: '#FFFF00', // Bold primary color
-  borderWidth: 3,
-  borderColor: '#000000',
-  shadowColor: '#000000',
-  shadowOffset: { width: 4, height: 4 },
-  shadowOpacity: 1,
-  shadowRadius: 0, // NO blur
-  elevation: 0,
-  paddingVertical: 16,
-  paddingHorizontal: 24,
-};
+// Light Mode
+background: '#F0F4F8'
+glass: 'rgba(255, 255, 255, 0.65)'
+primary: '#007AFF' // iOS blue
+accent: '#5856D6'  // Purple
+secondary: '#32D4DE' // Teal
 
-const brutalistButtonPressed = {
-  ...brutalistButton,
-  shadowOffset: { width: 1, height: 1 }, // Reduced shadow on press
-  transform: [{ translateX: 3 }, { translateY: 3 }],
-};
+// Dark Mode
+background: '#0A1628'
+glass: 'rgba(30, 41, 59, 0.65)'
+primary: '#0A84FF'
+accent: '#BF5AF2'
+secondary: '#40E0D0'
+```
+
+### Theme Usage
+```typescript
+import { useTheme } from './components/theme';
+
+function MyComponent() {
+  const { colors, isDark, mode, toggleMode } = useTheme();
+
+  return (
+    <View style={{ backgroundColor: colors.background }}>
+      <GlassCard>
+        <Text style={{ color: colors.textPrimary }}>Content</Text>
+      </GlassCard>
+      <GlassButton title="Action" onPress={handlePress} />
+    </View>
+  );
+}
+```
+
+### Glass Card Pattern
+```typescript
+import { BlurView } from '@react-native-community/blur';
+
+const GlassCard = ({ children }) => (
+  <View style={{
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+  }}>
+    {Platform.OS === 'ios' && (
+      <BlurView
+        style={StyleSheet.absoluteFill}
+        blurType={isDark ? 'dark' : 'light'}
+        blurAmount={20}
+      />
+    )}
+    <View style={{ backgroundColor: colors.glass, padding: 20 }}>
+      {children}
+    </View>
+  </View>
+);
 ```
 
 ## Project Stack
@@ -41,7 +83,7 @@ const brutalistButtonPressed = {
 
 ## Key Packages
 ```bash
-yarn add @solana-mobile/mobile-wallet-adapter-protocol-web3js @solana-mobile/mobile-wallet-adapter-protocol @solana/web3.js @solana/spl-token @metaplex-foundation/umi @metaplex-foundation/umi-bundle-defaults @metaplex-foundation/mpl-token-metadata
+yarn add @solana-mobile/mobile-wallet-adapter-protocol-web3js @solana-mobile/mobile-wallet-adapter-protocol @solana/web3.js @solana/spl-token @metaplex-foundation/umi @metaplex-foundation/umi-bundle-defaults @metaplex-foundation/mpl-token-metadata @react-native-community/blur
 ```
 
 ## Mobile Wallet Adapter Pattern
@@ -83,3 +125,4 @@ const connect = async () => {
 - Emulator: Android Studio AVD
 - Device: Enable USB debugging on Seeker, run `adb devices`
 - Mock Wallet: For testing MWA without real funds
+- After iOS pod install: `cd ios && pod install`

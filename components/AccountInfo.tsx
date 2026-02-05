@@ -1,9 +1,10 @@
 import React from 'react';
 import {LAMPORTS_PER_SOL, PublicKey} from '@solana/web3.js';
-import {StyleSheet, View, Text} from 'react-native';
+import {StyleSheet, View, Text, Platform} from 'react-native';
+import {BlurView} from '@react-native-community/blur';
 import RequestAirdropButton from './RequestAirdropButton';
 import DisconnectButton from './DisconnectButton';
-import {Colors} from './Colors';
+import {useTheme} from './theme';
 
 interface Account {
   address: string;
@@ -28,98 +29,116 @@ export default function AccountInfo({
   selectedAccount,
   fetchAndUpdateBalance,
 }: AccountInfoProps) {
+  const {colors, isDark} = useTheme();
+
+  const cardStyle = {
+    borderRadius: 16,
+    overflow: 'hidden' as const,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    shadowColor: colors.shadow,
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+  };
+
+  const content = (
+    <View style={{backgroundColor: colors.glass, padding: 20}}>
+      <Text style={[styles.walletHeader, {color: colors.textPrimary}]}>Wallet Info</Text>
+
+      <View style={[styles.balanceContainer, {backgroundColor: colors.primaryLight}]}>
+        <Text style={[styles.balanceLabel, {color: colors.textSecondary}]}>Balance</Text>
+        <Text style={[styles.walletBalance, {color: colors.primary}]}>
+          {balance ? convertLamportsToSOL(balance) : '0'} SOL
+        </Text>
+      </View>
+
+      <View style={[styles.labelContainer, {backgroundColor: colors.secondaryLight}]}>
+        <Text style={[styles.labelText, {color: colors.secondary}]}>
+          {selectedAccount.label || 'Unknown Wallet'}
+        </Text>
+      </View>
+
+      <Text style={[styles.walletAddress, {color: colors.textTertiary}]}>
+        {selectedAccount.address}
+      </Text>
+
+      <View style={styles.buttonGroup}>
+        <DisconnectButton title="Disconnect" />
+        <RequestAirdropButton
+          selectedAccount={selectedAccount}
+          onAirdropComplete={async (account: Account) =>
+            await fetchAndUpdateBalance(account)
+          }
+        />
+      </View>
+    </View>
+  );
+
+  if (Platform.OS === 'ios') {
+    return (
+      <View style={styles.container}>
+        <View style={cardStyle}>
+          <BlurView
+            style={StyleSheet.absoluteFill}
+            blurType={isDark ? 'dark' : 'light'}
+            blurAmount={20}
+            reducedTransparencyFallbackColor={colors.card}
+          />
+          {content}
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.walletHeader}>WALLET INFO</Text>
-        <View style={styles.balanceContainer}>
-          <Text style={styles.balanceLabel}>BALANCE</Text>
-          <Text style={styles.walletBalance}>
-            {balance ? convertLamportsToSOL(balance) : '0'} SOL
-          </Text>
-        </View>
-        <View style={styles.labelContainer}>
-          <Text style={styles.labelText}>
-            {selectedAccount.label || 'Unknown Wallet'}
-          </Text>
-        </View>
-        <Text style={styles.walletAddress}>{selectedAccount.address}</Text>
-        <View style={styles.buttonGroup}>
-          <DisconnectButton title="Disconnect" />
-          <RequestAirdropButton
-            selectedAccount={selectedAccount}
-            onAirdropComplete={async (account: Account) =>
-              await fetchAndUpdateBalance(account)
-            }
-          />
-        </View>
+      <View style={[cardStyle, {backgroundColor: colors.card}]}>
+        {content}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    // Removed padding - parent provides 20pt
-  },
-  card: {
-    backgroundColor: Colors.cardBg,
-    borderWidth: 3,
-    borderColor: Colors.border,
-    padding: 20,
-    shadowColor: Colors.border,
-    shadowOffset: {width: 8, height: 8},
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 0,
-  },
+  container: {},
   walletHeader: {
-    fontFamily: 'CourierPrime-Bold',
-    fontSize: 14,
-    color: Colors.textDark,
-    letterSpacing: 3,
+    fontSize: 18,
+    fontWeight: '600',
+    letterSpacing: 0.5,
     marginBottom: 16,
-    textTransform: 'uppercase',
   },
   balanceContainer: {
-    backgroundColor: Colors.primary,
-    borderWidth: 3,
-    borderColor: Colors.border,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 16,
   },
   balanceLabel: {
-    fontFamily: 'CourierPrime-Bold',
-    fontSize: 11,
-    color: Colors.textDark,
-    letterSpacing: 2,
+    fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: 0.5,
     marginBottom: 4,
   },
   walletBalance: {
-    fontFamily: 'CourierPrime-Bold',
     fontSize: 32,
-    color: Colors.textDark,
+    fontWeight: '600',
   },
   labelContainer: {
-    backgroundColor: Colors.accent,
-    borderWidth: 2,
-    borderColor: Colors.border,
+    borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 6,
     alignSelf: 'flex-start',
     marginBottom: 8,
   },
   labelText: {
-    fontFamily: 'CourierPrime-Bold',
-    fontSize: 12,
-    color: Colors.textDark,
-    textTransform: 'uppercase',
+    fontSize: 13,
+    fontWeight: '600',
   },
   walletAddress: {
-    fontFamily: 'CourierPrime-Regular',
-    fontSize: 11,
-    color: Colors.textLight,
+    fontSize: 12,
     marginBottom: 20,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   buttonGroup: {
     flexDirection: 'row',

@@ -5,12 +5,10 @@ import {
   StyleSheet,
   Animated,
   TouchableWithoutFeedback,
-  Dimensions,
+  Platform,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {Colors} from '../components/Colors';
-
-const {width, height} = Dimensions.get('window');
+import {useTheme} from '../components/theme';
 
 interface WelcomeScreenProps {
   onContinue: () => void;
@@ -18,11 +16,12 @@ interface WelcomeScreenProps {
 
 export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
   const insets = useSafeAreaInsets();
+  const {colors} = useTheme();
 
   // Animation values
   const brandOpacity = useRef(new Animated.Value(0)).current;
   const brandTranslateY = useRef(new Animated.Value(12)).current;
-  const brandLetterSpacing = useRef(new Animated.Value(20)).current; // Extra spacing that will reduce
+  const brandScale = useRef(new Animated.Value(0.95)).current;
 
   const lineWidth = useRef(new Animated.Value(0)).current;
 
@@ -37,13 +36,10 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
   const footerTranslateY = useRef(new Animated.Value(10)).current;
 
   // Transition animations
-  const transitionOpacity = useRef(new Animated.Value(1)).current;
   const whiteOverlay = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Staggered animation sequence matching the HTML timing
-
-    // Brand reveal: starts at 0.2s, duration 2.4s
+    // Brand reveal with scale
     Animated.parallel([
       Animated.timing(brandOpacity, {
         toValue: 1,
@@ -57,17 +53,24 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
         delay: 200,
         useNativeDriver: true,
       }),
+      Animated.spring(brandScale, {
+        toValue: 1,
+        delay: 200,
+        useNativeDriver: true,
+        friction: 8,
+        tension: 40,
+      }),
     ]).start();
 
-    // Line expand: starts at 1.4s, duration 1.8s
+    // Line expand
     Animated.timing(lineWidth, {
-      toValue: 60,
+      toValue: 80,
       duration: 1800,
       delay: 1400,
       useNativeDriver: false,
     }).start();
 
-    // Tagline: starts at 2s, duration 2s
+    // Tagline
     Animated.parallel([
       Animated.timing(taglineOpacity, {
         toValue: 1,
@@ -83,7 +86,7 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
       }),
     ]).start();
 
-    // Tap hint: starts at 3.2s, duration 1.6s
+    // Tap hint
     Animated.parallel([
       Animated.timing(tapHintOpacity, {
         toValue: 1,
@@ -99,7 +102,7 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
       }),
     ]).start();
 
-    // Tap arrow pulse: starts at 4s, loops
+    // Tap arrow pulse
     Animated.loop(
       Animated.sequence([
         Animated.timing(tapArrowPulse, {
@@ -116,7 +119,7 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
       ]),
     ).start();
 
-    // Footer: starts at 3.6s, duration 2s
+    // Footer
     Animated.parallel([
       Animated.timing(footerOpacity, {
         toValue: 1,
@@ -134,27 +137,22 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
   }, []);
 
   const handleTap = () => {
-    // Transition animation sequence
     Animated.parallel([
-      // Fade out tagline
       Animated.timing(taglineOpacity, {
         toValue: 0,
         duration: 600,
         useNativeDriver: true,
       }),
-      // Fade out tap hint
       Animated.timing(tapHintOpacity, {
         toValue: 0,
         duration: 300,
         useNativeDriver: true,
       }),
-      // Fade out footer
       Animated.timing(footerOpacity, {
         toValue: 0,
         duration: 400,
         useNativeDriver: true,
       }),
-      // Brand floats up and fades
       Animated.timing(brandTranslateY, {
         toValue: -20,
         duration: 1000,
@@ -165,7 +163,11 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
         duration: 1000,
         useNativeDriver: true,
       }),
-      // White overlay
+      Animated.timing(brandScale, {
+        toValue: 1.1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
       Animated.timing(whiteOverlay, {
         toValue: 1,
         duration: 1200,
@@ -177,7 +179,6 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
     });
   };
 
-  // Interpolate pulse for arrow opacity and movement
   const arrowOpacity = tapArrowPulse.interpolate({
     inputRange: [0, 1],
     outputRange: [0.4, 0.8],
@@ -190,10 +191,7 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
 
   return (
     <TouchableWithoutFeedback onPress={handleTap}>
-      <View style={styles.container}>
-        {/* Warm glow from center */}
-        <View style={styles.warmGlow} />
-
+      <View style={[styles.container, {backgroundColor: colors.background}]}>
         <View style={styles.content}>
           {/* Brand */}
           <Animated.View
@@ -201,67 +199,80 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
               styles.brandContainer,
               {
                 opacity: brandOpacity,
-                transform: [{translateY: brandTranslateY}],
+                transform: [{translateY: brandTranslateY}, {scale: brandScale}],
               },
             ]}>
-            <Text style={styles.brand}>glimpse</Text>
-            <Animated.View style={[styles.brandLine, {width: lineWidth}]} />
+            <Text style={[styles.brand, {color: colors.textPrimary}]}>
+              GLIMPSE
+            </Text>
+            <Animated.View
+              style={[
+                styles.brandLine,
+                {width: lineWidth, backgroundColor: colors.primary},
+              ]}
+            />
           </Animated.View>
 
           {/* Tagline */}
-          <Animated.View
+          <Animated.Text
             style={[
-              styles.taglineContainer,
+              styles.tagline,
               {
+                color: colors.textSecondary,
                 opacity: taglineOpacity,
                 transform: [{translateY: taglineTranslateY}],
               },
             ]}>
-            <Text style={styles.tagline}>creating connections</Text>
-            <Text style={styles.tagline}>documenting kindness</Text>
-          </Animated.View>
+            DOCUMENTING KINDNESS.
+          </Animated.Text>
         </View>
 
-        {/* Tap hint */}
+        {/* Scripture reference */}
         <Animated.View
           style={[
-            styles.tapHint,
+            styles.scriptureHint,
             {
               opacity: tapHintOpacity,
               transform: [{translateY: tapHintTranslateY}],
             },
           ]}>
-          <Animated.View
-            style={[
-              styles.tapArrow,
-              {
-                opacity: arrowOpacity,
-                transform: [{translateY: arrowTranslateY}, {rotate: '45deg'}],
-              },
-            ]}
-          />
-          <Text style={styles.tapText}>tap to continue</Text>
+          <Text style={[styles.scriptureText, {color: colors.textTertiary}]}>
+            Matthew 6:3
+          </Text>
         </Animated.View>
 
-        {/* Footer reference */}
+        {/* Tap to continue */}
         <Animated.View
           style={[
-            styles.footerContainer,
+            styles.tapContainer,
             {
               opacity: footerOpacity,
               transform: [{translateY: footerTranslateY}],
               bottom: 36 + insets.bottom,
             },
           ]}>
-          <Text style={styles.footerRef}>Matthew 6 : 3</Text>
+          <Text style={[styles.tapText, {color: colors.textTertiary}]}>
+            Tap to continue
+          </Text>
+          <Animated.View
+            style={[
+              styles.tapArrow,
+              {
+                opacity: arrowOpacity,
+                transform: [{translateY: arrowTranslateY}, {rotate: '45deg'}],
+                borderColor: colors.textTertiary,
+              },
+            ]}
+          />
         </Animated.View>
 
-        {/* White transition overlay */}
+        {/* Transition overlay */}
         <Animated.View
           style={[
-            styles.whiteOverlay,
+            styles.overlay,
             {
               opacity: whiteOverlay,
+              backgroundColor: colors.background,
             },
           ]}
           pointerEvents="none"
@@ -274,21 +285,8 @@ export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  warmGlow: {
-    position: 'absolute',
-    top: '35%',
-    left: '50%',
-    width: 300,
-    height: 300,
-    marginLeft: -150,
-    marginTop: -150,
-    borderRadius: 0,
-    backgroundColor: Colors.primary,
-    opacity: 0.15,
   },
   content: {
     alignItems: 'center',
@@ -296,92 +294,63 @@ const styles = StyleSheet.create({
   },
   brandContainer: {
     alignItems: 'center',
-    backgroundColor: Colors.background,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderWidth: 3,
-    borderColor: Colors.border,
-    shadowColor: Colors.border,
-    shadowOffset: {width: 12, height: 12},
-    shadowOpacity: 1,
-    shadowRadius: 0,
   },
   brand: {
-    fontFamily: 'CourierPrime-Bold',
     fontSize: 48,
-    letterSpacing: 12,
-    textTransform: 'uppercase',
-    color: Colors.cardBg,
-    fontWeight: '900',
+    fontWeight: '200',
+    letterSpacing: 6,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   brandLine: {
-    height: 4,
+    height: 2,
     marginTop: 12,
-    backgroundColor: Colors.primary,
-  },
-  taglineContainer: {
-    marginTop: 32,
-    alignItems: 'center',
-    backgroundColor: Colors.accent,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderWidth: 3,
-    borderColor: Colors.border,
-    shadowColor: Colors.border,
-    shadowOffset: {width: 4, height: 4},
-    shadowOpacity: 1,
-    shadowRadius: 0,
+    borderRadius: 1,
   },
   tagline: {
-    fontFamily: 'CourierPrime-Bold',
+    marginTop: 32,
     fontSize: 13,
-    color: Colors.textDark,
+    fontWeight: '400',
     textAlign: 'center',
-    lineHeight: 24,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    letterSpacing: 3,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
-  tapHint: {
+  scriptureHint: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 100,
+    left: 0,
+    right: 0,
     alignItems: 'center',
   },
   tapArrow: {
-    width: 24,
-    height: 24,
-    borderRightWidth: 3,
-    borderBottomWidth: 3,
-    borderColor: Colors.cardBg,
-    marginBottom: 12,
+    width: 16,
+    height: 16,
+    borderRightWidth: 1.5,
+    borderBottomWidth: 1.5,
+    marginTop: 10,
+  },
+  scriptureText: {
+    fontSize: 11,
+    fontWeight: '400',
+    letterSpacing: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  tapContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
   },
   tapText: {
-    fontFamily: 'CourierPrime-Bold',
     fontSize: 11,
-    color: Colors.cardBg,
-    letterSpacing: 3,
-    textTransform: 'uppercase',
-  },
-  footerContainer: {
-    position: 'absolute',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 2,
-    borderColor: Colors.border,
-    backgroundColor: Colors.background,
-  },
-  footerRef: {
-    fontFamily: 'CourierPrime-Regular',
-    fontSize: 11,
-    color: Colors.textLight,
+    fontWeight: '400',
     letterSpacing: 2,
-    textTransform: 'uppercase',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
-  whiteOverlay: {
+  overlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: Colors.background,
   },
 });

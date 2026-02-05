@@ -1,10 +1,10 @@
 import {useConnection} from '../components/providers/ConnectionProvider';
-import React, {useState, useCallback} from 'react';
-import {TouchableOpacity, Text, StyleSheet, ViewStyle} from 'react-native';
+import React, {useState, useCallback, useRef} from 'react';
+import {TouchableOpacity, Text, StyleSheet, ViewStyle, Animated} from 'react-native';
 import {Account} from './providers/AuthorizationProvider';
 import {alertAndLog} from '../util/alertAndLog';
 import {LAMPORTS_PER_SOL} from '@solana/web3.js';
-import {Colors} from './Colors';
+import {useTheme} from './theme';
 
 type Props = Readonly<{
   selectedAccount: Account;
@@ -25,9 +25,28 @@ export default function RequestAirdropButton({
   onAirdropComplete,
   style,
 }: Props) {
+  const {colors} = useTheme();
   const {connection} = useConnection();
   const [airdropInProgress, setAirdropInProgress] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
 
   const requestAirdrop = useCallback(async () => {
     const signature = await connection.requestAirdrop(
@@ -39,73 +58,66 @@ export default function RequestAirdropButton({
   }, [connection, selectedAccount]);
 
   return (
-    <TouchableOpacity
-      style={[
-        styles.button,
-        isPressed && styles.buttonPressed,
-        airdropInProgress && styles.buttonDisabled,
-        style,
-      ]}
-      disabled={airdropInProgress}
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => setIsPressed(false)}
-      activeOpacity={1}
-      onPress={async () => {
-        if (airdropInProgress) {
-          return;
-        }
-        setAirdropInProgress(true);
-        try {
-          await requestAirdrop();
-          alertAndLog(
-            'Funding successful:',
-            String(convertLamportsToSOL(LAMPORTS_PER_AIRDROP)) +
-              ' SOL added to ' +
-              selectedAccount.publicKey,
-          );
-          onAirdropComplete(selectedAccount);
-        } catch (err: any) {
-          alertAndLog(
-            'Failed to fund account:',
-            err instanceof Error ? err.message : err,
-          );
-        } finally {
-          setAirdropInProgress(false);
-        }
-      }}>
-      <Text style={styles.buttonText}>
-        {airdropInProgress ? 'REQUESTING...' : 'REQUEST AIRDROP'}
-      </Text>
-    </TouchableOpacity>
+    <Animated.View style={{transform: [{scale: scaleAnim}]}}>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          {
+            backgroundColor: airdropInProgress ? colors.textTertiary : colors.secondary,
+            shadowColor: colors.secondary,
+          },
+          style,
+        ]}
+        disabled={airdropInProgress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+        onPress={async () => {
+          if (airdropInProgress) {
+            return;
+          }
+          setAirdropInProgress(true);
+          try {
+            await requestAirdrop();
+            alertAndLog(
+              'Funding successful:',
+              String(convertLamportsToSOL(LAMPORTS_PER_AIRDROP)) +
+                ' SOL added to ' +
+                selectedAccount.publicKey,
+            );
+            onAirdropComplete(selectedAccount);
+          } catch (err: any) {
+            alertAndLog(
+              'Failed to fund account:',
+              err instanceof Error ? err.message : err,
+            );
+          } finally {
+            setAirdropInProgress(false);
+          }
+        }}>
+        <Text style={[styles.buttonText, {color: colors.textOnPrimary}]}>
+          {airdropInProgress ? 'Requesting...' : 'Request Airdrop'}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: Colors.accent,
-    borderWidth: 3,
-    borderColor: Colors.border,
-    paddingVertical: 18,
+    borderRadius: 12,
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    shadowColor: Colors.border,
-    shadowOffset: {width: 6, height: 6},
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 0,
-  },
-  buttonPressed: {
-    shadowOffset: {width: 0, height: 0},
-    transform: [{translateX: 6}, {translateY: 6}],
-  },
-  buttonDisabled: {
-    backgroundColor: Colors.headerBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
   },
   buttonText: {
-    fontFamily: 'CourierPrime-Bold',
-    fontSize: 14,
-    color: Colors.textDark,
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
 });
