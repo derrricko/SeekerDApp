@@ -203,23 +203,23 @@ export const CUSTOM_TIER = {
 
 export const ONBOARDING_SLIDES = [
   {
-    id: 'transparency',
-    headline: 'See where your gift goes',
-    body: 'Your full donation reaches someone who needs it. No middlemen. No mystery.',
+    id: 'direct',
+    headline: '100% goes to the need',
+    body: 'No middlemen. No overhead. Your full donation transfers directly to the recipient on-chain.',
   },
   {
-    id: 'direction',
-    headline: 'Pick a direction, not a person',
-    body: 'Choose a community to support. We handle the rest.',
+    id: 'choose',
+    headline: 'Pick a need, fund it',
+    body: 'Browse verified needs\u2014groceries, rent, new tires. Fund the whole thing or chip in what you can.',
   },
   {
     id: 'proof',
-    headline: 'Get proof it landed',
-    body: 'Photos. Receipts. Real impact\u2014documented on-chain.',
+    headline: 'See proof it landed',
+    body: 'Photos, receipts, real impact. Every gift is documented and recorded on Solana.',
   },
   {
-    id: 'ready',
-    headline: 'Ready?',
-    body: 'Your generosity is about to mean something.',
+    id: 'scale',
+    headline: 'Every dollar counts',
+    body: '$10 or $10,000\u2014your generosity is more effective here than anywhere else.',
   },
 ];
