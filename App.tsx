@@ -3,28 +3,39 @@ import {
   RPC_ENDPOINT,
 } from './components/providers/ConnectionProvider';
 import {clusterApiUrl} from '@solana/web3.js';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {StyleSheet, StatusBar, View} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {AuthorizationProvider} from './components/providers/AuthorizationProvider';
 import {ThemeProvider, useTheme} from './components/theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import WelcomeScreen from './screens/WelcomeScreen';
-import OnboardingScreen from './screens/OnboardingScreen';
 import HomeScreen from './screens/HomeScreen';
-
-type Screen = 'welcome' | 'onboarding' | 'home';
+import SplashOverlay from './components/SplashOverlay';
+import OnboardingModal from './components/OnboardingModal';
 
 function AppContent() {
   const {isDark, colors} = useTheme();
-  const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
+  const [showSplash, setShowSplash] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
-  const handleWelcomeContinue = () => {
-    setCurrentScreen('onboarding');
-  };
+  useEffect(() => {
+    AsyncStorage.getItem('hasLaunched')
+      .then(value => {
+        setIsFirstLaunch(value === null);
+        if (value === null) {
+          AsyncStorage.setItem('hasLaunched', 'true');
+        }
+      })
+      .catch(() => setIsFirstLaunch(false));
+  }, []);
 
-  const handleOnboardingComplete = () => {
-    setCurrentScreen('home');
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    if (isFirstLaunch) {
+      setTimeout(() => setShowOnboarding(true), 100);
+    }
   };
 
   return (
@@ -35,12 +46,10 @@ function AppContent() {
         translucent
       />
       <View style={[styles.container, {backgroundColor: colors.background}]}>
-        {currentScreen === 'welcome' ? (
-          <WelcomeScreen onContinue={handleWelcomeContinue} />
-        ) : currentScreen === 'onboarding' ? (
-          <OnboardingScreen onComplete={handleOnboardingComplete} />
-        ) : (
-          <HomeScreen />
+        <HomeScreen />
+        {showSplash && <SplashOverlay onComplete={handleSplashComplete} />}
+        {showOnboarding && (
+          <OnboardingModal onComplete={() => setShowOnboarding(false)} />
         )}
       </View>
     </>

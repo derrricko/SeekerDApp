@@ -1086,7 +1086,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     overflow: 'hidden',
   },
   headerBrand: {...Typography.brand},
