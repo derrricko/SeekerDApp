@@ -81,7 +81,7 @@ export const FAQ_DATA = [
     id: 'pick-person',
     question: 'Do I pick the specific person?',
     answer:
-      "No\u2014and that's intentional. You pick a direction, not a person. After your gift is deployed, you'll see exactly who it helped.",
+      "No\u2014and that's intentional. You pick a need, not a person. After your gift is deployed, you'll see exactly who it helped.",
   },
   {
     id: 'selection',
@@ -149,27 +149,68 @@ export const FAQ_DATA = [
   },
 ];
 
-export const TIERS = [
+// ─── Needs-based giving model ───────────────────────────────────────────────
+
+export interface Need {
+  id: string;
+  amount: number;
+  title: string;
+  description: string;
+  partner?: string;
+  funded: number;
+  icon: string;
+}
+
+export const NEEDS: Need[] = [
   {
-    id: 'be-heard',
-    amount: '$25',
-    isRange: false,
+    id: 'shower',
+    amount: 25,
     title: 'A clean shower and fresh clothes',
-    partner: 'BeHeard Movement \u00B7 Tulsa, OK',
     description:
-      'Give someone the simple gift of feeling clean, refreshed, and seen.',
-    cta: 'Give This Gift',
-    icon: 'circle-user' as const,
+      "For someone living on the street, a hot shower and clean clothes aren't just hygiene\u2014they're dignity. The feeling of being human again. Walking into a room without the weight of shame.",
+    partner: 'BeHeard Movement \u00B7 Tulsa, OK',
+    funded: 0,
+    icon: 'shower',
+  },
+  {
+    id: 'groceries',
+    amount: 100,
+    title: 'Groceries for a single mom',
+    description:
+      "She skips meals so her kids don't have to. Your gift fills a fridge, quiets the worry at 2am, and lets a mom sit at the table with her family instead of staring at an empty one.",
+    funded: 0,
+    icon: 'basket-shopping',
+  },
+  {
+    id: 'wardrobe',
+    amount: 250,
+    title: 'New wardrobe for a foster kid',
+    description:
+      "When a child enters foster care, everything they own fits in a trash bag\u2014if they have anything at all. New clothes that are theirs say something no words can: you matter, and someone thought of you.",
+    funded: 0,
+    icon: 'shirt',
+  },
+  {
+    id: 'tires',
+    amount: 400,
+    title: 'New tires for a family in need',
+    description:
+      "She white-knuckles the steering wheel every morning, praying the bald tires hold\u2014to get her kids to school, herself to work, and everyone home safe. New tires mean she can stop holding her breath.",
+    funded: 0,
+    icon: 'car',
+  },
+  {
+    id: 'rent',
+    amount: 1000,
+    title: "Full month's rent for a family",
+    description:
+      "An eviction notice doesn't just mean losing a home\u2014it means a child wondering where they'll sleep tomorrow. One month's rent buys a family the one thing money can't usually buy: time to breathe.",
+    funded: 0,
+    icon: 'house',
   },
 ];
 
-export const DIRECTIONS = [
-  {id: 'single-moms', label: 'Single moms'},
-  {id: 'low-income-kids', label: 'Low-income kids'},
-  {id: 'homeless', label: 'Neighbors experiencing homelessness'},
-  {id: 'recovery', label: 'People in recovery'},
-  {id: 'seniors', label: 'Seniors'},
-];
+export const CHIP_IN_AMOUNTS = [10, 25, 50] as const;
 
 export const CUSTOM_TIER = {
   id: 'custom',
@@ -177,8 +218,6 @@ export const CUSTOM_TIER = {
   subtitle: "Let's talk.",
   cta: 'Connect \u2192',
 };
-
-export const PRESET_AMOUNTS = [10, 25, 50, 100] as const;
 
 export const ONBOARDING_SLIDES = [
   {
