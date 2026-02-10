@@ -27,6 +27,7 @@ import {APP_IDENTITY} from '../components/providers/AuthorizationProvider';
 import GlassCard from '../components/GlassCard';
 import NeedCard from '../components/NeedCard';
 import GiveChoiceModal from '../components/GiveChoiceModal';
+import OnboardingModal from '../components/OnboardingModal';
 import {triggerHaptic} from '../utils/haptics';
 
 // Enable LayoutAnimation on Android
@@ -610,6 +611,7 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
   const {selectedAccount, authorizeSession} = useAuthorization();
   const {connection} = useConnection();
   const [activeTab, setActiveTab] = useState('give');
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
   // Needs-based Give state
@@ -715,6 +717,13 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
           {paddingTop: insets.top + 12, backgroundColor: colors.background, borderBottomColor: colors.glassBorder},
         ]}>
         <Text style={[styles.headerBrand, {color: colors.textPrimary, opacity: hideHeaderBrand ? 0 : 1}]}>Glimpse</Text>
+        <TouchableOpacity
+          style={styles.helpButton}
+          onPress={() => { triggerHaptic('impactLight'); setShowOnboarding(true); }}
+          activeOpacity={0.7}
+          hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+          <Text style={[styles.helpText, {color: colors.textTertiary}]}>?</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Content */}
@@ -836,6 +845,11 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
         onRetry={handleConfirmSend}
         onClose={handleCloseModal}
       />
+
+      {/* Onboarding replay */}
+      {showOnboarding && (
+        <OnboardingModal onComplete={() => setShowOnboarding(false)} />
+      )}
     </View>
   );
 }
@@ -854,6 +868,21 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerBrand: {...Typography.brand},
+  helpButton: {
+    position: 'absolute',
+    right: 24,
+    bottom: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  helpText: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Georgia',
+  },
   scrollView: {flex: 1},
   scrollContent: {paddingHorizontal: 24, paddingTop: 24},
 
