@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Animated,
   FlatList,
-  Platform,
   ViewToken,
   Easing,
   NativeSyntheticEvent,
@@ -15,7 +14,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {triggerHaptic} from '../utils/haptics';
-import {useTheme} from '../components/theme';
+import {useTheme, Typography} from '../components/theme';
 import {ONBOARDING_SLIDES} from '../data/content';
 
 // Slide icons built with View primitives
@@ -462,7 +461,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   skipText: {
-    fontSize: 15,
+    fontSize: Typography.bodySmall.fontSize,
     fontWeight: '500',
     letterSpacing: 0.5,
   },
@@ -473,19 +472,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   headline: {
-    fontSize: 32,
-    fontWeight: '200',
+    ...Typography.heading,
     textAlign: 'center',
     marginBottom: 16,
-    lineHeight: 40,
-    letterSpacing: 0.5,
-    fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
   },
   body: {
-    fontSize: 17,
-    lineHeight: 26,
+    ...Typography.body,
     textAlign: 'center',
-    fontWeight: '400',
   },
   bottomArea: {
     paddingHorizontal: 24,
@@ -515,8 +508,6 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   ctaText: {
-    fontSize: 17,
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    ...Typography.buttonLarge,
   },
 });

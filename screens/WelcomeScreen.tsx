@@ -6,18 +6,15 @@ import {
   Animated,
   Easing,
   TouchableWithoutFeedback,
-  Platform,
   Image,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useTheme} from '../components/theme';
+import {useTheme, Typography} from '../components/theme';
 import {triggerHaptic} from '../utils/haptics';
 
 interface WelcomeScreenProps {
   onContinue: () => void;
 }
-
-const DISPLAY_FONT = Platform.OS === 'ios' ? 'Georgia' : 'serif';
 
 export default function WelcomeScreen({onContinue}: WelcomeScreenProps) {
   const insets = useSafeAreaInsets();
@@ -472,9 +469,9 @@ const styles = StyleSheet.create({
   },
   brand: {
     fontSize: 52,
-    fontWeight: '500',
-    letterSpacing: 4,
-    fontFamily: DISPLAY_FONT,
+    fontWeight: Typography.brand.fontWeight,
+    letterSpacing: Typography.brand.letterSpacing,
+    fontFamily: Typography.brand.fontFamily,
   },
   brandLine: {
     width: 84,
@@ -484,7 +481,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     marginTop: 28,
-    fontSize: 14,
+    fontSize: Typography.bodySmall.fontSize,
     fontWeight: '500',
     textAlign: 'center',
     letterSpacing: 2.5,
