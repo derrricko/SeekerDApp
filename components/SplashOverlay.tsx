@@ -35,7 +35,7 @@ export default function SplashOverlay({onAnimationDone}: SplashOverlayProps) {
   // Calculate positions
   const headerCenterY = insets.top + 12 + Typography.brand.lineHeight / 2;
   const screenCenterY = SCREEN_HEIGHT / 2;
-  const translateDistance = screenCenterY - headerCenterY;
+  const translateDistance = screenCenterY - headerCenterY + 20;
 
   // Scale from 52px to 24px brand size
   const brandSizeScale = 24 / 52; // ~0.462
