@@ -64,5 +64,3 @@ test-ledger/
 # Other generated
 link-assets-manifest.json
 android/link-assets-manifest.json
-node_modules/**/android/build/
-node_modules/**/.gradle/
