@@ -96,18 +96,6 @@ export const FAQ_DATA = [
       "You can leave a note of encouragement with your gift. We don't expect recipients to respond\u2014but if they choose to, we'll make sure it reaches you.",
   },
   {
-    id: 'anonymous',
-    question: 'Do recipients know who I am?',
-    answer:
-      "No. Giving through Glimpse is intentionally anonymous. You're not giving to get recognition. You're giving because it's good.",
-  },
-  {
-    id: 'received',
-    question: 'How do I know my gift was received?',
-    answer:
-      "You'll see it. Every receipt is photographed. Every transaction is time-stamped on-chain. With permission, you'll see photos of the impact. Permanent proof it happened.",
-  },
-  {
     id: 'minimum',
     question: "What's the minimum donation?",
     answer: '$10.',
@@ -134,18 +122,6 @@ export const FAQ_DATA = [
     question: 'Where does Glimpse operate?',
     answer:
       "We're based in Muscatine, Iowa. Partners are continually added as they are vetted.",
-  },
-  {
-    id: 'seeker',
-    question: 'What is Seeker?',
-    answer:
-      "Seeker is Solana's mobile phone. Currently, Glimpse is only available in the Solana Mobile App Store. Android and iOS versions are coming later.",
-  },
-  {
-    id: 'wrong',
-    question: 'What if something goes wrong?',
-    answer:
-      "We'll tell you. Trust requires honesty\u2014even when we mess up. If something doesn't go as planned, we'll be transparent and make it right. That's the promise.",
   },
   {
     id: 'who',
