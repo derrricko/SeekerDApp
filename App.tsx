@@ -17,18 +17,7 @@ function AppContent() {
   const {isDark, colors} = useTheme();
   const [splashDone, setSplashDone] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    AsyncStorage.getItem('hasLaunched')
-      .then(value => {
-        setIsFirstLaunch(value === null);
-        if (value === null) {
-          AsyncStorage.setItem('hasLaunched', 'true');
-        }
-      })
-      .catch(() => setIsFirstLaunch(false));
-  }, []);
+  const [isFirstLaunch] = useState(true);
 
   const handleSplashDone = () => {
     setSplashDone(true);

@@ -25,6 +25,17 @@ import {AppRegistry} from 'react-native';
 import App from './App';
 import {name as appName} from './app.json';
 
+// Polyfill Event for Hermes (required by @solana-mobile/wallet-standard-mobile)
+if (typeof global.Event === 'undefined') {
+  global.Event = class Event {
+    constructor(type, options) {
+      this.type = type;
+      this.bubbles = options?.bubbles ?? false;
+      this.cancelable = options?.cancelable ?? false;
+    }
+  };
+}
+
 // Mock event listener functions to prevent them from fataling.
 window.addEventListener = () => {};
 window.removeEventListener = () => {};

@@ -17,6 +17,7 @@
     "@solana-mobile/wallet-standard-mobile": "^0.4.4",
     "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.74.0",
+    "@supabase/supabase-js": "^2.95.3",
     "buffer": "^6.0.3",
     "react": "18.2.0",
     "react-native": "0.71.4",
