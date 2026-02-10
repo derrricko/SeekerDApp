@@ -10,6 +10,7 @@ import {
   Easing,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Platform,
   useWindowDimensions,
   ViewToken,
 } from 'react-native';
@@ -22,58 +23,119 @@ import {ONBOARDING_SLIDES} from '../data/content';
 const EASE_OUT = Easing.out(Easing.cubic);
 const EASE_IN = Easing.in(Easing.cubic);
 
-// Slide icons (same as original OnboardingScreen)
+// Slide icons — 72x72, themed with full palette
 function SlideIcon({index}: {index: number}) {
   const {colors} = useTheme();
 
   if (index === 0) {
+    // Direct — arrow through a dashed ring
     return (
-      <View style={slideIconStyles.container}>
-        <View style={[slideIconStyles.eyeOuter, {borderColor: colors.secondary}]}>
-          <View style={[slideIconStyles.eyeInner, {backgroundColor: colors.secondary}]} />
+      <View style={iconStyles.container}>
+        <View
+          style={[
+            iconStyles.dashedRing,
+            {borderColor: colors.accent},
+            Platform.select({
+              ios: {borderStyle: 'dashed' as const},
+              default: {borderStyle: 'solid' as const, opacity: 0.5},
+            }),
+          ]}
+        />
+        <View style={iconStyles.arrowRow}>
+          <View style={[iconStyles.arrowDot, {backgroundColor: colors.secondary}]} />
+          <View style={[iconStyles.arrowShaft, {backgroundColor: colors.primary}]} />
+          <View style={iconStyles.chevronWrap}>
+            <View style={[iconStyles.chevronArm, {backgroundColor: colors.primary, transform: [{rotate: '-35deg'}], marginBottom: -1}]} />
+            <View style={[iconStyles.chevronArm, {backgroundColor: colors.primary, transform: [{rotate: '35deg'}], marginTop: -1}]} />
+          </View>
+          <View style={[iconStyles.arrowDot, {backgroundColor: colors.success}]} />
         </View>
       </View>
     );
   }
+
   if (index === 1) {
+    // Choose — 2x2 card grid, top-left selected
     return (
-      <View style={slideIconStyles.container}>
-        <View style={[slideIconStyles.compass, {borderColor: colors.primary}]}>
-          <View style={[slideIconStyles.compassNeedle, {backgroundColor: colors.primary}]} />
+      <View style={iconStyles.container}>
+        <View style={iconStyles.grid}>
+          <View style={[iconStyles.tileFilled, {backgroundColor: colors.primary}]}>
+            <View style={iconStyles.tileCheckWrap}>
+              <View style={[iconStyles.tileCheckShort, {backgroundColor: '#FFFFFF'}]} />
+              <View style={[iconStyles.tileCheckLong, {backgroundColor: '#FFFFFF'}]} />
+            </View>
+          </View>
+          <View style={[iconStyles.tile, {borderColor: colors.accent}]} />
+          <View style={[iconStyles.tile, {borderColor: colors.secondary}]} />
+          <View style={[iconStyles.tile, {borderColor: colors.accent}]} />
         </View>
       </View>
     );
   }
+
   if (index === 2) {
+    // Proof — receipt document + chain link
     return (
-      <View style={slideIconStyles.container}>
-        <View style={[slideIconStyles.checkCircle, {borderColor: colors.secondary}]}>
-          <View style={slideIconStyles.checkContainer}>
-            <View style={[slideIconStyles.checkShort, {backgroundColor: colors.secondary}]} />
-            <View style={[slideIconStyles.checkLong, {backgroundColor: colors.secondary}]} />
+      <View style={iconStyles.container}>
+        <View style={[iconStyles.receipt, {borderColor: colors.accent}]}>
+          <View style={[iconStyles.receiptLine, {width: 24, backgroundColor: colors.accent, opacity: 0.5}]} />
+          <View style={[iconStyles.receiptLine, {width: 18, backgroundColor: colors.accent, opacity: 0.5}]} />
+          <View style={[iconStyles.receiptLine, {width: 12, backgroundColor: colors.accent, opacity: 0.5}]} />
+          <View style={[iconStyles.receiptDivider, {backgroundColor: colors.accent, opacity: 0.3}]} />
+          <View style={iconStyles.receiptDotsRow}>
+            <View style={[iconStyles.receiptDot, {backgroundColor: colors.success}]} />
+            <View style={[iconStyles.receiptDot, {backgroundColor: colors.success}]} />
+            <View style={[iconStyles.receiptDot, {backgroundColor: colors.success}]} />
           </View>
         </View>
+        <View style={iconStyles.chainWrap}>
+          <View style={[iconStyles.chainCircle, {left: 0, borderColor: colors.primary}]} />
+          <View style={[iconStyles.chainCircle, {right: 0, borderColor: colors.primary}]} />
+        </View>
       </View>
     );
   }
+
+  // Scale — concentric ripples + heart center
   return (
-    <View style={slideIconStyles.container}>
-      <View style={[slideIconStyles.heart, {borderColor: colors.primary}]} />
+    <View style={iconStyles.container}>
+      <View style={[iconStyles.rippleOuter, {borderColor: colors.secondary, opacity: 0.25}]} />
+      <View style={[iconStyles.rippleMiddle, {borderColor: colors.accent, opacity: 0.5}]} />
+      <View style={[iconStyles.rippleInner, {borderColor: colors.primary, opacity: 0.8}]} />
+      <View style={[iconStyles.heartCenter, {backgroundColor: colors.primary}]} />
     </View>
   );
 }
 
-const slideIconStyles = StyleSheet.create({
-  container: {width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 24},
-  eyeOuter: {width: 48, height: 28, borderWidth: 2.5, borderRadius: 14, alignItems: 'center', justifyContent: 'center'},
-  eyeInner: {width: 12, height: 12, borderRadius: 6},
-  compass: {width: 40, height: 40, borderWidth: 2.5, borderRadius: 20, alignItems: 'center', justifyContent: 'center'},
-  compassNeedle: {width: 3, height: 16, borderRadius: 1.5, transform: [{rotate: '45deg'}]},
-  checkCircle: {width: 40, height: 40, borderWidth: 2.5, borderRadius: 20, alignItems: 'center', justifyContent: 'center'},
-  checkContainer: {width: 18, height: 14, position: 'relative'},
-  checkShort: {position: 'absolute', width: 3, height: 9, borderRadius: 1.5, bottom: 0, left: 2, transform: [{rotate: '-45deg'}]},
-  checkLong: {position: 'absolute', width: 3, height: 14, borderRadius: 1.5, bottom: 0, right: 2, transform: [{rotate: '30deg'}]},
-  heart: {width: 30, height: 30, borderWidth: 2.5, borderRadius: 7, transform: [{rotate: '45deg'}]},
+const iconStyles = StyleSheet.create({
+  container: {width: 72, height: 72, alignItems: 'center', justifyContent: 'center', marginBottom: 24},
+  // Slide 0 — Direct
+  dashedRing: {position: 'absolute', width: 44, height: 44, borderRadius: 22, borderWidth: 2},
+  arrowRow: {flexDirection: 'row', alignItems: 'center'},
+  arrowDot: {width: 7, height: 7, borderRadius: 3.5},
+  arrowShaft: {width: 36, height: 2.5, borderRadius: 1.25},
+  chevronWrap: {width: 10, height: 14, justifyContent: 'center', marginRight: 2},
+  chevronArm: {width: 10, height: 2.5, borderRadius: 1.25},
+  // Slide 1 — Choose
+  grid: {width: 56, height: 56, flexDirection: 'row', flexWrap: 'wrap', gap: 6},
+  tile: {width: 25, height: 25, borderRadius: 6, borderWidth: 2},
+  tileFilled: {width: 25, height: 25, borderRadius: 6, alignItems: 'center', justifyContent: 'center'},
+  tileCheckWrap: {width: 12, height: 10, position: 'relative'},
+  tileCheckShort: {position: 'absolute', width: 2.5, height: 7, borderRadius: 1.25, bottom: 0, left: 1, transform: [{rotate: '-45deg'}]},
+  tileCheckLong: {position: 'absolute', width: 2.5, height: 11, borderRadius: 1.25, bottom: 0, right: 1, transform: [{rotate: '30deg'}]},
+  // Slide 2 — Proof
+  receipt: {width: 40, height: 52, borderWidth: 2, borderRadius: 6, paddingHorizontal: 6, paddingTop: 8, alignItems: 'flex-start'},
+  receiptLine: {height: 2.5, borderRadius: 1.25, marginBottom: 5},
+  receiptDivider: {width: '100%' as any, height: 1, marginBottom: 5},
+  receiptDotsRow: {flexDirection: 'row', gap: 4},
+  receiptDot: {width: 4, height: 4, borderRadius: 2},
+  chainWrap: {position: 'absolute', bottom: 4, right: 8, width: 22, height: 14},
+  chainCircle: {position: 'absolute', width: 14, height: 14, borderRadius: 7, borderWidth: 2},
+  // Slide 3 — Scale
+  rippleOuter: {position: 'absolute', width: 64, height: 64, borderRadius: 32, borderWidth: 1.5},
+  rippleMiddle: {position: 'absolute', width: 44, height: 44, borderRadius: 22, borderWidth: 1.5},
+  rippleInner: {position: 'absolute', width: 28, height: 28, borderRadius: 14, borderWidth: 1.5},
+  heartCenter: {width: 14, height: 14, borderRadius: 3, transform: [{rotate: '45deg'}]},
 });
 
 // Staggered entrance for slide content
@@ -225,12 +287,17 @@ export default function OnboardingModal({onComplete}: OnboardingModalProps) {
             {
               opacity: modalOpacity,
               transform: [{scale: modalScale}],
-              marginTop: insets.top + 80,
+              marginTop: insets.top + 60,
               marginBottom: insets.bottom + 40,
             },
           ]}>
           <GlassCard style={{borderRadius: 20}}>
             <View style={styles.cardContent}>
+              {/* Section header — stays visible across all slides */}
+              <Text style={[styles.sectionHeader, {color: colors.textTertiary}]}>
+                HOW IT WORKS
+              </Text>
+
               {/* Slides */}
               <FlatList
                 ref={flatListRef}
@@ -323,10 +390,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   modalContainer: {
-    maxHeight: 480,
+    maxHeight: 520,
   },
   cardContent: {
     paddingVertical: 32,
+  },
+  sectionHeader: {
+    ...Typography.label,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    textAlign: 'center',
+    marginBottom: 16,
   },
   slide: {
     alignItems: 'center',
