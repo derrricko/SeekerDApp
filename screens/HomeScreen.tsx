@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import {BlurView} from '@react-native-community/blur';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useTheme} from '../components/theme';
+import {useTheme, Typography} from '../components/theme';
 import {useAuthorization} from '../components/providers/AuthorizationProvider';
 import {useConnection} from '../components/providers/ConnectionProvider';
 import {TIERS, DIRECTIONS, CUSTOM_TIER, FAQ_DATA} from '../data/content';
@@ -32,8 +32,6 @@ import {triggerHaptic} from '../utils/haptics';
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-
-const DISPLAY_FONT = Platform.OS === 'ios' ? 'Georgia' : 'serif';
 
 // Shared animation config
 const ENTRANCE_DURATION = 300;
@@ -194,6 +192,25 @@ function useEntrance(delay: number = 0) {
   return {opacity, translateY};
 }
 
+// ─── Error mapping ───────────────────────────────────────────────────────────
+
+function friendlyError(msg: string): string {
+  const lower = msg.toLowerCase();
+  if (lower.includes('user rejected') || lower.includes('declined') || lower.includes('cancelled')) {
+    return 'Transaction was cancelled.';
+  }
+  if (lower.includes('insufficient')) {
+    return 'Insufficient funds in your wallet.';
+  }
+  if (lower.includes('timeout')) {
+    return 'The transaction timed out. Please try again.';
+  }
+  if (lower.includes('network') || lower.includes('fetch')) {
+    return 'Network error. Please check your connection.';
+  }
+  return 'Something went wrong. Please try again.';
+}
+
 // ─── Confirmation Modal ──────────────────────────────────────────────────────
 
 interface ConfirmModalProps {
@@ -205,6 +222,7 @@ interface ConfirmModalProps {
   error: string | null;
   txSignature: string | null;
   onConfirm: () => void;
+  onRetry: () => void;
   onClose: () => void;
 }
 
@@ -217,6 +235,7 @@ function ConfirmModal({
   error,
   txSignature,
   onConfirm,
+  onRetry,
   onClose,
 }: ConfirmModalProps) {
   const {colors} = useTheme();
@@ -267,6 +286,12 @@ function ConfirmModal({
                   <Text style={[modalStyles.loadingText, {color: colors.textSecondary}]}>
                     Sending your gift...
                   </Text>
+                  <TouchableOpacity
+                    style={[modalStyles.cancelLoadingButton, {borderColor: colors.border}]}
+                    onPress={handleClose}
+                    activeOpacity={0.8}>
+                    <Text style={[modalStyles.cancelText, {color: colors.textSecondary}]}>Cancel</Text>
+                  </TouchableOpacity>
                 </View>
               ) : success ? (
                 <View style={modalStyles.centered}>
@@ -282,7 +307,10 @@ function ConfirmModal({
                     ${amount} toward {direction}
                   </Text>
                   {txSignature && (
-                    <TouchableOpacity activeOpacity={0.7} style={modalStyles.txHashWrap}>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      style={modalStyles.txHashWrap}
+                      onPress={() => Linking.openURL(`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`)}>
                       <Text style={[modalStyles.txHash, {color: colors.textTertiary}]}>
                         View transaction details
                       </Text>
@@ -308,18 +336,26 @@ function ConfirmModal({
                     Something went wrong
                   </Text>
                   <Text style={[modalStyles.successBody, {color: colors.textSecondary}]}>
-                    {error}
+                    {friendlyError(error)}
                   </Text>
-                  <Animated.View style={{transform: [{scale: btnScale}]}}>
+                  <View style={modalStyles.buttonRow}>
                     <TouchableOpacity
-                      style={[modalStyles.doneButton, {backgroundColor: colors.primary}]}
+                      style={[modalStyles.cancelButton, {borderColor: colors.border}]}
                       onPress={handleClose}
-                      onPressIn={btnPressIn}
-                      onPressOut={btnPressOut}
                       activeOpacity={0.8}>
-                      <Text style={[modalStyles.doneText, {color: colors.textOnPrimary}]}>Close</Text>
+                      <Text style={[modalStyles.cancelText, {color: colors.textSecondary}]}>Close</Text>
                     </TouchableOpacity>
-                  </Animated.View>
+                    <Animated.View style={{flex: 1, transform: [{scale: btnScale}]}}>
+                      <TouchableOpacity
+                        style={[modalStyles.confirmButton, {backgroundColor: colors.primary}]}
+                        onPress={() => { triggerHaptic('impactMedium'); onRetry(); }}
+                        onPressIn={btnPressIn}
+                        onPressOut={btnPressOut}
+                        activeOpacity={0.8}>
+                        <Text style={[modalStyles.confirmButtonText, {color: colors.textOnPrimary}]}>Try Again</Text>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  </View>
                 </View>
               ) : (
                 <>
@@ -371,27 +407,29 @@ const modalStyles = StyleSheet.create({
   overlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', paddingHorizontal: 32},
   cardContent: {padding: 28},
   centered: {alignItems: 'center', paddingVertical: 16},
-  loadingText: {marginTop: 24, fontSize: 17, fontWeight: '500'},
+  loadingText: {marginTop: 24, fontSize: Typography.body.fontSize, fontWeight: '500'},
   successCircle: {width: 80, height: 80, borderRadius: 40, borderWidth: 3, alignItems: 'center', justifyContent: 'center', marginBottom: 24},
   successCheck: {fontSize: 36, fontWeight: '300'},
-  successTitle: {fontSize: 22, fontWeight: '300', marginBottom: 12, letterSpacing: 0.5},
-  successBody: {fontSize: 17, marginBottom: 12},
+  successTitle: {...Typography.subheading, marginBottom: 12},
+  successBody: {fontSize: Typography.body.fontSize, marginBottom: 12},
   txHashWrap: {marginBottom: 24},
-  txHash: {fontSize: 14, textDecorationLine: 'underline'},
+  txHash: {fontSize: Typography.bodySmall.fontSize, textDecorationLine: 'underline'},
   errorCircle: {width: 80, height: 80, borderRadius: 40, borderWidth: 3, alignItems: 'center', justifyContent: 'center', marginBottom: 24},
   errorX: {fontSize: 36, fontWeight: '600'},
   doneButton: {paddingVertical: 16, paddingHorizontal: 56, borderRadius: 12, marginTop: 8},
-  doneText: {fontSize: 17, fontWeight: '600'},
-  confirmTitle: {fontSize: 22, fontWeight: '300', marginBottom: 24, textAlign: 'center', letterSpacing: 0.5},
+  doneText: {...Typography.buttonLarge},
+  confirmTitle: {...Typography.subheading, marginBottom: 24, textAlign: 'center'},
   detailRow: {flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1},
-  detailLabel: {fontSize: 14},
-  detailValue: {fontSize: 14, fontWeight: '600'},
-  disclaimer: {fontSize: 14, textAlign: 'center', marginTop: 20, marginBottom: 24, lineHeight: 20},
+  detailLabel: {fontSize: Typography.bodySmall.fontSize},
+  detailValue: {fontSize: Typography.bodySmall.fontSize, fontWeight: '600'},
+  disclaimer: {fontSize: Typography.bodySmall.fontSize, textAlign: 'center', marginTop: 20, marginBottom: 24, lineHeight: Typography.bodySmall.lineHeight},
   buttonRow: {flexDirection: 'row', gap: 12},
   cancelButton: {flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, alignItems: 'center'},
-  cancelText: {fontSize: 17, fontWeight: '500'},
+  cancelText: {fontSize: Typography.body.fontSize, fontWeight: '500'},
   confirmButton: {paddingVertical: 14, borderRadius: 12, alignItems: 'center'},
-  confirmButtonText: {fontSize: 17, fontWeight: '600'},
+  confirmButtonText: {...Typography.buttonLarge},
+
+  cancelLoadingButton: {paddingVertical: 12, paddingHorizontal: 32, borderRadius: 12, borderWidth: 1, marginTop: 24},
 });
 
 // ─── Tier Card ───────────────────────────────────────────────────────────────
@@ -482,7 +520,13 @@ function CustomGivingCard({onDonate}: CustomGivingCardProps) {
   const [inputFocused, setInputFocused] = useState(false);
 
   const handleAmountChange = (text: string) => {
-    setAmount(text.replace(/[^0-9]/g, ''));
+    const cleaned = text.replace(/[^0-9]/g, '');
+    const num = parseInt(cleaned, 10);
+    if (!isNaN(num) && num > 10000) {
+      setValidationError('Maximum donation is $10,000');
+      return;
+    }
+    setAmount(cleaned);
     setValidationError('');
   };
 
@@ -499,6 +543,7 @@ function CustomGivingCard({onDonate}: CustomGivingCardProps) {
   };
 
   const numAmount = parseInt(amount, 10) || 0;
+  const isValidAmount = numAmount >= 10;
   const isPooled = numAmount > 0 && numAmount < 100;
 
   return (
@@ -553,19 +598,22 @@ function CustomGivingCard({onDonate}: CustomGivingCardProps) {
           )}
 
           <TouchableOpacity
-            style={[styles.giveNowButton, {backgroundColor: colors.primary, shadowColor: colors.shadow}]}
+            style={[
+              styles.giveNowButton,
+              {backgroundColor: colors.primary, shadowColor: colors.shadow},
+              !isValidAmount && {opacity: 0.4},
+            ]}
             onPress={handleGiveNow}
-            onPressIn={onPressIn}
-            onPressOut={onPressOut}
-            activeOpacity={0.8}>
+            onPressIn={isValidAmount ? onPressIn : undefined}
+            onPressOut={isValidAmount ? onPressOut : undefined}
+            activeOpacity={isValidAmount ? 0.8 : 1}
+            disabled={!isValidAmount}>
             <Text style={[styles.giveNowButtonText, {color: colors.textOnPrimary}]}>Give Now</Text>
           </TouchableOpacity>
 
-          {isPooled && (
-            <Text style={[styles.poolingText, {color: colors.textTertiary}]}>
-              Under $100? Your gift combines with others for bigger impact.
-            </Text>
-          )}
+          <Text style={[styles.poolingText, {color: colors.textTertiary, opacity: isPooled ? 1 : 0}]}>
+            Under $100? Your gift combines with others for bigger impact.
+          </Text>
 
           {/* Dropdown Modal */}
           <Modal visible={showDropdown} transparent animationType="fade" onRequestClose={() => setShowDropdown(false)}>
@@ -805,24 +853,24 @@ const profileStyles = StyleSheet.create({
   cardContent: {
     padding: 20,
   },
-  cardTitle: {fontSize: 22, fontWeight: '300', marginBottom: 16, letterSpacing: 0.5},
+  cardTitle: {...Typography.subheading, marginBottom: 16},
   walletRow: {flexDirection: 'row', alignItems: 'center', marginBottom: 8},
   statusDot: {width: 8, height: 8, borderRadius: 4, marginRight: 8},
-  walletStatus: {fontSize: 14, fontWeight: '500'},
-  walletAddress: {fontSize: 12, fontFamily: 'monospace', marginBottom: 4, letterSpacing: 0.3},
+  walletStatus: {...Typography.label},
+  walletAddress: {fontSize: Typography.caption.fontSize, fontFamily: 'monospace', marginBottom: 4, letterSpacing: Typography.caption.letterSpacing},
   connectButton: {paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 12},
-  connectText: {fontSize: 17, fontWeight: '600'},
+  connectText: {...Typography.buttonLarge},
   themeRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: 14},
-  themeLabel: {fontSize: 14, fontWeight: '500', marginLeft: 12, flex: 1},
-  themeCycle: {fontSize: 12, letterSpacing: 0.3},
+  themeLabel: {...Typography.label, marginLeft: 12, flex: 1},
+  themeCycle: {...Typography.caption},
   faqItem: {borderBottomWidth: 1, paddingVertical: 14},
   faqHeader: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'},
-  faqQuestion: {flex: 1, fontSize: 14, fontWeight: '500', paddingRight: 12},
-  faqIcon: {fontSize: 22, fontWeight: '300'},
-  faqAnswer: {fontSize: 14, lineHeight: 22, paddingTop: 10, paddingRight: 36},
+  faqQuestion: {flex: 1, ...Typography.label, paddingRight: 12},
+  faqIcon: {fontSize: Typography.subheading.fontSize, fontWeight: Typography.subheading.fontWeight},
+  faqAnswer: {fontSize: Typography.bodySmall.fontSize, lineHeight: 22, paddingTop: 10, paddingRight: 36},
   linkRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: 8},
-  linkText: {fontSize: 14, fontWeight: '600'},
-  version: {fontSize: 12, textAlign: 'center', marginTop: 28, marginBottom: 32, letterSpacing: 0.3},
+  linkText: {fontSize: Typography.bodySmall.fontSize, fontWeight: '600'},
+  version: {...Typography.caption, textAlign: 'center', marginTop: 28, marginBottom: 32},
 });
 
 // ─── Home Screen ─────────────────────────────────────────────────────────────
@@ -876,13 +924,16 @@ export default function HomeScreen() {
     setTxError(null);
 
     try {
-      if (!selectedAccount) {
-        await transact(async (wallet: Web3MobileWallet) => {
-          await authorizeSession(wallet);
+      let pubKey = selectedAccount?.publicKey;
+
+      if (!pubKey) {
+        const account = await transact(async (wallet: Web3MobileWallet) => {
+          return await authorizeSession(wallet);
         });
+        pubKey = account?.publicKey;
       }
 
-      if (!selectedAccount?.publicKey) {
+      if (!pubKey) {
         setTxError('Please connect your wallet first.');
         setTxLoading(false);
         return;
@@ -890,7 +941,7 @@ export default function HomeScreen() {
 
       const signature = await transferUSDC(
         connection,
-        selectedAccount.publicKey,
+        pubKey,
         RECIPIENT_WALLET,
         confirmAmount,
       );
@@ -1018,6 +1069,7 @@ export default function HomeScreen() {
         error={txError}
         txSignature={txSignature}
         onConfirm={handleConfirmSend}
+        onRetry={handleConfirmSend}
         onClose={handleCloseModal}
       />
     </View>
@@ -1037,23 +1089,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     overflow: 'hidden',
   },
-  headerBrand: {fontSize: 24, fontWeight: '500', letterSpacing: 4, fontFamily: DISPLAY_FONT},
+  headerBrand: {...Typography.brand},
   scrollView: {flex: 1},
   scrollContent: {paddingHorizontal: 24, paddingTop: 28},
 
   // Hero
   heroArea: {marginBottom: 36},
-  heroTitle: {fontSize: 44, fontWeight: '200', letterSpacing: 2, marginBottom: 8, fontFamily: DISPLAY_FONT},
-  heroSubtitle: {fontSize: 14, fontWeight: '400', letterSpacing: 0.3},
+  heroTitle: {...Typography.display, marginBottom: 8},
+  heroSubtitle: {...Typography.bodySmall, letterSpacing: Typography.caption.letterSpacing},
 
   // Tier card
   tierCard: {marginBottom: 20},
   tierCardContent: {padding: 20},
   tierTop: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12},
-  tierAmount: {fontSize: 32, fontWeight: '200'},
+  tierAmount: {fontSize: Typography.heading.fontSize, fontWeight: Typography.heading.fontWeight},
   tierIcon: {width: 44, height: 44, borderRadius: 22, borderWidth: 2, alignItems: 'center', justifyContent: 'center'},
-  tierTitle: {fontSize: 17, fontWeight: '600', marginBottom: 4, lineHeight: 24},
-  tierPartner: {fontSize: 12, letterSpacing: 0.3, marginBottom: 16},
+  tierTitle: {fontSize: Typography.body.fontSize, fontWeight: '600', marginBottom: 4, lineHeight: 24},
+  tierPartner: {...Typography.caption, marginBottom: 16},
   donateButton: {
     borderRadius: 12,
     paddingVertical: 16,
@@ -1063,17 +1115,17 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-  donateButtonText: {fontSize: 17, fontWeight: '600', letterSpacing: 0.5},
+  donateButtonText: {...Typography.buttonLarge},
   tierExpandedInner: {paddingTop: 16},
   tierDivider: {height: 1, marginBottom: 16},
-  tierExpandedText: {fontSize: 14, lineHeight: 22, marginBottom: 6},
-  tierExpandedLink: {fontSize: 14, fontWeight: '600', marginBottom: 4},
+  tierExpandedText: {fontSize: Typography.bodySmall.fontSize, lineHeight: 22, marginBottom: 6},
+  tierExpandedLink: {fontSize: Typography.bodySmall.fontSize, fontWeight: '600', marginBottom: 4},
 
   // Custom giving card
   customGivingCard: {marginBottom: 32},
   customGivingCardContent: {padding: 24},
-  customGivingTitle: {fontSize: 22, fontWeight: '300', marginBottom: 20, letterSpacing: 0.5},
-  inputLabel: {fontSize: 14, fontWeight: '500', marginBottom: 8},
+  customGivingTitle: {...Typography.subheading, marginBottom: 20},
+  inputLabel: {...Typography.label, marginBottom: 8},
   dropdown: {
     borderRadius: 12,
     borderWidth: 1,
@@ -1083,7 +1135,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  dropdownText: {fontSize: 17, flex: 1},
+  dropdownText: {fontSize: Typography.body.fontSize, flex: 1},
   amountInputContainer: {
     borderRadius: 12,
     borderWidth: 1,
@@ -1092,10 +1144,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  dollarSign: {fontSize: 32, fontWeight: '200', marginRight: 8},
-  amountInput: {flex: 1, fontSize: 32, fontWeight: '200', paddingVertical: 8},
-  minimumText: {fontSize: 12, marginTop: 6, letterSpacing: 0.3},
-  errorText: {fontSize: 12, marginTop: 6, fontWeight: '500'},
+  dollarSign: {fontSize: Typography.heading.fontSize, fontWeight: Typography.heading.fontWeight, marginRight: 8},
+  amountInput: {flex: 1, fontSize: Typography.heading.fontSize, fontWeight: Typography.heading.fontWeight, paddingVertical: 8},
+  minimumText: {...Typography.caption, marginTop: 6},
+  errorText: {fontSize: Typography.caption.fontSize, marginTop: 6, fontWeight: '500'},
   giveNowButton: {
     borderRadius: 14,
     paddingVertical: 18,
@@ -1106,8 +1158,8 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-  giveNowButtonText: {fontSize: 17, fontWeight: '600', letterSpacing: 0.5},
-  poolingText: {fontSize: 12, marginTop: 16, textAlign: 'center', lineHeight: 18, letterSpacing: 0.3},
+  giveNowButtonText: {...Typography.buttonLarge},
+  poolingText: {...Typography.caption, marginTop: 16, textAlign: 'center', lineHeight: 18},
 
   // Something bigger card
   customCard: {marginBottom: 16, marginTop: 16},
@@ -1118,10 +1170,10 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   customTextWrap: {flex: 1, backgroundColor: 'transparent'},
-  customTitle: {fontSize: 17, fontWeight: '600', marginBottom: 2},
-  customSubtitle: {fontSize: 14},
+  customTitle: {fontSize: Typography.body.fontSize, fontWeight: '600', marginBottom: 2},
+  customSubtitle: {fontSize: Typography.bodySmall.fontSize},
   customCta: {paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10},
-  customCtaText: {fontSize: 14, fontWeight: '600', letterSpacing: 0.3},
+  customCtaText: {...Typography.buttonSmall},
 
   // Coming soon (Glimpses) — redesigned
   comingSoon: {alignItems: 'center', justifyContent: 'center', paddingVertical: 100},
@@ -1130,9 +1182,9 @@ const styles = StyleSheet.create({
   comingSoonCard1: {position: 'absolute', width: 24, height: 24, borderRadius: 4, top: 0, left: 0},
   comingSoonCard2: {position: 'absolute', width: 24, height: 24, borderRadius: 4, top: 4, left: 4},
   comingSoonCard3: {position: 'absolute', width: 24, height: 24, borderRadius: 4, top: 8, left: 8},
-  comingSoonTitle: {fontSize: 22, fontWeight: '300', marginBottom: 12, letterSpacing: 0.5},
-  comingSoonText: {fontSize: 17, textAlign: 'center', lineHeight: 24, paddingHorizontal: 20},
-  comingSoonSubtext: {fontSize: 14, textAlign: 'center', lineHeight: 22, paddingHorizontal: 32, marginTop: 8},
+  comingSoonTitle: {...Typography.subheading, marginBottom: 12},
+  comingSoonText: {fontSize: Typography.body.fontSize, textAlign: 'center', lineHeight: Typography.body.lineHeight, paddingHorizontal: 20},
+  comingSoonSubtext: {fontSize: Typography.bodySmall.fontSize, textAlign: 'center', lineHeight: 22, paddingHorizontal: 32, marginTop: 8},
 
   // Bottom nav
   bottomNav: {
@@ -1147,13 +1199,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   navItem: {alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8},
-  navLabel: {fontSize: 12, fontWeight: '500', marginTop: 4, letterSpacing: 0.3},
+  navLabel: {fontSize: Typography.caption.fontSize, fontWeight: '500', marginTop: 4, letterSpacing: Typography.caption.letterSpacing},
   navActiveDot: {width: 20, height: 4, borderRadius: 2, marginTop: 4},
 
   // Dropdown modal
   modalOverlay: {flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', paddingHorizontal: 40},
   dropdownModalContent: {paddingVertical: 8},
-  dropdownHeader: {fontSize: 14, fontWeight: '500', letterSpacing: 0.3, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4},
+  dropdownHeader: {...Typography.label, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4},
   dropdownItem: {paddingHorizontal: 20, paddingVertical: 16},
-  dropdownItemText: {fontSize: 17},
+  dropdownItemText: {fontSize: Typography.body.fontSize},
 });

@@ -110,7 +110,7 @@ export const FAQ_DATA = [
   {
     id: 'minimum',
     question: "What's the minimum donation?",
-    answer: '$25.',
+    answer: '$10.',
   },
   {
     id: 'fees',
