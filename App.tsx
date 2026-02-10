@@ -46,7 +46,7 @@ function AppContent() {
         translucent
       />
       <View style={[styles.container, {backgroundColor: colors.background}]}>
-        <HomeScreen />
+        <HomeScreen hideHeaderBrand={showSplash} />
         {showSplash && <SplashOverlay onComplete={handleSplashComplete} />}
         {showOnboarding && (
           <OnboardingModal onComplete={() => setShowOnboarding(false)} />

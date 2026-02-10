@@ -875,7 +875,11 @@ const profileStyles = StyleSheet.create({
 
 // ─── Home Screen ─────────────────────────────────────────────────────────────
 
-export default function HomeScreen() {
+interface HomeScreenProps {
+  hideHeaderBrand?: boolean;
+}
+
+export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
   const insets = useSafeAreaInsets();
   const {colors, isDark} = useTheme();
   const {selectedAccount, authorizeSession} = useAuthorization();
@@ -976,7 +980,7 @@ export default function HomeScreen() {
           blurAmount={12}
           reducedTransparencyFallbackColor={colors.card}
         />
-        <Text style={[styles.headerBrand, {color: colors.textPrimary}]}>Glimpse</Text>
+        <Text style={[styles.headerBrand, {color: colors.textPrimary, opacity: hideHeaderBrand ? 0 : 1}]}>Glimpse</Text>
       </View>
 
       {/* Content */}
