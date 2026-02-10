@@ -7,9 +7,7 @@ import {
   TouchableOpacity,
   Animated,
   Linking,
-  TextInput,
   Modal,
-  FlatList,
   ActivityIndicator,
   Platform,
   LayoutAnimation,
@@ -21,11 +19,14 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTheme, Typography} from '../components/theme';
 import {useAuthorization} from '../components/providers/AuthorizationProvider';
 import {useConnection} from '../components/providers/ConnectionProvider';
-import {TIERS, DIRECTIONS, FAQ_DATA, PRESET_AMOUNTS} from '../data/content';
+import {NEEDS, FAQ_DATA} from '../data/content';
+import type {Need} from '../data/content';
 import {transferUSDC, RECIPIENT_WALLET} from '../utils/transfer';
 import {transact, Web3MobileWallet} from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import {APP_IDENTITY} from '../components/providers/AuthorizationProvider';
 import GlassCard from '../components/GlassCard';
+import NeedCard from '../components/NeedCard';
+import GiveChoiceModal from '../components/GiveChoiceModal';
 import {triggerHaptic} from '../utils/haptics';
 
 // Enable LayoutAnimation on Android
@@ -78,26 +79,6 @@ const iconStyles = StyleSheet.create({
   systemHalfOutline: {width: 8, height: 18, borderWidth: 2, marginLeft: -2},
 });
 
-const ChevronDownIcon = ({color}: {color: string}) => (
-  <View style={{width: 20, height: 20, alignItems: 'center', justifyContent: 'center'}}>
-    <View
-      style={{
-        width: 10,
-        height: 10,
-        borderRightWidth: 2,
-        borderBottomWidth: 2,
-        borderColor: color,
-        transform: [{rotate: '45deg'}, {translateY: -2}],
-      }}
-    />
-  </View>
-);
-
-const CircleUserIcon = ({color}: {color: string}) => (
-  <View style={{width: 20, height: 20, alignItems: 'center', justifyContent: 'center'}}>
-    <View style={{width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: color}} />
-  </View>
-);
 
 // Nav icons — active state uses filled style
 const GiveNavIcon = ({active, color}: {active: boolean; color: string}) => (
@@ -367,7 +348,7 @@ function ConfirmModal({
                     <Text style={[modalStyles.detailValue, {color: colors.textPrimary}]}>${amount}</Text>
                   </View>
                   <View style={[modalStyles.detailRow, {borderBottomColor: colors.border}]}>
-                    <Text style={[modalStyles.detailLabel, {color: colors.textTertiary}]}>Direction</Text>
+                    <Text style={[modalStyles.detailLabel, {color: colors.textTertiary}]}>Toward</Text>
                     <Text style={[modalStyles.detailValue, {color: colors.textPrimary}]}>{direction}</Text>
                   </View>
                   <Text style={[modalStyles.disclaimer, {color: colors.textTertiary}]}>
@@ -432,159 +413,7 @@ const modalStyles = StyleSheet.create({
   cancelLoadingButton: {paddingVertical: 12, paddingHorizontal: 32, borderRadius: 12, borderWidth: 1, marginTop: 24},
 });
 
-// ─── Tier Spotlight (compact horizontal) ─────────────────────────────────────
 
-interface TierSpotlightProps {
-  tier: (typeof TIERS)[0];
-  delay: number;
-  onDonate: () => void;
-}
-
-function TierSpotlight({tier, delay, onDonate}: TierSpotlightProps) {
-  const {colors} = useTheme();
-  const {opacity, translateY} = useEntrance(delay);
-  const {scale, onPressIn, onPressOut} = usePressAnimation();
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const toggleExpand = () => {
-    LayoutAnimation.configureNext(smoothLayout);
-    setIsExpanded(!isExpanded);
-    triggerHaptic('impactLight');
-  };
-
-  const handleDonate = () => {
-    triggerHaptic('impactMedium');
-    onDonate();
-  };
-
-  return (
-    <Animated.View style={[spotlightStyles.wrapper, {opacity, transform: [{translateY}, {scale}]}]}>
-      <TouchableOpacity
-        activeOpacity={1}
-        onPress={toggleExpand}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}>
-        <GlassCard variant="secondary">
-          <View style={spotlightStyles.content}>
-            <View style={spotlightStyles.row}>
-              <View style={[spotlightStyles.iconCircle, {backgroundColor: colors.primaryLight, borderColor: colors.primary}]}>
-                <CircleUserIcon color={colors.primary} />
-              </View>
-              <View style={spotlightStyles.textWrap}>
-                <Text style={[spotlightStyles.title, {color: colors.textPrimary}]}>{tier.title}</Text>
-                <Text style={[spotlightStyles.partner, {color: colors.textTertiary}]}>{tier.partner}</Text>
-              </View>
-              <TouchableOpacity
-                style={[spotlightStyles.pill, {backgroundColor: colors.primary}]}
-                onPress={handleDonate}
-                activeOpacity={0.8}>
-                <Text style={[spotlightStyles.pillText, {color: colors.textOnPrimary}]}>{tier.amount}</Text>
-              </TouchableOpacity>
-            </View>
-            {isExpanded && (
-              <View style={spotlightStyles.expandedInner}>
-                <View style={[spotlightStyles.divider, {backgroundColor: colors.border}]} />
-                <Text style={[spotlightStyles.expandedText, {color: colors.textSecondary}]}>
-                  BeHeard is a nonprofit serving the unhoused population.
-                </Text>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => Linking.openURL('https://www.instagram.com/beheard.mvmt/')}>
-                  <Text style={[spotlightStyles.expandedLink, {color: colors.primary}]}>See what they do {'\u2192'}</Text>
-                </TouchableOpacity>
-                <Text style={[spotlightStyles.expandedText, {color: colors.textSecondary, marginTop: 12}]}>
-                  There is no guarantee of a response, but you will be given a first name and last initial.
-                </Text>
-              </View>
-            )}
-          </View>
-        </GlassCard>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
-
-const spotlightStyles = StyleSheet.create({
-  wrapper: {marginBottom: 16},
-  content: {padding: 16},
-  row: {flexDirection: 'row', alignItems: 'center'},
-  iconCircle: {width: 44, height: 44, borderRadius: 22, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginRight: 12},
-  textWrap: {flex: 1, marginRight: 12},
-  title: {fontSize: Typography.bodySmall.fontSize, fontWeight: '600', marginBottom: 2},
-  partner: {fontSize: Typography.caption.fontSize, letterSpacing: Typography.caption.letterSpacing},
-  pill: {paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20},
-  pillText: {fontSize: Typography.buttonSmall.fontSize, fontWeight: '600'},
-  expandedInner: {paddingTop: 16},
-  divider: {height: 1, marginBottom: 16},
-  expandedText: {fontSize: Typography.bodySmall.fontSize, lineHeight: 22, marginBottom: 6},
-  expandedLink: {fontSize: Typography.bodySmall.fontSize, fontWeight: '600', marginBottom: 4},
-});
-
-// ─── Amount-First Give UI (inline sections) ─────────────────────────────────
-// State + logic live in HomeScreen; these are small presentational helpers.
-
-function PresetChip({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  const {colors} = useTheme();
-  const chipScale = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () => {
-    triggerHaptic('impactLight');
-    Animated.spring(chipScale, {toValue: 0.93, ...springConfig}).start();
-  };
-  const handlePressOut = () => {
-    Animated.spring(chipScale, {toValue: 1, ...springConfig}).start();
-  };
-
-  return (
-    <Animated.View style={{transform: [{scale: chipScale}]}}>
-      <TouchableOpacity
-        style={[
-          chipStyles.chip,
-          {
-            borderColor: selected ? colors.primary : colors.border,
-            backgroundColor: selected ? colors.primaryLight : 'transparent',
-          },
-        ]}
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        activeOpacity={0.8}>
-        <Text
-          style={[
-            chipStyles.chipText,
-            {color: selected ? colors.primary : colors.textSecondary},
-            selected && {fontWeight: '600'},
-          ]}>
-          {label}
-        </Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
-
-const chipStyles = StyleSheet.create({
-  chip: {
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  chipText: {
-    fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '500',
-  },
-});
-
-// ─── Something Bigger (inline text CTA) ─────────────────────────────────────
-// No card wrapper — just centered text with a tappable link portion.
 
 // ─── FAQ Item for Profile ────────────────────────────────────────────────────
 
@@ -783,73 +612,24 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
   const [activeTab, setActiveTab] = useState('give');
   const scrollRef = useRef<ScrollView>(null);
 
-  // Amount-first Give state
-  const [amountMode, setAmountMode] = useState<'preset' | 'custom'>('preset');
-  const [selectedPreset, setSelectedPreset] = useState(25);
-  const [customAmount, setCustomAmount] = useState('');
-  const [selectedDirection, setSelectedDirection] = useState(DIRECTIONS[0]);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [validationError, setValidationError] = useState('');
-  const effectiveAmount = amountMode === 'preset' ? selectedPreset : (parseInt(customAmount, 10) || 0);
-  const isValidAmount = effectiveAmount >= 10;
-  const isPooled = effectiveAmount > 0 && effectiveAmount < 100;
+  // Needs-based Give state
+  const [giveChoiceVisible, setGiveChoiceVisible] = useState(false);
+  const [selectedNeed, setSelectedNeed] = useState<Need | null>(null);
 
-  // Amount display pulse animation
-  const amountPulse = useRef(new Animated.Value(1)).current;
-  const pulseAmount = useCallback(() => {
-    amountPulse.setValue(0.3);
-    Animated.timing(amountPulse, {toValue: 1, duration: 200, easing: EASE_OUT, useNativeDriver: true}).start();
-  }, [amountPulse]);
-
-  const handlePresetSelect = (value: number) => {
-    setAmountMode('preset');
-    setSelectedPreset(value);
-    setValidationError('');
-    pulseAmount();
+  const handleNeedGive = (need: Need) => {
+    setSelectedNeed(need);
+    setGiveChoiceVisible(true);
   };
 
-  const handleCustomSelect = () => {
-    setAmountMode('custom');
-    setCustomAmount('');
-    setValidationError('');
-    pulseAmount();
-  };
-
-  const handleCustomAmountChange = (text: string) => {
-    const cleaned = text.replace(/[^0-9]/g, '');
-    const num = parseInt(cleaned, 10);
-    if (!isNaN(num) && num > 10000) {
-      setValidationError('Maximum donation is $10,000');
-      return;
-    }
-    setCustomAmount(cleaned);
-    setValidationError('');
-    pulseAmount();
-  };
-
-  const handleGivePress = () => {
-    if (!isValidAmount) return;
-    if (effectiveAmount < 10) {
-      setValidationError('Minimum donation is $10');
-      triggerHaptic('notificationWarning');
-      return;
-    }
-    setValidationError('');
-    triggerHaptic('impactMedium');
-    handleDonate(effectiveAmount, selectedDirection.label);
+  const handleAmountSelected = (amount: number) => {
+    if (!selectedNeed) return;
+    setGiveChoiceVisible(false);
+    handleDonate(amount, selectedNeed.title);
   };
 
   // Give tab entrance animations
   const heroEntrance = useEntrance(0);
-  const amountEntrance = useEntrance(ENTRANCE_STAGGER);
-  const chipsEntrance = useEntrance(ENTRANCE_STAGGER * 2);
-  const directionEntrance = useEntrance(ENTRANCE_STAGGER * 3);
-  const buttonEntrance = useEntrance(ENTRANCE_STAGGER * 4);
-  const dividerEntrance = useEntrance(ENTRANCE_STAGGER * 6);
-  const ctaEntrance = useEntrance(ENTRANCE_STAGGER * 8);
-
-  // Give button press animation
-  const {scale: giveBtnScale, onPressIn: giveBtnPressIn, onPressOut: giveBtnPressOut} = usePressAnimation();
+  const ctaEntrance = useEntrance(ENTRANCE_STAGGER * (NEEDS.length + 2));
 
   // Tab transition
   const tabOpacity = useRef(new Animated.Value(1)).current;
@@ -926,10 +706,6 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
     setConfirmVisible(false);
   };
 
-  const handleTierDonate = () => {
-    handleDonate(25, 'Neighbors experiencing homelessness');
-  };
-
   return (
     <View style={[styles.container, {backgroundColor: colors.background}]}>
       {/* Header */}
@@ -950,107 +726,21 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
           showsVerticalScrollIndicator={false}>
           {activeTab === 'give' && (
             <>
-              {/* Page label */}
+              {/* Tagline */}
               <Animated.View style={[styles.heroArea, {opacity: heroEntrance.opacity, transform: [{translateY: heroEntrance.translateY}]}]}>
-                <Text style={[styles.heroLabel, {color: colors.textTertiary}]}>Give</Text>
-              </Animated.View>
-
-              {/* Amount display (hero) */}
-              <Animated.View style={[giveStyles.amountDisplay, {opacity: amountEntrance.opacity, transform: [{translateY: amountEntrance.translateY}]}]}>
-                <Animated.View style={[giveStyles.amountRow, {opacity: amountPulse}]}>
-                  <Text style={[giveStyles.dollarSign, {color: colors.textTertiary}]}>$</Text>
-                  {amountMode === 'custom' ? (
-                    <TextInput
-                      style={[giveStyles.amountHero, {color: colors.textPrimary}]}
-                      value={customAmount}
-                      onChangeText={handleCustomAmountChange}
-                      keyboardType="numeric"
-                      placeholder="0"
-                      placeholderTextColor={colors.textTertiary}
-                      autoFocus
-                    />
-                  ) : (
-                    <Text style={[giveStyles.amountHero, {color: colors.textPrimary}]}>
-                      {effectiveAmount}
-                    </Text>
-                  )}
-                </Animated.View>
-              </Animated.View>
-
-              {/* Preset chips */}
-              <Animated.View style={[giveStyles.chipsRow, {opacity: chipsEntrance.opacity, transform: [{translateY: chipsEntrance.translateY}]}]}>
-                {PRESET_AMOUNTS.map(value => (
-                  <PresetChip
-                    key={value}
-                    label={`$${value}`}
-                    selected={amountMode === 'preset' && selectedPreset === value}
-                    onPress={() => handlePresetSelect(value)}
-                  />
-                ))}
-                <PresetChip
-                  label="Other"
-                  selected={amountMode === 'custom'}
-                  onPress={handleCustomSelect}
-                />
-              </Animated.View>
-
-              {/* Validation error */}
-              {validationError ? (
-                <Text style={[giveStyles.errorText, {color: colors.error}]}>{validationError}</Text>
-              ) : null}
-
-              {/* Direction picker */}
-              <Animated.View style={[giveStyles.directionWrap, {opacity: directionEntrance.opacity, transform: [{translateY: directionEntrance.translateY}]}]}>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    setShowDropdown(true);
-                    triggerHaptic('impactLight');
-                  }}>
-                  <GlassCard variant="secondary">
-                    <View style={giveStyles.directionRow}>
-                      <Text style={[giveStyles.directionLabel, {color: colors.textTertiary}]}>Giving toward</Text>
-                      <Text style={[giveStyles.directionValue, {color: colors.textPrimary}]}>{selectedDirection.label}</Text>
-                      <ChevronDownIcon color={colors.textSecondary} />
-                    </View>
-                  </GlassCard>
-                </TouchableOpacity>
-              </Animated.View>
-
-              {/* Give button */}
-              <Animated.View style={[giveStyles.buttonWrap, {opacity: buttonEntrance.opacity, transform: [{translateY: buttonEntrance.translateY}, {scale: giveBtnScale}]}]}>
-                <TouchableOpacity
-                  style={[
-                    giveStyles.giveButton,
-                    {backgroundColor: colors.primary, shadowColor: colors.shadow},
-                    !isValidAmount && {opacity: 0.4},
-                  ]}
-                  onPress={handleGivePress}
-                  onPressIn={isValidAmount ? giveBtnPressIn : undefined}
-                  onPressOut={isValidAmount ? giveBtnPressOut : undefined}
-                  activeOpacity={isValidAmount ? 0.8 : 1}
-                  disabled={!isValidAmount}>
-                  <Text style={[giveStyles.giveButtonText, {color: colors.textOnPrimary}]}>
-                    {isValidAmount ? `Give $${effectiveAmount}` : 'Give Now'}
-                  </Text>
-                </TouchableOpacity>
-                <Text style={[giveStyles.subtext, {color: colors.textTertiary, opacity: isPooled ? 1 : isValidAmount ? 1 : 0}]}>
-                  {isPooled
-                    ? 'Under $100? Your gift combines with others for bigger impact.'
-                    : 'Your full gift goes to the need. Zero fees.'}
+                <Text style={[styles.heroTagline, {color: colors.textTertiary}]}>
+                  documenting kindness, creating connections
                 </Text>
               </Animated.View>
 
-              {/* "or" divider */}
-              <Animated.View style={[giveStyles.orDivider, {opacity: dividerEntrance.opacity, transform: [{translateY: dividerEntrance.translateY}]}]}>
-                <View style={[giveStyles.orLine, {backgroundColor: colors.border}]} />
-                <Text style={[giveStyles.orText, {color: colors.textTertiary}]}>or</Text>
-                <View style={[giveStyles.orLine, {backgroundColor: colors.border}]} />
-              </Animated.View>
-
-              {/* Tier spotlight */}
-              {TIERS.map(tier => (
-                <TierSpotlight key={tier.id} tier={tier} delay={350} onDonate={handleTierDonate} />
+              {/* Need cards */}
+              {NEEDS.map((need, index) => (
+                <NeedCard
+                  key={need.id}
+                  need={need}
+                  delay={ENTRANCE_STAGGER * (index + 1)}
+                  onGive={handleNeedGive}
+                />
               ))}
 
               {/* Something bigger — inline text */}
@@ -1067,43 +757,6 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
                   <Text style={[giveStyles.biggerLink, {color: colors.primary}]}>Let's talk {'\u2192'}</Text>
                 </TouchableOpacity>
               </Animated.View>
-
-              {/* Direction dropdown modal */}
-              <Modal visible={showDropdown} transparent animationType="fade" onRequestClose={() => setShowDropdown(false)}>
-                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowDropdown(false)}>
-                  <GlassCard>
-                    <View style={styles.dropdownModalContent}>
-                      <Text style={[styles.dropdownHeader, {color: colors.textTertiary}]}>Choose a direction</Text>
-                      <FlatList
-                        data={DIRECTIONS}
-                        keyExtractor={item => item.id}
-                        renderItem={({item}) => (
-                          <TouchableOpacity
-                            style={[
-                              styles.dropdownItem,
-                              item.id === selectedDirection.id && {backgroundColor: colors.primaryLight},
-                            ]}
-                            onPress={() => {
-                              setSelectedDirection(item);
-                              setShowDropdown(false);
-                              triggerHaptic('impactLight');
-                            }}
-                            activeOpacity={0.7}>
-                            <Text
-                              style={[
-                                styles.dropdownItemText,
-                                {color: colors.textPrimary},
-                                item.id === selectedDirection.id && {color: colors.primary, fontWeight: '600'},
-                              ]}>
-                              {item.label}
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                      />
-                    </View>
-                  </GlassCard>
-                </TouchableOpacity>
-              </Modal>
             </>
           )}
 
@@ -1161,6 +814,14 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
         ))}
       </View>
 
+      {/* Give Choice Modal */}
+      <GiveChoiceModal
+        visible={giveChoiceVisible}
+        need={selectedNeed}
+        onSelectAmount={handleAmountSelected}
+        onClose={() => setGiveChoiceVisible(false)}
+      />
+
       {/* Confirm Modal */}
       <ConfirmModal
         visible={confirmVisible}
@@ -1193,11 +854,17 @@ const styles = StyleSheet.create({
   },
   headerBrand: {...Typography.brand},
   scrollView: {flex: 1},
-  scrollContent: {paddingHorizontal: 24, paddingTop: 28},
+  scrollContent: {paddingHorizontal: 24, paddingTop: 24},
 
   // Hero
-  heroArea: {marginBottom: 8, alignItems: 'center'},
-  heroLabel: {...Typography.label, textTransform: 'uppercase' as const, letterSpacing: 2, fontSize: 13},
+  heroArea: {marginBottom: 24, alignItems: 'center'},
+  heroTagline: {
+    fontSize: 15,
+    fontStyle: 'italic' as const,
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    fontWeight: '300',
+    letterSpacing: 0.3,
+  },
 
   // (Give tab styles moved to giveStyles below)
 
@@ -1228,63 +895,13 @@ const styles = StyleSheet.create({
   navLabel: {fontSize: Typography.caption.fontSize, fontWeight: '500', marginTop: 4, letterSpacing: Typography.caption.letterSpacing},
   navActiveDot: {width: 20, height: 4, borderRadius: 2, marginTop: 4},
 
-  // Dropdown modal
-  modalOverlay: {flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', paddingHorizontal: 40},
-  dropdownModalContent: {paddingVertical: 8},
-  dropdownHeader: {...Typography.label, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4},
-  dropdownItem: {paddingHorizontal: 20, paddingVertical: 16},
-  dropdownItemText: {fontSize: Typography.body.fontSize},
 });
 
 // ─── Give Tab Styles ──────────────────────────────────────────────────────────
 
 const giveStyles = StyleSheet.create({
-  // Amount display (hero)
-  amountDisplay: {alignItems: 'center', marginBottom: 24},
-  amountRow: {flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center'},
-  dollarSign: {fontSize: 32, fontWeight: '200', marginRight: 4},
-  amountHero: {
-    fontSize: 64,
-    fontWeight: '200',
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
-    minWidth: 80,
-    textAlign: 'center',
-    padding: 0,
-  },
-
-  // Preset chips
-  chipsRow: {flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 24},
-
-  // Validation error
-  errorText: {fontSize: Typography.caption.fontSize, fontWeight: '500', textAlign: 'center', marginTop: -16, marginBottom: 16},
-
-  // Direction picker
-  directionWrap: {marginBottom: 20},
-  directionRow: {flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14},
-  directionLabel: {fontSize: Typography.caption.fontSize, letterSpacing: Typography.caption.letterSpacing, marginRight: 6},
-  directionValue: {fontSize: Typography.body.fontSize, fontWeight: '500', flex: 1},
-
-  // Give button
-  buttonWrap: {marginBottom: 28},
-  giveButton: {
-    borderRadius: 14,
-    paddingVertical: 18,
-    alignItems: 'center',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  giveButtonText: {...Typography.buttonLarge},
-  subtext: {...Typography.caption, marginTop: 8, textAlign: 'center', lineHeight: 18},
-
-  // "or" divider
-  orDivider: {flexDirection: 'row', alignItems: 'center', marginBottom: 24},
-  orLine: {flex: 1, height: 1},
-  orText: {fontSize: Typography.caption.fontSize, marginHorizontal: 16, fontWeight: '500'},
-
-  // Something bigger — inline text
-  biggerWrap: {flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 8, marginBottom: 16},
-  biggerText: {fontSize: Typography.bodySmall.fontSize},
-  biggerLink: {fontSize: Typography.bodySmall.fontSize, fontWeight: '600'},
+  // Something bigger CTA
+  biggerWrap: {flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 24, marginBottom: 32},
+  biggerText: {fontSize: Typography.body.fontSize, fontWeight: '300'},
+  biggerLink: {fontSize: Typography.body.fontSize, fontWeight: '600'},
 });
