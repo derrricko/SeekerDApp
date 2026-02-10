@@ -9,6 +9,7 @@ export const Typography = {
     fontSize: 44,
     fontWeight: '200' as TextStyle['fontWeight'],
     letterSpacing: 2,
+    lineHeight: 52,
     fontFamily: DISPLAY_FONT,
   },
   // Heading — section titles, card amounts
@@ -16,6 +17,7 @@ export const Typography = {
     fontSize: 32,
     fontWeight: '200' as TextStyle['fontWeight'],
     letterSpacing: 1,
+    lineHeight: 40,
     fontFamily: SYSTEM_FONT,
   },
   // Subheading — card titles, modal titles
@@ -23,6 +25,7 @@ export const Typography = {
     fontSize: 22,
     fontWeight: '300' as TextStyle['fontWeight'],
     letterSpacing: 0.5,
+    lineHeight: 30,
     fontFamily: SYSTEM_FONT,
   },
   // Body — primary content text, buttons
@@ -44,6 +47,7 @@ export const Typography = {
     fontSize: 12,
     fontWeight: '400' as TextStyle['fontWeight'],
     letterSpacing: 0.3,
+    lineHeight: 16,
     fontFamily: SYSTEM_FONT,
   },
   // Brand — specifically for "Glimpse" brand name in headers
@@ -51,6 +55,7 @@ export const Typography = {
     fontSize: 24,
     fontWeight: '500' as TextStyle['fontWeight'],
     letterSpacing: 4,
+    lineHeight: 30,
     fontFamily: DISPLAY_FONT,
   },
   // Button text styles

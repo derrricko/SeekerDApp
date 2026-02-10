@@ -9,27 +9,27 @@ export const LightColors = {
   backgroundSecondary: '#EFE3D5',
 
   // Glass effects
-  glass: 'rgba(255, 255, 255, 0.7)',
+  glass: 'rgba(255, 255, 255, 0.55)',
   glassBorder: 'rgba(72, 51, 38, 0.12)',
-  glassHighlight: 'rgba(255, 255, 255, 0.9)',
+  glassHighlight: 'rgba(255, 255, 255, 0.75)',
 
   // Primary palette (terracotta)
-  primary: '#D07A4F',
-  primaryLight: 'rgba(208, 122, 79, 0.18)',
+  primary: '#B8663C',
+  primaryLight: 'rgba(184, 102, 60, 0.16)',
   accent: '#355C5A',
   accentLight: 'rgba(53, 92, 90, 0.12)',
-  secondary: '#2F7B6D',
-  secondaryLight: 'rgba(47, 123, 109, 0.15)',
+  secondary: '#B89B5E',
+  secondaryLight: 'rgba(184, 155, 94, 0.15)',
 
   // Semantic colors
   success: '#3A9B6E',
   warning: '#E39A3B',
-  error: '#D35B4C',
+  error: '#C43D3D',
 
   // Text colors
   textPrimary: '#2A1C12',
   textSecondary: '#5C4B40',
-  textTertiary: '#8B776B',
+  textTertiary: '#6E5F54',
   textOnPrimary: '#FFFFFF',
 
   // Borders & Shadows
@@ -50,20 +50,20 @@ export const DarkColors = {
   // Glass effects
   glass: 'rgba(32, 26, 22, 0.7)',
   glassBorder: 'rgba(255, 255, 255, 0.12)',
-  glassHighlight: 'rgba(255, 255, 255, 0.12)',
+  glassHighlight: 'rgba(255, 255, 255, 0.20)',
 
   // Primary palette (terracotta)
   primary: '#E29A73',
   primaryLight: 'rgba(226, 154, 115, 0.2)',
   accent: '#89C2B5',
   accentLight: 'rgba(137, 194, 181, 0.18)',
-  secondary: '#79B19F',
-  secondaryLight: 'rgba(121, 177, 159, 0.18)',
+  secondary: '#D4B87A',
+  secondaryLight: 'rgba(212, 184, 122, 0.18)',
 
   // Semantic colors
   success: '#52B788',
   warning: '#F2B366',
-  error: '#E07A6A',
+  error: '#E06060',
 
   // Text colors
   textPrimary: '#F8F2EA',
