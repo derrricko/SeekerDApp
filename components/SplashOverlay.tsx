@@ -35,10 +35,16 @@ export default function SplashOverlay({onComplete}: SplashOverlayProps) {
   // Calculate positions
   const headerCenterY = insets.top + 12 + Typography.brand.lineHeight / 2;
   const screenCenterY = SCREEN_HEIGHT / 2;
-  const translateDistance = screenCenterY - headerCenterY;
 
   // Scale from 52px to 24px brand size
   const brandSizeScale = 24 / 52; // ~0.462
+
+  // Compensate for scale-around-center: when text shrinks from 52→24px,
+  // the visual center shifts up by half the height difference * (1 - scale)
+  // This offset prevents the "drift then snap" at the end of the animation
+  const brandHeight = 52 * 1.2; // approximate rendered height with line spacing
+  const scaleOffset = (brandHeight * (1 - brandSizeScale)) / 2;
+  const translateDistance = screenCenterY - headerCenterY - scaleOffset;
 
   useEffect(() => {
     // Phase 1: Brand entrance (0–1000ms)
@@ -63,9 +69,9 @@ export default function SplashOverlay({onComplete}: SplashOverlayProps) {
       // Drive the transition progress 0→1
       Animated.timing(transitionProgress, {
         toValue: 1,
-        duration: 1600,
+        duration: 1400,
         delay: 2800,
-        easing: Easing.bezier(0.25, 0.1, 0.25, 1), // smooth ease
+        easing: Easing.out(Easing.quad), // clean deceleration, no stall at end
         useNativeDriver: true,
       }),
       // Art fades out (starts with transition, finishes earlier)
@@ -76,18 +82,20 @@ export default function SplashOverlay({onComplete}: SplashOverlayProps) {
         easing: EASE_OUT,
         useNativeDriver: true,
       }),
-      // Overlay background fades out (matches transition)
+      // Overlay background fades out (matches transition duration)
       Animated.timing(overlayOpacity, {
         toValue: 0,
-        duration: 1600,
+        duration: 1400,
         delay: 2800,
-        easing: EASE_OUT,
+        easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
     ]);
 
     Animated.parallel([brandEntrance, autoTransition]).start(() => {
-      onComplete();
+      // Delay removal by one frame so the native driver can
+      // composite the final position before React unmounts
+      requestAnimationFrame(() => onComplete());
     });
 
     return () => {
