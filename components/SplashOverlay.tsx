@@ -33,9 +33,6 @@ export default function SplashOverlay({onComplete}: SplashOverlayProps) {
   const transitionProgress = useRef(new Animated.Value(0)).current;
 
   // Calculate positions
-  // Brand starts at screen center, ends at header center
-  // Header: paddingTop = insets.top + 12, paddingBottom = 12
-  // Brand lineHeight = 30, so center of brand in header = insets.top + 12 + 15
   const headerCenterY = insets.top + 12 + Typography.brand.lineHeight / 2;
   const screenCenterY = SCREEN_HEIGHT / 2;
   const translateDistance = screenCenterY - headerCenterY;
@@ -44,46 +41,46 @@ export default function SplashOverlay({onComplete}: SplashOverlayProps) {
   const brandSizeScale = 24 / 52; // ~0.462
 
   useEffect(() => {
-    // Phase 1: Brand entrance (0–800ms)
+    // Phase 1: Brand entrance (0–1000ms)
     const brandEntrance = Animated.parallel([
       Animated.timing(brandOpacity, {
         toValue: 1,
-        duration: 800,
+        duration: 1000,
         easing: EASE_OUT,
         useNativeDriver: true,
       }),
       Animated.timing(brandScale, {
         toValue: 1,
-        duration: 800,
+        duration: 1000,
         easing: EASE_OUT,
         useNativeDriver: true,
       }),
     ]);
 
-    // Phase 2: Hold (800–2000ms) — just a delay
-    // Phase 3: Auto-transition (2000–2800ms)
+    // Phase 2: Hold (1000–2800ms) — longer pause to breathe
+    // Phase 3: Slow auto-transition (2800–4400ms) — 1600ms duration
     const autoTransition = Animated.parallel([
       // Drive the transition progress 0→1
       Animated.timing(transitionProgress, {
         toValue: 1,
-        duration: 800,
-        delay: 2000,
-        easing: EASE_OUT,
+        duration: 1600,
+        delay: 2800,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1), // smooth ease
         useNativeDriver: true,
       }),
-      // Art fades out
+      // Art fades out (starts with transition, finishes earlier)
       Animated.timing(artOpacity, {
         toValue: 0,
-        duration: 600,
-        delay: 2000,
+        duration: 1000,
+        delay: 2800,
         easing: EASE_OUT,
         useNativeDriver: true,
       }),
-      // Overlay background fades out
+      // Overlay background fades out (matches transition)
       Animated.timing(overlayOpacity, {
         toValue: 0,
-        duration: 800,
-        delay: 2000,
+        duration: 1600,
+        delay: 2800,
         easing: EASE_OUT,
         useNativeDriver: true,
       }),
@@ -127,9 +124,9 @@ export default function SplashOverlay({onComplete}: SplashOverlayProps) {
         },
       ]}
       pointerEvents="none">
-      {/* Art frame */}
+      {/* Art frame — centered in screen */}
       <Animated.View
-        style={[styles.artContainer, {opacity: artOpacity}]}
+        style={[styles.artWrapper, {opacity: artOpacity}]}
         pointerEvents="none">
         <View
           style={[
@@ -157,7 +154,7 @@ export default function SplashOverlay({onComplete}: SplashOverlayProps) {
         </View>
       </Animated.View>
 
-      {/* Brand text — centered, animates up to header */}
+      {/* Brand text — overlaid on art, animates up to header */}
       <Animated.View
         style={[
           styles.brandContainer,
@@ -184,19 +181,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 100,
   },
-  artContainer: {
+  artWrapper: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  artFrame: {
-    position: 'absolute',
-    top: 100,
     left: 24,
     right: 24,
-    height: 220,
+    alignSelf: 'center',
+    // Vertically centered — offset slightly above center so brand text sits over the lower portion
+    top: SCREEN_HEIGHT / 2 - 140,
+    height: 240,
+  },
+  artFrame: {
+    flex: 1,
     borderRadius: 24,
     borderWidth: 1,
     overflow: 'hidden',
