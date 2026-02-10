@@ -352,7 +352,7 @@ function ConfirmModal({
                     <Text style={[modalStyles.detailValue, {color: colors.textPrimary}]}>{direction}</Text>
                   </View>
                   <Text style={[modalStyles.disclaimer, {color: colors.textTertiary}]}>
-                    This will open your wallet to sign the transaction.
+                    100% of your gift goes to the need. Any amount raised beyond the goal will be applied to the next cause or refunded.
                   </Text>
                   <View style={modalStyles.buttonRow}>
                     <TouchableOpacity
@@ -738,6 +738,7 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
                 <NeedCard
                   key={need.id}
                   need={need}
+                  index={index}
                   delay={ENTRANCE_STAGGER * (index + 1)}
                   onGive={handleNeedGive}
                 />

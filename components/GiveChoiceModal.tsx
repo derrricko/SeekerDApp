@@ -166,6 +166,11 @@ export default function GiveChoiceModal({
                 </View>
               )}
 
+              {/* Funding note */}
+              <Text style={[modalStyles.fundingNote, {color: colors.textTertiary}]}>
+                Chip-ins combine to fully fund the need. Any excess goes to the next cause.
+              </Text>
+
               {/* Chip In button — appears as text until amount selected */}
               {isChipInValid ? (
                 <TouchableOpacity
@@ -271,5 +276,11 @@ const modalStyles = StyleSheet.create({
   chipInHint: {
     fontSize: Typography.caption.fontSize,
     fontWeight: '400',
+  },
+  fundingNote: {
+    fontSize: Typography.caption.fontSize,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 16,
   },
 });
