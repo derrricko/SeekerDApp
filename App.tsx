@@ -16,7 +16,7 @@ import OnboardingModal from './components/OnboardingModal';
 
 function AppContent() {
   const {isDark, colors} = useTheme();
-  const [showSplash, setShowSplash] = useState(true);
+  const [splashDone, setSplashDone] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
@@ -31,8 +31,8 @@ function AppContent() {
       .catch(() => setIsFirstLaunch(false));
   }, []);
 
-  const handleSplashComplete = () => {
-    setShowSplash(false);
+  const handleSplashDone = () => {
+    setSplashDone(true);
     if (isFirstLaunch) {
       setTimeout(() => setShowOnboarding(true), 100);
     }
@@ -46,8 +46,8 @@ function AppContent() {
         translucent
       />
       <View style={[styles.container, {backgroundColor: colors.background}]}>
-        <HomeScreen hideHeaderBrand={showSplash} />
-        {showSplash && <SplashOverlay onComplete={handleSplashComplete} />}
+        <HomeScreen hideHeaderBrand />
+        <SplashOverlay onAnimationDone={handleSplashDone} />
         {showOnboarding && (
           <OnboardingModal onComplete={() => setShowOnboarding(false)} />
         )}
