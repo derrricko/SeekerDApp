@@ -119,6 +119,12 @@ export const FAQ_DATA = [
       'For our Seeker launch: zero. No platform fees. No admin cuts. Your full gift goes to the need.',
   },
   {
+    id: 'overfunding',
+    question: 'What if more is raised than a need costs?',
+    answer:
+      "Every dollar goes to work. If a need is fully funded and there\u2019s money left over, the excess is applied to the next verified need in the queue. If you\u2019d prefer a refund, just reach out\u2014we\u2019ll take care of it.",
+  },
+  {
     id: 'tax',
     question: 'Is my donation tax-deductible?',
     answer: 'Yes.',
