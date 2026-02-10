@@ -49,7 +49,7 @@ export const DarkColors = {
 
   // Glass effects
   glass: 'rgba(32, 26, 22, 0.7)',
-  glassBorder: 'rgba(255, 255, 255, 0.08)',
+  glassBorder: 'rgba(255, 255, 255, 0.12)',
   glassHighlight: 'rgba(255, 255, 255, 0.12)',
 
   // Primary palette (terracotta)
@@ -72,7 +72,7 @@ export const DarkColors = {
   textOnPrimary: '#1A120D',
 
   // Borders & Shadows
-  border: 'rgba(255, 255, 255, 0.08)',
+  border: 'rgba(255, 255, 255, 0.10)',
   shadow: 'rgba(0, 0, 0, 0.45)',
   shadowStrong: 'rgba(0, 0, 0, 0.6)',
 
