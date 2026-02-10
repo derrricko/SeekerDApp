@@ -9,10 +9,8 @@ import {
   LayoutAnimation,
 } from 'react-native';
 import {useTheme, Typography} from '../../components/theme';
-import {useAuthorization} from '../../components/providers/AuthorizationProvider';
+import {useWallet} from '../../components/providers/WalletProvider';
 import {FAQ_DATA} from '../../data/content';
-import {transact, Web3MobileWallet} from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
-import {APP_IDENTITY} from '../../components/providers/AuthorizationProvider';
 import GlassCard from '../../components/GlassCard';
 import {smoothLayout} from '../../utils/animations';
 import {triggerHaptic} from '../../utils/haptics';
@@ -105,24 +103,28 @@ function FAQItem({item, isExpanded, onToggle}: FAQItemProps) {
 
 export default function ProfileTab() {
   const {colors, mode, toggleMode} = useTheme();
-  const {selectedAccount} = useAuthorization();
+  const {publicKey, connected, connect, disconnect} = useWallet();
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
   const handleConnect = async () => {
     triggerHaptic('impactMedium');
     try {
-      await transact(async (wallet: Web3MobileWallet) => {
-        await wallet.authorize({
-          cluster: 'devnet',
-          identity: APP_IDENTITY,
-        });
-      });
+      await connect();
     } catch {
       // User cancelled or error
     }
   };
 
-  const walletAddress = selectedAccount?.publicKey?.toBase58();
+  const handleDisconnect = async () => {
+    triggerHaptic('impactMedium');
+    try {
+      await disconnect();
+    } catch {
+      // Error
+    }
+  };
+
+  const walletAddress = publicKey?.toBase58();
   const shortAddress = walletAddress
     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
     : null;
@@ -133,13 +135,19 @@ export default function ProfileTab() {
       <GlassCard style={profileStyles.cardSpacing}>
         <View style={profileStyles.cardContent}>
           <Text style={[profileStyles.cardTitle, {color: colors.textPrimary}]}>Wallet</Text>
-          {selectedAccount ? (
+          {connected ? (
             <>
               <View style={profileStyles.walletRow}>
                 <View style={[profileStyles.statusDot, {backgroundColor: colors.success}]} />
                 <Text style={[profileStyles.walletStatus, {color: colors.textSecondary}]}>Connected</Text>
               </View>
               <Text style={[profileStyles.walletAddress, {color: colors.textTertiary}]}>{shortAddress}</Text>
+              <TouchableOpacity
+                style={[profileStyles.disconnectButton, {borderColor: colors.border}]}
+                onPress={handleDisconnect}
+                activeOpacity={0.8}>
+                <Text style={[profileStyles.disconnectText, {color: colors.textSecondary}]}>Disconnect</Text>
+              </TouchableOpacity>
             </>
           ) : (
             <>
@@ -227,6 +235,8 @@ const profileStyles = StyleSheet.create({
   walletAddress: {fontSize: Typography.caption.fontSize, fontFamily: 'monospace', marginBottom: 4, letterSpacing: Typography.caption.letterSpacing},
   connectButton: {paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 12},
   connectText: {...Typography.buttonLarge},
+  disconnectButton: {paddingVertical: 12, borderRadius: 12, borderWidth: 1, alignItems: 'center', marginTop: 12},
+  disconnectText: {fontSize: Typography.bodySmall.fontSize, fontWeight: '500'},
   themeRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: 14},
   themeLabel: {...Typography.label, marginLeft: 12, flex: 1},
   themeCycle: {...Typography.caption},

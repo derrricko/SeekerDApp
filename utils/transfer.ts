@@ -20,20 +20,16 @@ import {
   transact,
   Web3MobileWallet,
 } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
-import {APP_IDENTITY} from '../components/providers/AuthorizationProvider';
+import {
+  APP_IDENTITY,
+  SOLANA_CLUSTER,
+  USDC_MINT,
+  USDC_DECIMALS,
+  RECIPIENT_WALLET,
+} from '../config/env';
 
-// Devnet USDC mint address
-export const USDC_MINT = new PublicKey(
-  '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
-);
-
-// USDC has 6 decimal places
-export const USDC_DECIMALS = 6;
-
-// Recipient wallet address (org's USDC wallet — replace with your actual address)
-export const RECIPIENT_WALLET = new PublicKey(
-  '11111111111111111111111111111111', // TODO: Replace with actual org wallet
-);
+// Re-export for consumers
+export {USDC_MINT, USDC_DECIMALS, RECIPIENT_WALLET};
 
 /**
  * Convert a dollar amount to USDC base units (6 decimals)
@@ -118,7 +114,7 @@ export async function transferUSDC(
     async (wallet: Web3MobileWallet) => {
       // Authorize / reauthorize the session
       const authResult = await wallet.authorize({
-        cluster: 'devnet',
+        cluster: SOLANA_CLUSTER,
         identity: APP_IDENTITY,
       });
 

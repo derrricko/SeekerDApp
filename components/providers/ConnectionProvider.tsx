@@ -6,8 +6,9 @@ import React, {
   createContext,
   useContext,
 } from 'react';
+import {SOLANA_CLUSTER} from '../../config/env';
 
-export const RPC_ENDPOINT = 'devnet';
+export const RPC_ENDPOINT = SOLANA_CLUSTER;
 
 export interface ConnectionProviderProps {
   children: ReactNode;

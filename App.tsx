@@ -1,14 +1,13 @@
-import {
-  ConnectionProvider,
-  RPC_ENDPOINT,
-} from './components/providers/ConnectionProvider';
+import {ConnectionProvider} from './components/providers/ConnectionProvider';
+import {WalletProvider} from './components/providers/WalletProvider';
+import {AuthProvider} from './components/providers/AuthProvider';
 import {clusterApiUrl} from '@solana/web3.js';
 import React, {useEffect, useState} from 'react';
 import {StyleSheet, StatusBar, View} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
-import {AuthorizationProvider} from './components/providers/AuthorizationProvider';
 import {ThemeProvider, useTheme} from './components/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {SOLANA_CLUSTER} from './config/env';
 
 import HomeScreen from './screens/HomeScreen';
 import SplashOverlay from './components/SplashOverlay';
@@ -62,10 +61,12 @@ export default function App() {
       <ThemeProvider>
         <ConnectionProvider
           config={{commitment: 'processed'}}
-          endpoint={clusterApiUrl(RPC_ENDPOINT)}>
-          <AuthorizationProvider>
-            <AppContent />
-          </AuthorizationProvider>
+          endpoint={clusterApiUrl(SOLANA_CLUSTER)}>
+          <WalletProvider>
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
+          </WalletProvider>
         </ConnectionProvider>
       </ThemeProvider>
     </SafeAreaProvider>

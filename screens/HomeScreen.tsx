@@ -13,13 +13,12 @@ import {
 import {BlurView} from '@react-native-community/blur';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTheme, Typography} from '../components/theme';
-import {useAuthorization} from '../components/providers/AuthorizationProvider';
+import {useWallet} from '../components/providers/WalletProvider';
 import {useConnection} from '../components/providers/ConnectionProvider';
-import {NEEDS} from '../data/content';
+import {useNeeds} from '../hooks/useNeeds';
 import type {Need} from '../data/content';
 import {transferUSDC, RECIPIENT_WALLET} from '../utils/transfer';
-import {transact, Web3MobileWallet} from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
-import {APP_IDENTITY} from '../components/providers/AuthorizationProvider';
+import {recordTransaction} from '../services/transactions';
 import NeedCard from '../components/NeedCard';
 import GiveChoiceModal from '../components/GiveChoiceModal';
 import OnboardingModal from '../components/OnboardingModal';
@@ -43,8 +42,9 @@ interface HomeScreenProps {
 export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
   const insets = useSafeAreaInsets();
   const {colors, isDark} = useTheme();
-  const {selectedAccount, authorizeSession} = useAuthorization();
+  const {publicKey, connect} = useWallet();
   const {connection} = useConnection();
+  const {needs} = useNeeds();
   const [activeTab, setActiveTab] = useState('give');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -66,7 +66,7 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
 
   // Give tab entrance animations
   const heroEntrance = useEntrance(0);
-  const ctaEntrance = useEntrance(ENTRANCE_STAGGER * (NEEDS.length + 2));
+  const ctaEntrance = useEntrance(ENTRANCE_STAGGER * (needs.length + 2));
 
   // Tab transition
   const tabOpacity = useRef(new Animated.Value(1)).current;
@@ -108,17 +108,13 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
     setTxError(null);
 
     try {
-      let pubKey = selectedAccount?.publicKey;
+      let pubKey = publicKey;
 
       if (!pubKey) {
-        const account = await transact(async (wallet: Web3MobileWallet) => {
-          return await authorizeSession(wallet);
-        });
-        pubKey = account?.publicKey;
-      }
-
-      if (!pubKey) {
-        setTxError('Please connect your wallet first.');
+        await connect();
+        // publicKey updates asynchronously via state — but we need it now.
+        // Re-read won't work in the same render. Ask user to retry.
+        setTxError('Wallet connected. Please tap Send Gift again.');
         setTxLoading(false);
         return;
       }
@@ -131,6 +127,14 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
       );
       setTxSignature(signature);
       setTxSuccess(true);
+
+      // Record transaction in Supabase (fire-and-forget — tx is already on-chain)
+      recordTransaction(
+        pubKey.toBase58(),
+        signature,
+        confirmAmount,
+        selectedNeed?.id,
+      ).catch(() => {});
     } catch (err: any) {
       setTxError(err?.message || 'Transaction failed. Please try again.');
     } finally {
@@ -177,7 +181,7 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
               </Animated.View>
 
               {/* Need cards */}
-              {NEEDS.map((need, index) => (
+              {needs.map((need, index) => (
                 <NeedCard
                   key={need.id}
                   need={need}
