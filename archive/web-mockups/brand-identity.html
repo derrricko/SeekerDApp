@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLIMPSE — Brand Identity System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   GLIMPSE BRAND IDENTITY SYSTEM
+   A portfolio-quality design system presentation
+   ============================================================ */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --purple-light: #5856D6;
+  --purple-dark: #BF5AF2;
+  --teal-light: #32D4DE;
+  --teal-dark: #40E0D0;
+  --bg-light: #F0F4F8;
+  --bg-dark: #0A1628;
+  --text-primary-light: #1A202C;
+  --text-secondary-light: #4A5568;
+  --text-tertiary-light: #718096;
+  --text-primary-dark: #F7FAFC;
+  --text-secondary-dark: #A0AEC0;
+  --text-tertiary-dark: #718096;
+  --success: #34C759;
+  --success-dark: #30D158;
+  --warning: #FF9500;
+  --warning-dark: #FF9F0A;
+  --error: #FF3B30;
+  --error-dark: #FF453A;
+  --glass-light: rgba(255, 255, 255, 0.65);
+  --glass-dark: rgba(30, 41, 59, 0.65);
+  --glass-border-light: rgba(255, 255, 255, 0.3);
+  --glass-border-dark: rgba(255, 255, 255, 0.08);
+  --canvas: #0A1628;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--canvas);
+  color: var(--text-primary-dark);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle ambient glow */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(ellipse, rgba(88, 86, 214, 0.04) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(10, 22, 40, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.3s ease;
+}
+
+.nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 48px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-brand {
+  font-family: 'Courier Prime', monospace;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 6px;
+  color: var(--text-primary-dark);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary-dark);
+  text-decoration: none;
+  transition: color 0.3s ease;
+  padding: 4px 0;
+  position: relative;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--purple-dark), var(--teal-dark));
+  transition: width 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: var(--text-primary-dark);
+}
+
+.nav-links a:hover::after {
+  width: 100%;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+
+.section {
+  min-height: 100vh;
+  padding: 140px 48px 100px;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.section-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--purple-dark);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-label::before {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--purple-dark);
+}
+
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 48px;
+  font-weight: 300;
+  color: var(--text-primary-dark);
+  line-height: 1.15;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+.section-desc {
+  font-family: 'Courier Prime', monospace;
+  font-size: 13px;
+  color: var(--text-secondary-dark);
+  max-width: 520px;
+  line-height: 1.8;
+  margin-bottom: 64px;
+}
+
+.divider {
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--purple-dark), var(--teal-dark));
+  margin-bottom: 48px;
+  border-radius: 1px;
+}
+
+/* ============================================================
+   HERO SECTION
+   ============================================================ */
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(ellipse, rgba(88, 86, 214, 0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.hero-mark {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 40px;
+  opacity: 0;
+  animation: heroFadeIn 1.6s ease-out 0.3s forwards;
+}
+
+.hero-mark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.hero-brand-line {
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--purple-dark), var(--teal-dark));
+  margin-bottom: 32px;
+  border-radius: 1px;
+  animation: lineGrow 1s ease-out 1.2s forwards;
+}
+
+.hero-wordmark {
+  font-family: 'Courier Prime', monospace;
+  font-size: 48px;
+  font-weight: 400;
+  letter-spacing: 6px;
+  color: var(--text-primary-dark);
+  text-transform: uppercase;
+  opacity: 0;
+  animation: heroFadeIn 1.2s ease-out 0.8s forwards;
+}
+
+.hero-tagline {
+  font-family: 'Courier Prime', monospace;
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--text-secondary-dark);
+  text-transform: uppercase;
+  margin-top: 24px;
+  opacity: 0;
+  animation: heroFadeIn 1s ease-out 1.6s forwards;
+}
+
+.hero-subtitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 300;
+  color: var(--text-tertiary-dark);
+  margin-top: 48px;
+  font-style: italic;
+  opacity: 0;
+  animation: heroFadeIn 1s ease-out 2s forwards;
+}
+
+.hero-scroll {
+  position: absolute;
+  bottom: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  animation: heroFadeIn 1s ease-out 2.4s forwards;
+}
+
+.hero-scroll span {
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-tertiary-dark);
+}
+
+.hero-scroll-arrow {
+  width: 16px;
+  height: 16px;
+  border-right: 1px solid var(--text-tertiary-dark);
+  border-bottom: 1px solid var(--text-tertiary-dark);
+  transform: rotate(45deg);
+  animation: scrollBounce 2.5s ease-in-out infinite;
+}
+
+@keyframes heroFadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes lineGrow {
+  from { width: 0; }
+  to { width: 56px; }
+}
+
+@keyframes scrollBounce {
+  0%, 100% { transform: rotate(45deg) translateY(0); opacity: 0.4; }
+  50% { transform: rotate(45deg) translateY(5px); opacity: 0.8; }
+}
+
+/* ============================================================
+   LOGO SYSTEM
+   ============================================================ */
+
+.logo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-bottom: 64px;
+}
+
+.logo-card {
+  border-radius: 16px;
+  padding: 48px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.logo-card-dark {
+  background: var(--bg-dark);
+}
+
+.logo-card-light {
+  background: var(--bg-light);
+}
+
+.logo-card-gradient {
+  background: linear-gradient(135deg, var(--purple-dark), var(--teal-dark));
+}
+
+.logo-card-label {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+
+.logo-card-dark .logo-card-label { color: var(--text-secondary-dark); }
+.logo-card-light .logo-card-label { color: var(--text-secondary-light); }
+.logo-card-gradient .logo-card-label { color: rgba(255, 255, 255, 0.7); }
+
+.g-mark { width: 64px; height: 64px; }
+.g-mark-sm { width: 40px; height: 40px; }
+.g-mark-lg { width: 96px; height: 96px; }
+
+.lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.lockup-line {
+  width: 32px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.lockup-wordmark {
+  font-family: 'Courier Prime', monospace;
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+}
+
+/* Logo don'ts */
+.donts-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-top: 48px;
+}
+
+.dont-card {
+  background: rgba(255, 59, 48, 0.04);
+  border: 1px solid rgba(255, 59, 48, 0.15);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.dont-card svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+}
+
+.dont-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--error-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.dont-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--text-tertiary-dark);
+}
+
+/* Clearspace */
+.clearspace-demo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 64px;
+  margin: 48px 0;
+}
+
+.clearspace-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.clearspace-box::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px dashed rgba(191, 90, 242, 0.3);
+  border-radius: 8px;
+}
+
+.clearspace-label {
+  position: absolute;
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px;
+  color: var(--purple-dark);
+  letter-spacing: 0.1em;
+}
+
+.clearspace-label.top { top: -20px; left: 50%; transform: translateX(-50%); }
+.clearspace-label.right { right: -36px; top: 50%; transform: translateY(-50%) rotate(90deg); }
+
+/* ============================================================
+   COLOR PALETTE
+   ============================================================ */
+
+.color-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+  margin-bottom: 48px;
+}
+
+.color-group-title {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary-dark);
+  margin-bottom: 16px;
+}
+
+.color-swatches {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+.color-swatch {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.swatch-block {
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.swatch-block-lg {
+  width: 200px;
+  height: 120px;
+}
+
+.swatch-name {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--text-primary-dark);
+  font-weight: 700;
+}
+
+.swatch-hex {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  color: var(--text-tertiary-dark);
+}
+
+.swatch-use {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  color: var(--text-tertiary-dark);
+}
+
+/* Gradient showcase */
+.gradient-strip {
+  height: 80px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.gradient-strip-label {
+  position: absolute;
+  bottom: 12px;
+  left: 20px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.1em;
+}
+
+/* Semantic colors */
+.semantic-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.semantic-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.semantic-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.semantic-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.semantic-name {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--text-primary-dark);
+  font-weight: 700;
+}
+
+.semantic-vals {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  color: var(--text-tertiary-dark);
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+
+.type-specimen {
+  margin-bottom: 64px;
+  padding-bottom: 64px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.type-specimen:last-child {
+  border-bottom: none;
+}
+
+.type-family {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--purple-dark);
+  margin-bottom: 24px;
+}
+
+.type-alphabet {
+  font-size: 36px;
+  line-height: 1.4;
+  color: var(--text-primary-dark);
+  margin-bottom: 16px;
+  word-break: break-all;
+}
+
+.type-alphabet-sm {
+  font-size: 20px;
+  color: var(--text-secondary-dark);
+  margin-bottom: 32px;
+}
+
+.type-weights {
+  display: flex;
+  gap: 48px;
+  margin-bottom: 32px;
+}
+
+.type-weight-sample {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.type-weight-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-tertiary-dark);
+}
+
+.type-weight-text {
+  font-size: 28px;
+  color: var(--text-primary-dark);
+}
+
+/* Type scale */
+.type-scale {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 48px;
+}
+
+.scale-row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 32px;
+  align-items: baseline;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.scale-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.scale-size {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--purple-dark);
+  font-weight: 700;
+}
+
+.scale-font {
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px;
+  color: var(--text-tertiary-dark);
+}
+
+.scale-sample {
+  color: var(--text-primary-dark);
+}
+
+/* ============================================================
+   VOICE & TONE
+   ============================================================ */
+
+.voice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+  margin-bottom: 64px;
+}
+
+.voice-card {
+  padding: 32px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.voice-card-title {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-primary-dark);
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+
+.voice-trait {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--text-primary-dark);
+  margin-bottom: 8px;
+}
+
+.voice-trait-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--text-secondary-dark);
+  line-height: 1.6;
+}
+
+.example-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-top: 48px;
+}
+
+.example-card {
+  padding: 28px;
+  border-radius: 16px;
+  position: relative;
+}
+
+.example-do {
+  background: rgba(48, 209, 88, 0.06);
+  border: 1px solid rgba(48, 209, 88, 0.2);
+}
+
+.example-dont {
+  background: rgba(255, 69, 58, 0.06);
+  border: 1px solid rgba(255, 69, 58, 0.2);
+}
+
+.example-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.example-do .example-label { color: var(--success-dark); }
+.example-dont .example-label { color: var(--error-dark); }
+
+.example-text {
+  font-family: 'Courier Prime', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text-primary-dark);
+}
+
+/* Hashtags */
+.hashtag-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 48px;
+}
+
+.hashtag {
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  color: var(--teal-dark);
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(64, 224, 208, 0.06);
+  border: 1px solid rgba(64, 224, 208, 0.15);
+}
+
+/* ============================================================
+   DESIGN SYSTEM
+   ============================================================ */
+
+.ds-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+  margin-bottom: 64px;
+}
+
+.ds-card {
+  padding: 32px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ds-card-title {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary-dark);
+  margin-bottom: 20px;
+}
+
+/* Glass card demos */
+.glass-demo-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+  margin-bottom: 48px;
+}
+
+.glass-demo {
+  border-radius: 20px;
+  padding: 48px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-demo-light {
+  background: var(--bg-light);
+}
+
+.glass-demo-dark {
+  background: var(--bg-dark);
+}
+
+.glass-card-preview {
+  padding: 24px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.glass-card-light {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.glass-card-dark {
+  background: rgba(30, 41, 59, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.glass-card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.glass-card-body {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.glass-card-light .glass-card-title { color: var(--text-primary-light); }
+.glass-card-light .glass-card-body { color: var(--text-secondary-light); }
+.glass-card-dark .glass-card-title { color: var(--text-primary-dark); }
+.glass-card-dark .glass-card-body { color: var(--text-secondary-dark); }
+
+/* Button demos */
+.button-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.btn {
+  font-family: 'Courier Prime', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 12px 24px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: var(--purple-light);
+  color: #FFFFFF;
+  box-shadow: 0 3px 10px rgba(88, 86, 214, 0.3);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 5px 16px rgba(88, 86, 214, 0.4);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--purple-dark);
+  border: 1.5px solid var(--purple-dark);
+}
+
+.btn-teal {
+  background: var(--teal-light);
+  color: #0A1628;
+  box-shadow: 0 3px 10px rgba(50, 212, 222, 0.2);
+}
+
+.btn-disabled {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-tertiary-dark);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Spacing demo */
+.spacing-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.spacing-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.spacing-visual {
+  background: rgba(191, 90, 242, 0.2);
+  border: 1px solid rgba(191, 90, 242, 0.4);
+  border-radius: 4px;
+}
+
+.spacing-val {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  color: var(--text-tertiary-dark);
+}
+
+/* Radius demo */
+.radius-row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.radius-sample {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.radius-box {
+  width: 60px;
+  height: 60px;
+  border: 1.5px solid var(--teal-dark);
+  background: rgba(64, 224, 208, 0.06);
+}
+
+.radius-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px;
+  color: var(--text-tertiary-dark);
+  text-align: center;
+}
+
+/* Spec table */
+.spec-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 24px;
+}
+
+.spec-table th,
+.spec-table td {
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+}
+
+.spec-table th {
+  color: var(--text-tertiary-dark);
+  font-weight: 400;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.spec-table td {
+  color: var(--text-secondary-dark);
+}
+
+.spec-table td:first-child {
+  color: var(--text-primary-dark);
+  font-weight: 700;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.footer {
+  padding: 80px 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.footer-brand {
+  font-family: 'Courier Prime', monospace;
+  font-size: 20px;
+  letter-spacing: 6px;
+  color: var(--text-primary-dark);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.footer-tagline {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--text-tertiary-dark);
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.footer-ref {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text-tertiary-dark);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .section { padding: 100px 24px 60px; }
+  .section-title { font-size: 32px; }
+  .logo-grid { grid-template-columns: 1fr; }
+  .color-row { grid-template-columns: 1fr; }
+  .voice-grid { grid-template-columns: 1fr; }
+  .example-grid { grid-template-columns: 1fr; }
+  .ds-row { grid-template-columns: 1fr; }
+  .glass-demo-container { grid-template-columns: 1fr; }
+  .donts-grid { grid-template-columns: repeat(2, 1fr); }
+  .nav-links { display: none; }
+  .hero-wordmark { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     NAVIGATION
+     ============================================================ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#hero" class="nav-brand">Glimpse</a>
+    <ul class="nav-links">
+      <li><a href="#logo">Logo</a></li>
+      <li><a href="#color">Color</a></li>
+      <li><a href="#typography">Typography</a></li>
+      <li><a href="#voice">Voice</a></li>
+      <li><a href="#system">System</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<section class="hero" id="hero">
+  <div class="hero-mark">
+    <svg viewBox="0 0 64 64" fill="none">
+      <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+      <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="hero-brand-line"></div>
+  <div class="hero-wordmark">GLIMPSE</div>
+  <div class="hero-tagline">Documenting Kindness</div>
+  <div class="hero-subtitle">Brand Identity System &mdash; v1.0</div>
+  <div class="hero-scroll">
+    <span>scroll</span>
+    <div class="hero-scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     LOGO SYSTEM
+     ============================================================ -->
+<section class="section" id="logo">
+  <div class="section-label">01 &mdash; Logo System</div>
+  <div class="section-title">The G Lettermark</div>
+  <div class="section-desc">
+    A broken circle representing a glimpse through an opening &mdash; the moment kindness becomes visible. The horizontal bar draws the eye inward, a quiet invitation to look closer.
+  </div>
+  <div class="divider"></div>
+
+  <!-- Mark / Wordmark / Lockup -->
+  <div class="color-group-title">Primary Variants</div>
+  <div class="logo-grid">
+    <!-- G Mark -->
+    <div class="logo-card logo-card-dark">
+      <span class="logo-card-label">G Mark &mdash; Dark</span>
+      <svg class="g-mark-lg" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+        <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- Wordmark -->
+    <div class="logo-card logo-card-dark">
+      <span class="logo-card-label">Wordmark &mdash; Dark</span>
+      <div style="font-family:'Courier Prime',monospace; font-size:28px; letter-spacing:6px; color:#F7FAFC; text-transform:uppercase;">GLIMPSE</div>
+    </div>
+
+    <!-- Full Lockup -->
+    <div class="logo-card logo-card-dark">
+      <span class="logo-card-label">Lockup &mdash; Dark</span>
+      <div class="lockup">
+        <svg class="g-mark" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+          <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <div class="lockup-line" style="background: linear-gradient(90deg, #BF5AF2, #40E0D0);"></div>
+        <div class="lockup-wordmark" style="color: #F7FAFC;">GLIMPSE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Light mode variants -->
+  <div class="color-group-title">Light Mode</div>
+  <div class="logo-grid">
+    <div class="logo-card logo-card-light">
+      <span class="logo-card-label">G Mark &mdash; Light</span>
+      <svg class="g-mark-lg" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="28" stroke="#5856D6" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+        <line x1="32" y1="32" x2="48" y2="32" stroke="#5856D6" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="logo-card logo-card-light">
+      <span class="logo-card-label">Wordmark &mdash; Light</span>
+      <div style="font-family:'Courier Prime',monospace; font-size:28px; letter-spacing:6px; color:#1A202C; text-transform:uppercase;">GLIMPSE</div>
+    </div>
+    <div class="logo-card logo-card-light">
+      <span class="logo-card-label">Lockup &mdash; Light</span>
+      <div class="lockup">
+        <svg class="g-mark" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="28" stroke="#5856D6" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+          <line x1="32" y1="32" x2="48" y2="32" stroke="#5856D6" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <div class="lockup-line" style="background: linear-gradient(90deg, #5856D6, #32D4DE);"></div>
+        <div class="lockup-wordmark" style="color: #1A202C;">GLIMPSE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gradient variants -->
+  <div class="color-group-title">On Gradient</div>
+  <div class="logo-grid">
+    <div class="logo-card logo-card-gradient">
+      <span class="logo-card-label">G Mark &mdash; Gradient</span>
+      <svg class="g-mark-lg" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="28" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+        <line x1="32" y1="32" x2="48" y2="32" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="logo-card logo-card-gradient">
+      <span class="logo-card-label">Wordmark &mdash; Gradient</span>
+      <div style="font-family:'Courier Prime',monospace; font-size:28px; letter-spacing:6px; color:#FFFFFF; text-transform:uppercase;">GLIMPSE</div>
+    </div>
+    <div class="logo-card logo-card-gradient">
+      <span class="logo-card-label">Lockup &mdash; Gradient</span>
+      <div class="lockup">
+        <svg class="g-mark" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="28" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+          <line x1="32" y1="32" x2="48" y2="32" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <div class="lockup-line" style="background: rgba(255,255,255,0.6);"></div>
+        <div class="lockup-wordmark" style="color: #FFFFFF;">GLIMPSE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clearspace -->
+  <div class="color-group-title" style="margin-top:48px;">Clearspace &amp; Minimum Size</div>
+  <div class="clearspace-demo">
+    <div class="clearspace-box">
+      <span class="clearspace-label top">1x height</span>
+      <span class="clearspace-label right">1x height</span>
+      <svg style="width:80px;height:80px;" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+        <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+      <div style="display:flex;align-items:center;gap:24px;">
+        <div style="text-align:center;">
+          <svg style="width:32px;height:32px;" viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+            <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="3.5" stroke-linecap="round"/>
+          </svg>
+          <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--text-tertiary-dark);margin-top:8px;">32px min</div>
+        </div>
+        <div style="text-align:center;">
+          <svg style="width:24px;height:24px;" viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="4" stroke-linecap="round" stroke-dasharray="140 36"/>
+            <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+          <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--text-tertiary-dark);margin-top:8px;">24px min (icon)</div>
+        </div>
+        <div style="text-align:center;opacity:0.35;">
+          <svg style="width:16px;height:16px;" viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="28" stroke="#FF453A" stroke-width="5" stroke-linecap="round" stroke-dasharray="140 36"/>
+            <line x1="32" y1="32" x2="48" y2="32" stroke="#FF453A" stroke-width="5" stroke-linecap="round"/>
+          </svg>
+          <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--error-dark);margin-top:8px;">Too small</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logo don'ts -->
+  <div class="color-group-title" style="margin-top:48px;">Usage Don'ts</div>
+  <div class="donts-grid">
+    <div class="dont-card">
+      <svg viewBox="0 0 64 64" fill="none" style="transform:scaleX(1.5);">
+        <circle cx="32" cy="32" r="28" stroke="#FF453A" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36" opacity="0.5"/>
+        <line x1="32" y1="32" x2="48" y2="32" stroke="#FF453A" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+      </svg>
+      <div class="dont-label">&#10005; Don't stretch</div>
+      <div class="dont-desc">Never distort proportions</div>
+    </div>
+    <div class="dont-card">
+      <svg viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="28" stroke="#FF6347" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36" opacity="0.5"/>
+        <line x1="32" y1="32" x2="48" y2="32" stroke="#FF6347" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+      </svg>
+      <div class="dont-label">&#10005; Don't recolor</div>
+      <div class="dont-desc">Use only brand colors</div>
+    </div>
+    <div class="dont-card">
+      <svg viewBox="0 0 64 64" fill="none" style="transform:rotate(30deg);">
+        <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36" opacity="0.5"/>
+        <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+      </svg>
+      <div class="dont-label">&#10005; Don't rotate</div>
+      <div class="dont-desc">Keep orientation fixed</div>
+    </div>
+    <div class="dont-card">
+      <svg viewBox="0 0 64 64" fill="none" style="filter:drop-shadow(0 0 8px #BF5AF2);">
+        <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36" opacity="0.5"/>
+        <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+      </svg>
+      <div class="dont-label">&#10005; Don't add effects</div>
+      <div class="dont-desc">No glow, shadow, or bevel</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     COLOR PALETTE
+     ============================================================ -->
+<section class="section" id="color">
+  <div class="section-label">02 &mdash; Color</div>
+  <div class="section-title">Color Palette</div>
+  <div class="section-desc">
+    A cool-toned palette built for trust and clarity. Purple conveys purpose. Teal conveys transparency. Together they form the signature gradient.
+  </div>
+  <div class="divider"></div>
+
+  <!-- Primary Colors -->
+  <div class="color-group-title">Primary</div>
+  <div class="color-swatches">
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#5856D6;"></div>
+      <div class="swatch-name">Purple Light</div>
+      <div class="swatch-hex">#5856D6</div>
+      <div class="swatch-use">Light mode primary</div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#BF5AF2;"></div>
+      <div class="swatch-name">Purple Dark</div>
+      <div class="swatch-hex">#BF5AF2</div>
+      <div class="swatch-use">Dark mode primary</div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#32D4DE;"></div>
+      <div class="swatch-name">Teal Light</div>
+      <div class="swatch-hex">#32D4DE</div>
+      <div class="swatch-use">Light mode secondary</div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#40E0D0;"></div>
+      <div class="swatch-name">Teal Dark</div>
+      <div class="swatch-hex">#40E0D0</div>
+      <div class="swatch-use">Dark mode secondary</div>
+    </div>
+  </div>
+
+  <!-- Gradients -->
+  <div class="color-group-title">Gradients</div>
+  <div class="gradient-strip" style="background:linear-gradient(135deg, #5856D6, #32D4DE);">
+    <span class="gradient-strip-label">Light Gradient &mdash; 135deg &mdash; #5856D6 &rarr; #32D4DE</span>
+  </div>
+  <div class="gradient-strip" style="background:linear-gradient(135deg, #BF5AF2, #40E0D0);">
+    <span class="gradient-strip-label">Dark Gradient &mdash; 135deg &mdash; #BF5AF2 &rarr; #40E0D0</span>
+  </div>
+
+  <!-- Backgrounds -->
+  <div class="color-group-title" style="margin-top:32px;">Backgrounds</div>
+  <div class="color-swatches">
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#F0F4F8; border-color: rgba(0,0,0,0.1);"></div>
+      <div class="swatch-name">BG Light</div>
+      <div class="swatch-hex">#F0F4F8</div>
+      <div class="swatch-use">Light mode canvas</div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#0A1628;"></div>
+      <div class="swatch-name">BG Dark</div>
+      <div class="swatch-hex">#0A1628</div>
+      <div class="swatch-use">Dark mode canvas</div>
+    </div>
+  </div>
+
+  <!-- Text Colors -->
+  <div class="color-group-title" style="margin-top:32px;">Text &mdash; Light Mode</div>
+  <div class="color-swatches">
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#1A202C;"></div>
+      <div class="swatch-name">Primary</div>
+      <div class="swatch-hex">#1A202C</div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#4A5568;"></div>
+      <div class="swatch-name">Secondary</div>
+      <div class="swatch-hex">#4A5568</div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#718096;"></div>
+      <div class="swatch-name">Tertiary</div>
+      <div class="swatch-hex">#718096</div>
+    </div>
+  </div>
+
+  <div class="color-group-title">Text &mdash; Dark Mode</div>
+  <div class="color-swatches">
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#F7FAFC;"></div>
+      <div class="swatch-name">Primary</div>
+      <div class="swatch-hex">#F7FAFC</div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#A0AEC0;"></div>
+      <div class="swatch-name">Secondary</div>
+      <div class="swatch-hex">#A0AEC0</div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:#718096;"></div>
+      <div class="swatch-name">Tertiary</div>
+      <div class="swatch-hex">#718096</div>
+    </div>
+  </div>
+
+  <!-- Glass -->
+  <div class="color-group-title" style="margin-top:32px;">Glass Surfaces</div>
+  <div class="color-swatches">
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:rgba(255,255,255,0.65); border-color: rgba(0,0,0,0.08); backdrop-filter:blur(10px);"></div>
+      <div class="swatch-name">Glass Light</div>
+      <div class="swatch-hex">rgba(255,255,255,0.65)</div>
+      <div class="swatch-use">blur(20px), border 0.3</div>
+    </div>
+    <div class="color-swatch">
+      <div class="swatch-block" style="background:rgba(30,41,59,0.65); backdrop-filter:blur(10px);"></div>
+      <div class="swatch-name">Glass Dark</div>
+      <div class="swatch-hex">rgba(30,41,59,0.65)</div>
+      <div class="swatch-use">blur(20px), border 0.08</div>
+    </div>
+  </div>
+
+  <!-- Semantic -->
+  <div class="color-group-title" style="margin-top:32px;">Semantic</div>
+  <div class="semantic-row">
+    <div class="semantic-card">
+      <div class="semantic-dot" style="background: linear-gradient(135deg, #34C759, #30D158);"></div>
+      <div class="semantic-info">
+        <div class="semantic-name">Success</div>
+        <div class="semantic-vals">#34C759 / #30D158</div>
+      </div>
+    </div>
+    <div class="semantic-card">
+      <div class="semantic-dot" style="background: linear-gradient(135deg, #FF9500, #FF9F0A);"></div>
+      <div class="semantic-info">
+        <div class="semantic-name">Warning</div>
+        <div class="semantic-vals">#FF9500 / #FF9F0A</div>
+      </div>
+    </div>
+    <div class="semantic-card">
+      <div class="semantic-dot" style="background: linear-gradient(135deg, #FF3B30, #FF453A);"></div>
+      <div class="semantic-info">
+        <div class="semantic-name">Error</div>
+        <div class="semantic-vals">#FF3B30 / #FF453A</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     TYPOGRAPHY
+     ============================================================ -->
+<section class="section" id="typography">
+  <div class="section-label">03 &mdash; Typography</div>
+  <div class="section-title">Type System</div>
+  <div class="section-desc">
+    Two typefaces in dialogue. Cormorant Garamond brings editorial elegance to headlines and amounts. Courier Prime grounds everything in honest, purposeful mono.
+  </div>
+  <div class="divider"></div>
+
+  <!-- Cormorant Garamond -->
+  <div class="type-specimen">
+    <div class="type-family">Cormorant Garamond &mdash; Display / Headlines</div>
+    <div class="type-alphabet" style="font-family:'Cormorant Garamond',serif; font-weight:300;">
+      Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz
+    </div>
+    <div class="type-alphabet-sm" style="font-family:'Cormorant Garamond',serif; font-weight:300;">
+      0 1 2 3 4 5 6 7 8 9 &mdash; $ . , : ; ! ? & @
+    </div>
+    <div class="type-weights">
+      <div class="type-weight-sample">
+        <div class="type-weight-label">Light 300</div>
+        <div class="type-weight-text" style="font-family:'Cormorant Garamond',serif; font-weight:300;">Give a Glimpse</div>
+      </div>
+      <div class="type-weight-sample">
+        <div class="type-weight-label">Regular 400</div>
+        <div class="type-weight-text" style="font-family:'Cormorant Garamond',serif; font-weight:400;">Give a Glimpse</div>
+      </div>
+      <div class="type-weight-sample">
+        <div class="type-weight-label">SemiBold 600</div>
+        <div class="type-weight-text" style="font-family:'Cormorant Garamond',serif; font-weight:600;">Give a Glimpse</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Courier Prime -->
+  <div class="type-specimen">
+    <div class="type-family">Courier Prime &mdash; Body / Brand / UI</div>
+    <div class="type-alphabet" style="font-family:'Courier Prime',monospace; font-weight:400;">
+      Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz
+    </div>
+    <div class="type-alphabet-sm" style="font-family:'Courier Prime',monospace; font-weight:400;">
+      0 1 2 3 4 5 6 7 8 9 &mdash; $ . , : ; ! ? & @
+    </div>
+    <div class="type-weights">
+      <div class="type-weight-sample">
+        <div class="type-weight-label">Regular 400</div>
+        <div class="type-weight-text" style="font-family:'Courier Prime',monospace; font-weight:400;">GLIMPSE</div>
+      </div>
+      <div class="type-weight-sample">
+        <div class="type-weight-label">Bold 700</div>
+        <div class="type-weight-text" style="font-family:'Courier Prime',monospace; font-weight:700;">GLIMPSE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Type Scale -->
+  <div class="color-group-title" style="margin-top:48px;">Type Scale</div>
+  <div class="type-scale">
+    <div class="scale-row">
+      <div class="scale-meta">
+        <div class="scale-size">48px</div>
+        <div class="scale-font">Courier Prime 400 &middot; ls: 6px</div>
+      </div>
+      <div class="scale-sample" style="font-family:'Courier Prime',monospace; font-size:48px; font-weight:400; letter-spacing:6px; text-transform:uppercase;">GLIMPSE</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-meta">
+        <div class="scale-size">36px</div>
+        <div class="scale-font">Cormorant Garamond 300</div>
+      </div>
+      <div class="scale-sample" style="font-family:'Cormorant Garamond',serif; font-size:36px; font-weight:300;">$25</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-meta">
+        <div class="scale-size">28px</div>
+        <div class="scale-font">Cormorant Garamond 300</div>
+      </div>
+      <div class="scale-sample" style="font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:300;">Give a Glimpse</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-meta">
+        <div class="scale-size">18px</div>
+        <div class="scale-font">Cormorant Garamond 600</div>
+      </div>
+      <div class="scale-sample" style="font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:600;">A Shower &amp; Clean Clothes</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-meta">
+        <div class="scale-size">16px</div>
+        <div class="scale-font">Inter 400</div>
+      </div>
+      <div class="scale-sample" style="font-family:'Inter',sans-serif; font-size:16px; font-weight:400;">Every gift tracked. Every impact documented.</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-meta">
+        <div class="scale-size">13px</div>
+        <div class="scale-font">Courier Prime 400 &middot; ls: 3px</div>
+      </div>
+      <div class="scale-sample" style="font-family:'Courier Prime',monospace; font-size:13px; font-weight:400; letter-spacing:3px; text-transform:uppercase;">Documenting Kindness</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-meta">
+        <div class="scale-size">10px</div>
+        <div class="scale-font">Courier Prime 400 &middot; ls: 0.2em</div>
+      </div>
+      <div class="scale-sample" style="font-family:'Courier Prime',monospace; font-size:10px; font-weight:400; letter-spacing:0.2em; text-transform:uppercase;">Choose your gift</div>
+    </div>
+    <div class="scale-row">
+      <div class="scale-meta">
+        <div class="scale-size">9px</div>
+        <div class="scale-font">Courier Prime 400</div>
+      </div>
+      <div class="scale-sample" style="font-family:'Courier Prime',monospace; font-size:9px; font-weight:400; color:var(--text-tertiary-dark);">Matthew 6:3 &middot; @DerrickWKing</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     VOICE & TONE
+     ============================================================ -->
+<section class="section" id="voice">
+  <div class="section-label">04 &mdash; Voice &amp; Tone</div>
+  <div class="section-title">Bold. Mission-driven.</div>
+  <div class="section-desc">
+    Glimpse speaks with confidence, not arrogance. With purpose, not preachiness. Every word should feel like it belongs on a protest sign or a journal entry &mdash; never a corporate press release.
+  </div>
+  <div class="divider"></div>
+
+  <!-- Voice traits -->
+  <div class="voice-grid">
+    <div class="voice-card">
+      <div class="voice-card-title">We Are</div>
+      <div class="voice-trait">Direct</div>
+      <div class="voice-trait-desc">Short sentences. Real numbers. No hedging. Lead with the action, not the feeling.</div>
+    </div>
+    <div class="voice-card">
+      <div class="voice-card-title">We Are</div>
+      <div class="voice-trait">Purposeful</div>
+      <div class="voice-trait-desc">Every word earns its place. We say what matters and nothing more. Copy is a design element.</div>
+    </div>
+    <div class="voice-card">
+      <div class="voice-card-title">We Are</div>
+      <div class="voice-trait">Human</div>
+      <div class="voice-trait-desc">We talk like people, not platforms. Names, not "users." Stories, not "use cases."</div>
+    </div>
+    <div class="voice-card">
+      <div class="voice-card-title">We Are</div>
+      <div class="voice-trait">Confident</div>
+      <div class="voice-trait-desc">We believe in what we're building. No apologies, no qualifiers, no "we hope to."</div>
+    </div>
+  </div>
+
+  <!-- We Are Not -->
+  <div class="color-group-title" style="margin-top:32px;">We Are Not</div>
+  <div class="voice-grid">
+    <div class="voice-card" style="border-color: rgba(255, 69, 58, 0.15);">
+      <div class="voice-trait" style="color: var(--text-tertiary-dark);">Preachy</div>
+      <div class="voice-trait-desc">We don't guilt-trip. We inspire action through proof, not emotion.</div>
+    </div>
+    <div class="voice-card" style="border-color: rgba(255, 69, 58, 0.15);">
+      <div class="voice-trait" style="color: var(--text-tertiary-dark);">Hypey</div>
+      <div class="voice-trait-desc">No "revolutionary" or "game-changing." The work speaks for itself.</div>
+    </div>
+  </div>
+
+  <!-- Do / Don't -->
+  <div class="color-group-title" style="margin-top:48px;">Do / Don't</div>
+  <div class="example-grid">
+    <div class="example-card example-do">
+      <div class="example-label">Do</div>
+      <div class="example-text">"$25. A warm shower. Fresh clothes. You'll see the proof."</div>
+    </div>
+    <div class="example-card example-dont">
+      <div class="example-label">Don't</div>
+      <div class="example-text">"Your generous donation can help make a real difference in someone's life today!"</div>
+    </div>
+    <div class="example-card example-do">
+      <div class="example-label">Do</div>
+      <div class="example-text">"Every transaction on Solana. Transparent. Permanent."</div>
+    </div>
+    <div class="example-card example-dont">
+      <div class="example-label">Don't</div>
+      <div class="example-text">"Leveraging cutting-edge blockchain technology to revolutionize charitable giving!"</div>
+    </div>
+    <div class="example-card example-do">
+      <div class="example-label">Do</div>
+      <div class="example-text">"James got a warm meal today. Here's the receipt."</div>
+    </div>
+    <div class="example-card example-dont">
+      <div class="example-label">Don't</div>
+      <div class="example-text">"Thanks to our amazing community, we were able to facilitate a positive outcome!"</div>
+    </div>
+  </div>
+
+  <!-- Hashtags -->
+  <div class="color-group-title" style="margin-top:48px;">Campaign Hashtags</div>
+  <div class="hashtag-row">
+    <div class="hashtag">#GiveAGlimpse</div>
+    <div class="hashtag">#DocumentingKindness</div>
+    <div class="hashtag">#SeeTheProof</div>
+    <div class="hashtag">#BuiltOnSolana</div>
+    <div class="hashtag">#TransparentGiving</div>
+  </div>
+</section>
+
+<!-- ============================================================
+     DESIGN SYSTEM
+     ============================================================ -->
+<section class="section" id="system">
+  <div class="section-label">05 &mdash; Design System</div>
+  <div class="section-title">iOS 18 Glassmorphism</div>
+  <div class="section-desc">
+    Built on Apple's design language: frosted glass surfaces, generous blur, subtle borders, and spring-physics interactions. Feels native on Seeker hardware.
+  </div>
+  <div class="divider"></div>
+
+  <!-- Glass Cards -->
+  <div class="color-group-title">Glass Card Component</div>
+  <div class="glass-demo-container">
+    <div class="glass-demo glass-demo-light">
+      <!-- Decorative background elements -->
+      <div style="position:absolute;top:20px;left:20px;width:100px;height:100px;border-radius:50%;background:rgba(88,86,214,0.15);"></div>
+      <div style="position:absolute;bottom:30px;right:20px;width:80px;height:80px;border-radius:50%;background:rgba(50,212,222,0.15);"></div>
+      <div class="glass-card-preview glass-card-light">
+        <div class="glass-card-title">A Shower & Clean Clothes</div>
+        <div class="glass-card-body">Give someone the dignity of a warm shower and fresh clothes.</div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;">Donate $25</button>
+      </div>
+    </div>
+    <div class="glass-demo glass-demo-dark">
+      <div style="position:absolute;top:20px;right:20px;width:100px;height:100px;border-radius:50%;background:rgba(191,90,242,0.12);"></div>
+      <div style="position:absolute;bottom:30px;left:20px;width:80px;height:80px;border-radius:50%;background:rgba(64,224,208,0.12);"></div>
+      <div class="glass-card-preview glass-card-dark">
+        <div class="glass-card-title">A Shower & Clean Clothes</div>
+        <div class="glass-card-body">Give someone the dignity of a warm shower and fresh clothes.</div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;">Donate $25</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Glass Spec Table -->
+  <table class="spec-table">
+    <thead>
+      <tr>
+        <th>Property</th>
+        <th>Light Mode</th>
+        <th>Dark Mode</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Background</td>
+        <td>rgba(255, 255, 255, 0.65)</td>
+        <td>rgba(30, 41, 59, 0.65)</td>
+      </tr>
+      <tr>
+        <td>Backdrop Filter</td>
+        <td>blur(20px)</td>
+        <td>blur(20px)</td>
+      </tr>
+      <tr>
+        <td>Border</td>
+        <td>1px solid rgba(255, 255, 255, 0.3)</td>
+        <td>1px solid rgba(255, 255, 255, 0.08)</td>
+      </tr>
+      <tr>
+        <td>Border Radius</td>
+        <td>16px</td>
+        <td>16px</td>
+      </tr>
+      <tr>
+        <td>Shadow</td>
+        <td>0 8px 24px rgba(0, 0, 0, 0.08)</td>
+        <td>0 8px 24px rgba(0, 0, 0, 0.3)</td>
+      </tr>
+      <tr>
+        <td>Padding</td>
+        <td>20px</td>
+        <td>20px</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Buttons -->
+  <div class="color-group-title" style="margin-top:64px;">Buttons</div>
+  <div class="ds-row">
+    <div class="ds-card">
+      <div class="ds-card-title">Button Variants</div>
+      <div class="button-row" style="margin-bottom:24px;">
+        <button class="btn btn-primary">Donate $25</button>
+        <button class="btn btn-secondary">Learn More</button>
+      </div>
+      <div class="button-row" style="margin-bottom:24px;">
+        <button class="btn btn-teal">See Proof</button>
+        <button class="btn btn-disabled" disabled>Unavailable</button>
+      </div>
+      <div style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--text-tertiary-dark);line-height:1.8;">
+        Radius: 10px<br>
+        Padding: 12px 24px<br>
+        Font: Courier Prime 700, 13px<br>
+        Shadow: 0 3px 10px (primary at 0.3)
+      </div>
+    </div>
+    <div class="ds-card">
+      <div class="ds-card-title">Interaction</div>
+      <div style="display:flex;gap:24px;align-items:center;margin-bottom:24px;">
+        <div style="text-align:center;">
+          <button class="btn btn-primary">Default</button>
+          <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--text-tertiary-dark);margin-top:8px;">scale(1.0)</div>
+        </div>
+        <div style="text-align:center;">
+          <button class="btn btn-primary" style="transform:scale(0.98);opacity:0.9;">Pressed</button>
+          <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--text-tertiary-dark);margin-top:8px;">scale(0.98)</div>
+        </div>
+      </div>
+      <div style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--text-tertiary-dark);line-height:1.8;">
+        Press: scale(0.98)<br>
+        Animation: spring (mass 1, damping 15)<br>
+        Duration: 200ms<br>
+        Cursor: pointer
+      </div>
+    </div>
+  </div>
+
+  <!-- Spacing Scale -->
+  <div class="color-group-title" style="margin-top:32px;">Spacing Scale (base: 4px)</div>
+  <div class="spacing-row" style="margin-bottom:48px;">
+    <div class="spacing-block">
+      <div class="spacing-visual" style="width:4px;height:32px;"></div>
+      <div class="spacing-val">4</div>
+    </div>
+    <div class="spacing-block">
+      <div class="spacing-visual" style="width:8px;height:32px;"></div>
+      <div class="spacing-val">8</div>
+    </div>
+    <div class="spacing-block">
+      <div class="spacing-visual" style="width:12px;height:32px;"></div>
+      <div class="spacing-val">12</div>
+    </div>
+    <div class="spacing-block">
+      <div class="spacing-visual" style="width:16px;height:32px;"></div>
+      <div class="spacing-val">16</div>
+    </div>
+    <div class="spacing-block">
+      <div class="spacing-visual" style="width:20px;height:32px;"></div>
+      <div class="spacing-val">20</div>
+    </div>
+    <div class="spacing-block">
+      <div class="spacing-visual" style="width:24px;height:32px;"></div>
+      <div class="spacing-val">24</div>
+    </div>
+    <div class="spacing-block">
+      <div class="spacing-visual" style="width:32px;height:32px;"></div>
+      <div class="spacing-val">32</div>
+    </div>
+    <div class="spacing-block">
+      <div class="spacing-visual" style="width:48px;height:32px;"></div>
+      <div class="spacing-val">48</div>
+    </div>
+  </div>
+
+  <!-- Border Radius -->
+  <div class="color-group-title">Border Radius</div>
+  <div class="radius-row" style="margin-bottom:48px;">
+    <div class="radius-sample">
+      <div class="radius-box" style="border-radius:4px;"></div>
+      <div class="radius-label">4px<br>Badges</div>
+    </div>
+    <div class="radius-sample">
+      <div class="radius-box" style="border-radius:9px;"></div>
+      <div class="radius-label">9px<br>Inputs</div>
+    </div>
+    <div class="radius-sample">
+      <div class="radius-box" style="border-radius:10px;"></div>
+      <div class="radius-label">10px<br>Buttons</div>
+    </div>
+    <div class="radius-sample">
+      <div class="radius-box" style="border-radius:16px;"></div>
+      <div class="radius-label">16px<br>Cards</div>
+    </div>
+    <div class="radius-sample">
+      <div class="radius-box" style="border-radius:50%;"></div>
+      <div class="radius-label">50%<br>Icons</div>
+    </div>
+  </div>
+
+  <!-- Icon Style -->
+  <div class="color-group-title">Icon Style</div>
+  <div style="display:flex;gap:32px;align-items:center;margin-bottom:24px;">
+    <div style="text-align:center;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+      <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--text-tertiary-dark);margin-top:8px;">Heart</div>
+    </div>
+    <div style="text-align:center;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+      </svg>
+      <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--text-tertiary-dark);margin-top:8px;">Gallery</div>
+    </div>
+    <div style="text-align:center;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--text-tertiary-dark);margin-top:8px;">Activity</div>
+    </div>
+    <div style="text-align:center;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+        <path d="M12 6v6l4 2"/>
+      </svg>
+      <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--text-tertiary-dark);margin-top:8px;">Clock</div>
+    </div>
+  </div>
+  <div style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--text-tertiary-dark);line-height:1.8;">
+    Style: Line icons only (no filled)<br>
+    Stroke: 1.5px<br>
+    Caps: Round<br>
+    Joins: Round<br>
+    Grid: 24x24 with 2px padding
+  </div>
+</section>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer class="footer">
+  <div style="margin-bottom:24px;">
+    <svg style="width:48px;height:48px;" viewBox="0 0 64 64" fill="none">
+      <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+      <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="footer-brand">GLIMPSE</div>
+  <div class="footer-tagline">Documenting Kindness</div>
+  <div class="footer-ref">Matthew 6 : 3</div>
+  <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--text-tertiary-dark);margin-top:24px;letter-spacing:0.1em;">@DerrickWKing &middot; Brand Identity v1.0</div>
+</footer>
+
+<!-- ============================================================
+     SCRIPTS
+     ============================================================ -->
+<script>
+// Intersection Observer for section fade-in
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, {
+  threshold: 0.1,
+  rootMargin: '0px 0px -50px 0px'
+});
+
+document.querySelectorAll('.section').forEach(section => {
+  observer.observe(section);
+});
+
+// Smooth scroll for nav links
+document.querySelectorAll('.nav-links a').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// Nav background change on scroll
+const nav = document.querySelector('.nav');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 100) {
+    nav.style.background = 'rgba(10, 22, 40, 0.95)';
+  } else {
+    nav.style.background = 'rgba(10, 22, 40, 0.88)';
+  }
+});
+</script>
+
+</body>
+</html>

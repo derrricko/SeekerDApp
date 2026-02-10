@@ -10,18 +10,21 @@ import {AuthorizationProvider} from './components/providers/AuthorizationProvide
 import {ThemeProvider, useTheme} from './components/theme';
 
 import WelcomeScreen from './screens/WelcomeScreen';
+import OnboardingScreen from './screens/OnboardingScreen';
 import HomeScreen from './screens/HomeScreen';
 
-type Screen = 'welcome' | 'home';
+type Screen = 'welcome' | 'onboarding' | 'home';
 
 function AppContent() {
   const {isDark, colors} = useTheme();
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
 
-  const handleWelcomeContinue = () => setCurrentScreen('home');
+  const handleWelcomeContinue = () => {
+    setCurrentScreen('onboarding');
+  };
 
-  const handleTierPress = (_tierId: string) => {
-    // TODO: Integrate wallet transaction for tier donation
+  const handleOnboardingComplete = () => {
+    setCurrentScreen('home');
   };
 
   return (
@@ -34,8 +37,10 @@ function AppContent() {
       <View style={[styles.container, {backgroundColor: colors.background}]}>
         {currentScreen === 'welcome' ? (
           <WelcomeScreen onContinue={handleWelcomeContinue} />
+        ) : currentScreen === 'onboarding' ? (
+          <OnboardingScreen onComplete={handleOnboardingComplete} />
         ) : (
-          <HomeScreen onTierPress={handleTierPress} />
+          <HomeScreen />
         )}
       </View>
     </>

@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLIMPSE — Social Media Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   GLIMPSE SOCIAL MEDIA KIT
+   Portfolio-quality asset presentation
+   ============================================================ */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --purple-light: #5856D6;
+  --purple-dark: #BF5AF2;
+  --teal-light: #32D4DE;
+  --teal-dark: #40E0D0;
+  --bg-light: #F0F4F8;
+  --bg-dark: #0A1628;
+  --text-primary-dark: #F7FAFC;
+  --text-secondary-dark: #A0AEC0;
+  --text-tertiary-dark: #718096;
+  --text-primary-light: #1A202C;
+  --text-secondary-light: #4A5568;
+  --success: #34C759;
+  --success-dark: #30D158;
+  --warning: #FF9500;
+  --error: #FF3B30;
+  --error-dark: #FF453A;
+  --canvas: #0A1628;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--canvas);
+  color: var(--text-primary-dark);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(10, 22, 40, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 48px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-brand {
+  font-family: 'Courier Prime', monospace;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 6px;
+  color: var(--text-primary-dark);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary-dark);
+  text-decoration: none;
+  transition: color 0.3s ease;
+  position: relative;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--purple-dark), var(--teal-dark));
+  transition: width 0.3s ease;
+}
+
+.nav-links a:hover { color: var(--text-primary-dark); }
+.nav-links a:hover::after { width: 100%; }
+
+/* ============================================================
+   LAYOUT HELPERS
+   ============================================================ */
+
+.section {
+  min-height: 100vh;
+  padding: 140px 48px 100px;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.section-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--purple-dark);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-label::before {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--purple-dark);
+}
+
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 48px;
+  font-weight: 300;
+  color: var(--text-primary-dark);
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+
+.section-desc {
+  font-family: 'Courier Prime', monospace;
+  font-size: 13px;
+  color: var(--text-secondary-dark);
+  max-width: 520px;
+  line-height: 1.8;
+  margin-bottom: 64px;
+}
+
+.divider {
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--purple-dark), var(--teal-dark));
+  margin-bottom: 48px;
+  border-radius: 1px;
+}
+
+.group-title {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary-dark);
+  margin-bottom: 24px;
+  margin-top: 48px;
+}
+
+.group-title:first-of-type {
+  margin-top: 0;
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(ellipse, rgba(191, 90, 242, 0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.hero-mark {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 32px;
+  opacity: 0;
+  animation: fadeUp 1.2s ease-out 0.3s forwards;
+}
+
+.hero-wordmark {
+  font-family: 'Courier Prime', monospace;
+  font-size: 48px;
+  letter-spacing: 6px;
+  color: var(--text-primary-dark);
+  text-transform: uppercase;
+  opacity: 0;
+  animation: fadeUp 1.2s ease-out 0.6s forwards;
+}
+
+.hero-line {
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--purple-dark), var(--teal-dark));
+  margin: 24px 0;
+  border-radius: 1px;
+  animation: lineGrow 1s ease-out 1s forwards;
+}
+
+.hero-subtitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 300;
+  color: var(--text-secondary-dark);
+  opacity: 0;
+  animation: fadeUp 1s ease-out 1.4s forwards;
+}
+
+.hero-tagline {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--text-tertiary-dark);
+  text-transform: uppercase;
+  margin-top: 16px;
+  opacity: 0;
+  animation: fadeUp 1s ease-out 1.8s forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes lineGrow {
+  from { width: 0; }
+  to { width: 56px; }
+}
+
+/* ============================================================
+   ASSET FRAME (the container for mockups)
+   ============================================================ */
+
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+}
+
+.asset-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.asset-frame {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+.asset-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  position: relative;
+  overflow: hidden;
+}
+
+.asset-meta {
+  padding: 20px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.asset-name {
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary-dark);
+  margin-bottom: 4px;
+}
+
+.asset-spec {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  color: var(--text-tertiary-dark);
+  line-height: 1.6;
+}
+
+/* ============================================================
+   PROFILE PICTURE MOCKUP
+   ============================================================ */
+
+.pfp-mockup {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: var(--bg-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.pfp-mockup svg {
+  width: 80px;
+  height: 80px;
+}
+
+.pfp-mockup-sq {
+  border-radius: 16px;
+}
+
+/* ============================================================
+   BANNER MOCKUP
+   ============================================================ */
+
+.banner-mockup {
+  width: 100%;
+  aspect-ratio: 3 / 1;
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.banner-mockup::before {
+  display: none;
+}
+
+.banner-wordmark {
+  font-family: 'Courier Prime', monospace;
+  font-size: 36px;
+  letter-spacing: 6px;
+  color: var(--text-primary-dark);
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
+}
+
+.banner-tagline {
+  font-family: 'Courier Prime', monospace;
+  font-size: 24px;
+  letter-spacing: 0.18em;
+  color: #1A202C;
+  text-transform: lowercase;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   POST TEMPLATE MOCKUPS
+   ============================================================ */
+
+.post-mockup {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.post-dark {
+  background: var(--bg-dark);
+}
+
+.post-gradient {
+  background: linear-gradient(135deg, var(--purple-dark), var(--teal-dark));
+}
+
+.post-light {
+  background: var(--bg-light);
+}
+
+/* Impact Stat Post */
+.stat-number {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 64px;
+  font-weight: 300;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 32px;
+}
+
+.stat-bar {
+  width: 32px;
+  height: 2px;
+  border-radius: 1px;
+  margin-bottom: 24px;
+}
+
+.stat-tagline {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+/* Quote / Mission Post */
+.quote-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1.5;
+  text-align: center;
+  max-width: 280px;
+  margin-bottom: 24px;
+}
+
+.quote-bar {
+  width: 32px;
+  height: 2px;
+  border-radius: 1px;
+  margin-bottom: 16px;
+}
+
+.quote-attr {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+/* Feature Highlight Post */
+.feature-icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.feature-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.feature-desc {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  text-align: center;
+  max-width: 200px;
+  line-height: 1.7;
+  opacity: 0.7;
+}
+
+/* Post G watermark */
+.post-watermark {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  width: 24px;
+  height: 24px;
+  opacity: 0.25;
+}
+
+.post-handle {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  opacity: 0.4;
+}
+
+/* ============================================================
+   CAMPAIGN ASSETS
+   ============================================================ */
+
+.campaign-card {
+  width: 100%;
+  padding: 48px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 300px;
+}
+
+.campaign-badge {
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+
+.campaign-headline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1.3;
+  margin-bottom: 16px;
+  max-width: 400px;
+}
+
+.campaign-sub {
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  opacity: 0.7;
+  max-width: 340px;
+  margin-bottom: 24px;
+}
+
+.campaign-cta {
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+/* ============================================================
+   PHONE MOCKUP (App Store Preview)
+   ============================================================ */
+
+.phone-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.phone-frame {
+  width: 280px;
+  height: 600px;
+  border-radius: 36px;
+  background: var(--bg-light);
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 0 0 2px rgba(0, 0, 0, 0.25),
+    0 25px 60px rgba(0, 0, 0, 0.5),
+    0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.phone-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 24px;
+  background: #0A1628;
+  border-radius: 0 0 16px 16px;
+  z-index: 100;
+}
+
+.phone-status {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 20px 4px;
+  z-index: 50;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary-light);
+}
+
+.phone-header {
+  padding: 48px 16px 10px;
+  background: rgba(255, 255, 255, 0.75);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0.28em;
+  color: #1B365D;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.phone-content {
+  padding: 14px 16px;
+}
+
+.phone-section-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #C4A87C;
+  margin-bottom: 6px;
+}
+
+.phone-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 300;
+  color: #1B365D;
+  margin-bottom: 4px;
+}
+
+.phone-sub {
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px;
+  color: #B8B5AD;
+  margin-bottom: 14px;
+}
+
+.phone-card {
+  background: #FAFAF8;
+  border: 1px solid #E8E6E1;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.phone-card-amount {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 500;
+  color: #1B365D;
+  margin-bottom: 4px;
+}
+
+.phone-card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #3A3835;
+  margin-bottom: 2px;
+}
+
+.phone-card-partner {
+  font-family: 'Courier Prime', monospace;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #B8975A;
+  margin-bottom: 6px;
+}
+
+.phone-card-desc {
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px;
+  color: #6B6860;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.phone-card-btn {
+  background: #1B365D;
+  color: #FAFAF8;
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.phone-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(250, 250, 248, 0.95);
+  border-top: 1px solid rgba(196, 168, 124, 0.15);
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  padding-top: 8px;
+}
+
+.phone-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.phone-nav-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.phone-nav-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 7px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #1B365D;
+}
+
+.phone-nav-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #C4A87C;
+}
+
+/* ============================================================
+   SPECS TABLE
+   ============================================================ */
+
+.spec-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 24px;
+}
+
+.spec-table th,
+.spec-table td {
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+}
+
+.spec-table th {
+  color: var(--text-tertiary-dark);
+  font-weight: 400;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.spec-table td {
+  color: var(--text-secondary-dark);
+}
+
+.spec-table td:first-child {
+  color: var(--text-primary-dark);
+  font-weight: 700;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.footer {
+  padding: 80px 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.footer-brand {
+  font-family: 'Courier Prime', monospace;
+  font-size: 20px;
+  letter-spacing: 6px;
+  color: var(--text-primary-dark);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.footer-tagline {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--text-tertiary-dark);
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.footer-ref {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text-tertiary-dark);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .section { padding: 100px 24px 60px; }
+  .section-title { font-size: 32px; }
+  .asset-grid { grid-template-columns: 1fr; }
+  .asset-grid-3 { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+  .hero-wordmark { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     NAVIGATION
+     ============================================================ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#hero" class="nav-brand">Glimpse</a>
+    <ul class="nav-links">
+      <li><a href="#profile">Profile</a></li>
+      <li><a href="#posts">Posts</a></li>
+      <li><a href="#campaigns">Campaigns</a></li>
+      <li><a href="#appstore">App Store</a></li>
+      <li><a href="#specs">Specs</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<section class="hero" id="hero">
+  <div class="hero-mark">
+    <svg viewBox="0 0 64 64" fill="none" style="width:100%;height:100%;">
+      <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+      <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="hero-wordmark">GLIMPSE</div>
+  <div class="hero-line"></div>
+  <div class="hero-subtitle">Social Media Kit</div>
+  <div class="hero-tagline">Documenting Kindness</div>
+</section>
+
+<!-- ============================================================
+     PROFILE ASSETS
+     ============================================================ -->
+<section class="section" id="profile">
+  <div class="section-label">01 &mdash; Profile Assets</div>
+  <div class="section-title">Profile &amp; Banner</div>
+  <div class="section-desc">
+    The G lettermark centered on the dark canvas for profile pictures. The wordmark with gradient glow for banners. Consistent across X, Instagram, and LinkedIn.
+  </div>
+  <div class="divider"></div>
+
+  <div class="asset-grid">
+    <!-- Profile Picture: Circle -->
+    <div class="asset-frame">
+      <div class="asset-preview" style="background:rgba(255,255,255,0.02);padding:48px;">
+        <div class="pfp-mockup">
+          <svg viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+            <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="asset-meta">
+        <div class="asset-name">Profile Picture (Circle)</div>
+        <div class="asset-spec">400 x 400px &middot; PNG &middot; G mark on #0A1628<br>Use for X/Twitter, Instagram, Discord</div>
+      </div>
+    </div>
+
+    <!-- Profile Picture: Square -->
+    <div class="asset-frame">
+      <div class="asset-preview" style="background:rgba(255,255,255,0.02);padding:48px;">
+        <div class="pfp-mockup pfp-mockup-sq">
+          <svg viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+            <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="asset-meta">
+        <div class="asset-name">Profile Picture (Square)</div>
+        <div class="asset-spec">400 x 400px &middot; PNG &middot; 16px radius<br>Use for LinkedIn, YouTube</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Banner -->
+  <div class="group-title">Banner / Header</div>
+  <div class="asset-frame">
+    <div class="asset-preview" style="padding:0;">
+      <div class="banner-mockup">
+        <div class="banner-tagline" style="font-size:20px; letter-spacing:0.18em; text-transform:lowercase;">documenting kindness...</div>
+      </div>
+    </div>
+    <div class="asset-meta">
+      <div class="asset-name">X/Twitter Banner</div>
+      <div class="asset-spec">1500 x 500px &middot; PNG &middot; "documenting kindness..." centered on white &middot; 3:1 aspect ratio</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     POST TEMPLATES
+     ============================================================ -->
+<section class="section" id="posts">
+  <div class="section-label">02 &mdash; Post Templates</div>
+  <div class="section-title">Content Formats</div>
+  <div class="section-desc">
+    Three core post types. Each one delivers a different message with the same visual language: clean, dark, purposeful.
+  </div>
+  <div class="divider"></div>
+
+  <div class="asset-grid asset-grid-3">
+    <!-- Impact Stat -->
+    <div class="asset-frame">
+      <div class="asset-preview" style="padding:0;">
+        <div class="post-mockup post-dark">
+          <div class="stat-number" style="color:var(--text-primary-dark);">$4,820</div>
+          <div class="stat-label" style="color:var(--text-secondary-dark);">Donated this week</div>
+          <div class="stat-bar" style="background:linear-gradient(90deg, var(--purple-dark), var(--teal-dark));"></div>
+          <div class="stat-tagline" style="color:var(--text-tertiary-dark);">GLIMPSE &middot; Documenting Kindness</div>
+          <svg class="post-watermark" viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+            <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          <span class="post-handle" style="color:var(--text-tertiary-dark);">@DerrickWKing</span>
+        </div>
+      </div>
+      <div class="asset-meta">
+        <div class="asset-name">Impact Stat</div>
+        <div class="asset-spec">1080 x 1080px &middot; Big number + label<br>Weekly/monthly impact data</div>
+      </div>
+    </div>
+
+    <!-- Quote / Mission -->
+    <div class="asset-frame">
+      <div class="asset-preview" style="padding:0;">
+        <div class="post-mockup post-gradient">
+          <div class="quote-text" style="color:#FFFFFF;">"Every gift tracked. Every impact documented."</div>
+          <div class="quote-bar" style="background:rgba(255,255,255,0.4);"></div>
+          <div class="quote-attr" style="color:rgba(255,255,255,0.7);">GLIMPSE &middot; @DerrickWKing</div>
+          <svg class="post-watermark" viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.3)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+            <line x1="32" y1="32" x2="48" y2="32" stroke="rgba(255,255,255,0.3)" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="asset-meta">
+        <div class="asset-name">Quote / Mission</div>
+        <div class="asset-spec">1080 x 1080px &middot; On gradient bg<br>Vision statements, scripture</div>
+      </div>
+    </div>
+
+    <!-- Feature Highlight -->
+    <div class="asset-frame">
+      <div class="asset-preview" style="padding:0;">
+        <div class="post-mockup post-dark">
+          <div class="feature-icon-circle" style="border-color:var(--teal-dark);">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#40E0D0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </div>
+          <div class="feature-title" style="color:var(--text-primary-dark);">Transparent Giving</div>
+          <div class="feature-desc" style="color:var(--text-secondary-dark);">Every donation recorded on Solana. See exactly where your money goes.</div>
+          <svg class="post-watermark" viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+            <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          <span class="post-handle" style="color:var(--text-tertiary-dark);">@DerrickWKing</span>
+        </div>
+      </div>
+      <div class="asset-meta">
+        <div class="asset-name">Feature Highlight</div>
+        <div class="asset-spec">1080 x 1080px &middot; Icon + headline + desc<br>Feature announcements</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     CAMPAIGN ASSETS
+     ============================================================ -->
+<section class="section" id="campaigns">
+  <div class="section-label">03 &mdash; Campaign Assets</div>
+  <div class="section-title">Announcements &amp; Threads</div>
+  <div class="section-desc">
+    High-impact visuals for launches, milestones, and thread openers. The gradient background signals a major moment.
+  </div>
+  <div class="divider"></div>
+
+  <div class="asset-grid">
+    <!-- Announcement -->
+    <div class="asset-frame">
+      <div class="asset-preview" style="padding:0;">
+        <div class="campaign-card" style="background:linear-gradient(135deg, var(--purple-dark), var(--teal-dark));">
+          <div class="campaign-badge" style="color:rgba(255,255,255,0.9);background:rgba(255,255,255,0.15);">Coming Soon</div>
+          <div class="campaign-headline" style="color:#FFFFFF;">Glimpse is coming to the Seeker dApp Store</div>
+          <div class="campaign-sub" style="color:rgba(255,255,255,0.75);">Transparent donations. Verified impact. Built on Solana.</div>
+          <div class="campaign-cta" style="background:#FFFFFF;color:var(--purple-dark);">Learn More</div>
+        </div>
+      </div>
+      <div class="asset-meta">
+        <div class="asset-name">Launch Announcement</div>
+        <div class="asset-spec">1200 x 675px (16:9) &middot; Gradient bg<br>Major announcements, launches</div>
+      </div>
+    </div>
+
+    <!-- Thread Opener -->
+    <div class="asset-frame">
+      <div class="asset-preview" style="padding:0;">
+        <div class="campaign-card" style="background:var(--bg-dark);border:1px solid rgba(255,255,255,0.06);">
+          <svg style="width:48px;height:48px;margin-bottom:20px;" viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+            <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          <div class="campaign-headline" style="color:var(--text-primary-dark);font-size:28px;">Why we built Glimpse</div>
+          <div class="campaign-sub" style="color:var(--text-secondary-dark);">$593B donated in 2024. $0 in donor-to-impact connection. Thread.</div>
+          <div style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--teal-dark);letter-spacing:0.15em;">1/8</div>
+        </div>
+      </div>
+      <div class="asset-meta">
+        <div class="asset-name">Thread Opener</div>
+        <div class="asset-spec">1200 x 675px (16:9) &middot; Dark bg<br>Deep-dive threads, storytelling</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Engagement CTA -->
+  <div class="group-title">Engagement Formats</div>
+  <div class="asset-grid asset-grid-3">
+    <div class="asset-frame">
+      <div class="asset-preview" style="padding:0;">
+        <div class="post-mockup post-dark" style="aspect-ratio:auto;min-height:200px;padding:24px;">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--text-primary-dark);text-align:center;margin-bottom:12px;">What would you<br>give $25 for?</div>
+          <div style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--text-secondary-dark);letter-spacing:0.15em;">REPLY BELOW</div>
+        </div>
+      </div>
+      <div class="asset-meta">
+        <div class="asset-name">Engagement CTA</div>
+        <div class="asset-spec">Ask questions, drive replies</div>
+      </div>
+    </div>
+    <div class="asset-frame">
+      <div class="asset-preview" style="padding:0;">
+        <div class="post-mockup post-dark" style="aspect-ratio:auto;min-height:200px;padding:24px;">
+          <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:12px;">Glimpse of the Week</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--text-primary-dark);text-align:center;margin-bottom:8px;">James got a warm meal.<br>Here's the receipt.</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--success-dark);">&#10003; Verified</div>
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--text-tertiary-dark);">&middot; Feb 5, 2026</div>
+          </div>
+        </div>
+      </div>
+      <div class="asset-meta">
+        <div class="asset-name">Impact Story</div>
+        <div class="asset-spec">Weekly proof-of-impact posts</div>
+      </div>
+    </div>
+    <div class="asset-frame">
+      <div class="asset-preview" style="padding:0;">
+        <div class="post-mockup post-gradient" style="aspect-ratio:auto;min-height:200px;padding:24px;">
+          <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.7);margin-bottom:16px;">Milestone</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:48px;font-weight:300;color:#FFFFFF;margin-bottom:4px;">100</div>
+          <div style="font-family:'Courier Prime',monospace;font-size:12px;letter-spacing:0.15em;color:rgba(255,255,255,0.8);text-transform:uppercase;">Glimpses Documented</div>
+        </div>
+      </div>
+      <div class="asset-meta">
+        <div class="asset-name">Milestone</div>
+        <div class="asset-spec">Celebrate numbers, growth</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     APP STORE PREVIEW
+     ============================================================ -->
+<section class="section" id="appstore">
+  <div class="section-label">04 &mdash; App Store Preview</div>
+  <div class="section-title">Device Mockup</div>
+  <div class="section-desc">
+    App store screenshots and marketing materials. The Give screen showcases the core experience: pick a cause, donate, see proof.
+  </div>
+  <div class="divider"></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;">
+    <div class="phone-container">
+      <div class="phone-frame">
+        <div class="phone-status">
+          <span>9:41</span>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <div style="display:flex;gap:1px;align-items:flex-end;height:10px;">
+              <div style="width:3px;height:4px;background:var(--text-primary-light);border-radius:1px;"></div>
+              <div style="width:3px;height:6px;background:var(--text-primary-light);border-radius:1px;"></div>
+              <div style="width:3px;height:8px;background:var(--text-primary-light);border-radius:1px;"></div>
+              <div style="width:3px;height:10px;background:var(--text-primary-light);border-radius:1px;"></div>
+            </div>
+            <div style="width:20px;height:9px;border:1.5px solid var(--text-primary-light);border-radius:2px;position:relative;">
+              <div style="position:absolute;inset:1px;border-radius:0.5px;background:var(--text-primary-light);"></div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-header">Glimpse</div>
+        <div class="phone-content">
+          <div class="phone-section-label">choose your gift</div>
+          <div class="phone-heading">Give a Glimpse</div>
+          <div class="phone-sub">every gift tells a story. pick yours.</div>
+
+          <div class="phone-card">
+            <div class="phone-card-amount">$20</div>
+            <div class="phone-card-title">A Shower & Clean Clothes</div>
+            <div class="phone-card-partner">with Be Heard &middot; Tulsa, OK</div>
+            <div class="phone-card-desc">Give someone the dignity of a warm shower and fresh clothes.</div>
+            <div class="phone-card-btn">Give Now</div>
+          </div>
+
+          <div class="phone-card">
+            <div class="phone-card-amount" style="font-size:18px;">$100 &ndash; $1,000</div>
+            <div class="phone-card-title">Meet a Real Need</div>
+            <div class="phone-card-partner">curated causes &middot; verified stories</div>
+            <div class="phone-card-desc">A single mom needs car repairs. You choose the amount.</div>
+            <div class="phone-card-btn">Choose Amount</div>
+          </div>
+        </div>
+
+        <div class="phone-nav">
+          <div class="phone-nav-item">
+            <svg class="phone-nav-icon" viewBox="0 0 24 24" fill="none" stroke="#1B365D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <div class="phone-nav-label">give</div>
+            <div class="phone-nav-dot"></div>
+          </div>
+          <div class="phone-nav-item" style="opacity:0.4;">
+            <svg class="phone-nav-icon" viewBox="0 0 24 24" fill="none" stroke="#1B365D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <div class="phone-nav-label">glimpses</div>
+          </div>
+          <div class="phone-nav-item" style="opacity:0.4;">
+            <svg class="phone-nav-icon" viewBox="0 0 24 24" fill="none" stroke="#1B365D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            <div class="phone-nav-label">board</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="group-title" style="margin-top:0;">Screenshot Specs</div>
+      <table class="spec-table">
+        <tbody>
+          <tr>
+            <td>iPhone 15 Pro Max</td>
+            <td>1290 x 2796px</td>
+          </tr>
+          <tr>
+            <td>iPhone 15 Pro</td>
+            <td>1179 x 2556px</td>
+          </tr>
+          <tr>
+            <td>Android / Seeker</td>
+            <td>1080 x 2400px</td>
+          </tr>
+          <tr>
+            <td>iPad Pro</td>
+            <td>2048 x 2732px</td>
+          </tr>
+          <tr>
+            <td>Feature Graphic</td>
+            <td>1024 x 500px</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--text-tertiary-dark);margin-top:24px;line-height:1.8;">
+        Screenshots should use the actual app screens.<br>
+        Add descriptive text overlay in Courier Prime.<br>
+        Use #0A1628 frame with subtle gradient glow.<br>
+        Feature graphic uses wordmark + tagline format.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     COMPLETE SPECS TABLE
+     ============================================================ -->
+<section class="section" id="specs">
+  <div class="section-label">05 &mdash; Reference</div>
+  <div class="section-title">Complete Specs</div>
+  <div class="section-desc">
+    Every dimension, format, and guideline for social media assets at a glance.
+  </div>
+  <div class="divider"></div>
+
+  <table class="spec-table">
+    <thead>
+      <tr>
+        <th>Asset</th>
+        <th>Dimensions</th>
+        <th>Format</th>
+        <th>Background</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Profile Picture</td>
+        <td>400 x 400px</td>
+        <td>PNG</td>
+        <td>#0A1628</td>
+        <td>G mark centered, circle crop safe</td>
+      </tr>
+      <tr>
+        <td>X/Twitter Banner</td>
+        <td>1500 x 500px</td>
+        <td>PNG</td>
+        <td>#0A1628 + glow</td>
+        <td>Wordmark + tagline, gradient glow</td>
+      </tr>
+      <tr>
+        <td>LinkedIn Banner</td>
+        <td>1584 x 396px</td>
+        <td>PNG</td>
+        <td>#0A1628 + glow</td>
+        <td>Wordmark + tagline + alt tagline</td>
+      </tr>
+      <tr>
+        <td>Instagram Post</td>
+        <td>1080 x 1080px</td>
+        <td>PNG</td>
+        <td>Varies by type</td>
+        <td>Impact stat, quote, or feature</td>
+      </tr>
+      <tr>
+        <td>Instagram Story</td>
+        <td>1080 x 1920px</td>
+        <td>PNG</td>
+        <td>Varies by type</td>
+        <td>Vertical adaptation of post templates</td>
+      </tr>
+      <tr>
+        <td>X/Twitter Post</td>
+        <td>1200 x 675px</td>
+        <td>PNG</td>
+        <td>Varies by type</td>
+        <td>16:9 ratio for feed optimization</td>
+      </tr>
+      <tr>
+        <td>Thread Opener</td>
+        <td>1200 x 675px</td>
+        <td>PNG</td>
+        <td>#0A1628</td>
+        <td>G mark + headline + thread count</td>
+      </tr>
+      <tr>
+        <td>Announcement</td>
+        <td>1200 x 675px</td>
+        <td>PNG</td>
+        <td>Gradient</td>
+        <td>Badge + headline + CTA</td>
+      </tr>
+      <tr>
+        <td>App Icon</td>
+        <td>1024 x 1024px</td>
+        <td>PNG</td>
+        <td>#0A1628</td>
+        <td>G mark, thicker stroke (3-4px)</td>
+      </tr>
+      <tr>
+        <td>OG Image</td>
+        <td>1200 x 630px</td>
+        <td>PNG</td>
+        <td>#0A1628 + glow</td>
+        <td>Full lockup centered</td>
+      </tr>
+      <tr>
+        <td>Favicon</td>
+        <td>32 x 32px</td>
+        <td>ICO/SVG</td>
+        <td>Transparent</td>
+        <td>G mark, stroke-width 4</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Brand Copy Reference -->
+  <div class="group-title" style="margin-top:64px;">Brand Copy Reference</div>
+  <table class="spec-table">
+    <thead>
+      <tr>
+        <th>Element</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Name</td>
+        <td>GLIMPSE (all caps in branding) / Glimpse (in body text)</td>
+      </tr>
+      <tr>
+        <td>Tagline</td>
+        <td>Documenting Kindness</td>
+      </tr>
+      <tr>
+        <td>Alt Tagline</td>
+        <td>Creating Connections, Documenting Kindness</td>
+      </tr>
+      <tr>
+        <td>Handle</td>
+        <td>@DerrickWKing</td>
+      </tr>
+      <tr>
+        <td>Biblical Anchor</td>
+        <td>Matthew 6:3</td>
+      </tr>
+      <tr>
+        <td>Bio Template</td>
+        <td>Transparent donations on Solana. Every gift tracked. Every impact documented. #DocumentingKindness</td>
+      </tr>
+      <tr>
+        <td>Hashtags</td>
+        <td>#GiveAGlimpse #DocumentingKindness #SeeTheProof #BuiltOnSolana #TransparentGiving</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Color Quick Reference -->
+  <div class="group-title" style="margin-top:48px;">Color Quick Reference</div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+      <div style="width:16px;height:16px;border-radius:50%;background:#BF5AF2;"></div>
+      <span style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--text-secondary-dark);">#BF5AF2</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+      <div style="width:16px;height:16px;border-radius:50%;background:#40E0D0;"></div>
+      <span style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--text-secondary-dark);">#40E0D0</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+      <div style="width:16px;height:16px;border-radius:50%;background:#0A1628;"></div>
+      <span style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--text-secondary-dark);">#0A1628</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+      <div style="width:16px;height:16px;border-radius:50%;background:#F7FAFC;border:1px solid rgba(255,255,255,0.2);"></div>
+      <span style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--text-secondary-dark);">#F7FAFC</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+      <div style="width:16px;height:16px;border-radius:50%;background:#5856D6;"></div>
+      <span style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--text-secondary-dark);">#5856D6</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer class="footer">
+  <div style="margin-bottom:24px;">
+    <svg style="width:48px;height:48px;" viewBox="0 0 64 64" fill="none">
+      <circle cx="32" cy="32" r="28" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="140 36"/>
+      <line x1="32" y1="32" x2="48" y2="32" stroke="#BF5AF2" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="footer-brand">GLIMPSE</div>
+  <div class="footer-tagline">Documenting Kindness</div>
+  <div class="footer-ref">Matthew 6 : 3</div>
+  <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--text-tertiary-dark);margin-top:24px;letter-spacing:0.1em;">@DerrickWKing &middot; Social Media Kit v1.0</div>
+</footer>
+
+<!-- ============================================================
+     SCRIPTS
+     ============================================================ -->
+<script>
+// Intersection Observer for fade-in
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, {
+  threshold: 0.1,
+  rootMargin: '0px 0px -50px 0px'
+});
+
+document.querySelectorAll('.section').forEach(section => {
+  observer.observe(section);
+});
+
+// Smooth scroll
+document.querySelectorAll('.nav-links a').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// Nav opacity on scroll
+const nav = document.querySelector('.nav');
+window.addEventListener('scroll', () => {
+  nav.style.background = window.scrollY > 100
+    ? 'rgba(10, 22, 40, 0.95)'
+    : 'rgba(10, 22, 40, 0.88)';
+});
+</script>
+
+</body>
+</html>

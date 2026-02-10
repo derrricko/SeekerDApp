@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0A1628;
+    font-family: 'Courier Prime', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 40px;
+    gap: 48px;
+  }
+  h1 {
+    color: rgba(255,255,255,0.3);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 40px;
+    max-width: 1100px;
+  }
+  .option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .preview {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+  .inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .label {
+    color: rgba(255,255,255,0.5);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .sublabel {
+    color: rgba(255,255,255,0.25);
+    font-size: 9px;
+    text-align: center;
+    margin-top: -8px;
+  }
+</style>
+</head>
+<body>
+
+<h1>"Give" Button Profile Picture Concepts</h1>
+
+<!-- ROW 1: Core button concepts -->
+<div class="grid">
+
+  <!-- A: Pill button, light purple bg -->
+  <div class="option">
+    <div class="preview">
+      <div class="inner" style="background: #F0F4F8;">
+        <div style="background: #E8E0F7; border-radius: 50px; padding: 18px 36px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-family: 'Courier Prime', monospace; font-size: 22px; font-weight: 700; color: #5856D6; letter-spacing: 3px; text-transform: lowercase;">give</span>
+        </div>
+      </div>
+    </div>
+    <div class="label">A &mdash; Pill Button</div>
+    <div class="sublabel">Light purple pill on light bg</div>
+  </div>
+
+  <!-- B: Rounded rect, bolder -->
+  <div class="option">
+    <div class="preview">
+      <div class="inner" style="background: #FFFFFF;">
+        <div style="background: #5856D6; border-radius: 14px; padding: 20px 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(88, 86, 214, 0.35);">
+          <span style="font-family: 'Courier Prime', monospace; font-size: 24px; font-weight: 700; color: white; letter-spacing: 4px; text-transform: lowercase;">give</span>
+        </div>
+      </div>
+    </div>
+    <div class="label">B &mdash; Bold Button</div>
+    <div class="sublabel">Solid purple, white text</div>
+  </div>
+
+  <!-- C: Capsule, pump.fun inspired -->
+  <div class="option">
+    <div class="preview">
+      <div class="inner" style="background: #F0F4F8;">
+        <div style="width: 110px; height: 110px; border-radius: 28px; background: linear-gradient(180deg, #E8E0F7 0%, #D4C8F0 100%); border: 2px solid #C4B5E8; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(88, 86, 214, 0.15);">
+          <span style="font-family: 'Courier Prime', monospace; font-size: 20px; font-weight: 700; color: #5856D6; letter-spacing: 2px; text-transform: lowercase;">give</span>
+        </div>
+      </div>
+    </div>
+    <div class="label">C &mdash; Capsule</div>
+    <div class="sublabel">Soft rounded square, subtle border</div>
+  </div>
+
+  <!-- D: Circle button, pure -->
+  <div class="option">
+    <div class="preview">
+      <div class="inner" style="background: #EDE8F5;">
+        <div style="width: 100px; height: 100px; border-radius: 50%; background: #5856D6; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(88, 86, 214, 0.4);">
+          <span style="font-family: 'Courier Prime', monospace; font-size: 18px; font-weight: 700; color: white; letter-spacing: 2px; text-transform: lowercase;">give</span>
+        </div>
+      </div>
+    </div>
+    <div class="label">D &mdash; Circle CTA</div>
+    <div class="sublabel">Purple circle on lavender</div>
+  </div>
+
+</div>
+
+<!-- ROW 2 -->
+<div class="grid">
+
+  <!-- E: Minimal, just text on pastel -->
+  <div class="option">
+    <div class="preview">
+      <div class="inner" style="background: #EDE8F5;">
+        <span style="font-family: 'Courier Prime', monospace; font-size: 32px; font-weight: 700; color: #5856D6; letter-spacing: 4px; text-transform: lowercase;">give</span>
+      </div>
+    </div>
+    <div class="label">E &mdash; Naked Text</div>
+    <div class="sublabel">Just the word on lavender</div>
+  </div>
+
+  <!-- F: White bg, ultra clean -->
+  <div class="option">
+    <div class="preview">
+      <div class="inner" style="background: #FFFFFF;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <span style="font-family: 'Courier Prime', monospace; font-size: 28px; font-weight: 400; color: #5856D6; letter-spacing: 5px; text-transform: lowercase;">give</span>
+          <div style="width: 40px; height: 2px; background: #5856D6; border-radius: 1px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="label">F &mdash; Give + Line</div>
+    <div class="sublabel">Brand line beneath, white bg</div>
+  </div>
+
+  <!-- G: Full bleed purple -->
+  <div class="option">
+    <div class="preview">
+      <div class="inner" style="background: #5856D6;">
+        <span style="font-family: 'Courier Prime', monospace; font-size: 30px; font-weight: 700; color: rgba(255,255,255,0.95); letter-spacing: 5px; text-transform: lowercase;">give</span>
+      </div>
+    </div>
+    <div class="label">G &mdash; Full Purple</div>
+    <div class="sublabel">Solid purple, max impact</div>
+  </div>
+
+  <!-- H: Gradient pill -->
+  <div class="option">
+    <div class="preview">
+      <div class="inner" style="background: #FFFFFF;">
+        <div style="background: linear-gradient(135deg, #5856D6, #32D4DE); border-radius: 50px; padding: 16px 32px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-family: 'Courier Prime', monospace; font-size: 22px; font-weight: 700; color: white; letter-spacing: 3px; text-transform: lowercase;">give</span>
+        </div>
+      </div>
+    </div>
+    <div class="label">H &mdash; Gradient Pill</div>
+    <div class="sublabel">Purple-to-teal gradient button</div>
+  </div>
+
+</div>
+
+<!-- ROW 3: Extra light purple variations -->
+<h1 style="margin-top: 12px;">Light Purple Variations</h1>
+<div class="grid">
+
+  <!-- I: Very light, pastel button -->
+  <div class="option">
+    <div class="preview">
+      <div class="inner" style="background: #FFFFFF;">
+        <div style="background: #F0EAFF; border-radius: 50px; padding: 18px 36px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-family: 'Courier Prime', monospace; font-size: 22px; font-weight: 400; color: #7B6FC4; letter-spacing: 4px; text-transform: lowercase;">give</span>
+        </div>
+      </div>
+    </div>
+    <div class="label">I &mdash; Pastel Pill</div>
+    <div class="sublabel">Ultra-soft lavender</div>
+  </div>
+
+  <!-- J: Light purple bg, dark text -->
+  <div class="option">
+    <div class="preview">
+      <div class="inner" style="background: #F0EAFF;">
+        <span style="font-family: 'Courier Prime', monospace; font-size: 30px; font-weight: 400; color: #1A202C; letter-spacing: 5px; text-transform: lowercase;">give</span>
+      </div>
+    </div>
+    <div class="label">J &mdash; Lavender + Dark</div>
+    <div class="sublabel">Light purple bg, dark text</div>
+  </div>
+
+  <!-- K: Outlined pill on light purple -->
+  <div class="option">
+    <div class="preview">
+      <div class="inner" style="background: #F5F0FF;">
+        <div style="border: 2px solid #5856D6; border-radius: 50px; padding: 14px 30px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-family: 'Courier Prime', monospace; font-size: 20px; font-weight: 400; color: #5856D6; letter-spacing: 3px; text-transform: lowercase;">give</span>
+        </div>
+      </div>
+    </div>
+    <div class="label">K &mdash; Outlined Pill</div>
+    <div class="sublabel">Ghost button on lavender</div>
+  </div>
+
+  <!-- L: Serif "give" for elegance -->
+  <div class="option">
+    <div class="preview">
+      <div class="inner" style="background: #FFFFFF;">
+        <div style="background: #EDE8F5; border-radius: 50px; padding: 16px 34px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; color: #5856D6; letter-spacing: 3px; text-transform: lowercase;">give</span>
+        </div>
+      </div>
+    </div>
+    <div class="label">L &mdash; Serif Pill</div>
+    <div class="sublabel">Cormorant Garamond in pill</div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLIMPSE — Product Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;width:100%;overflow:hidden}
+body{
+  background:#0c1222;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  display:flex;align-items:center;justify-content:center;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 50% 30%,rgba(88,86,214,0.06) 0%,transparent 70%);
+  pointer-events:none;
+}
+
+/* DEMO LAYOUT */
+.demo-container{
+  display:flex;flex-direction:column;align-items:center;
+  gap:24px;position:relative;z-index:1;
+}
+
+/* NARRATION */
+.narration-area{
+  text-align:center;min-height:72px;
+  display:flex;align-items:center;justify-content:center;
+}
+.narration-text{
+  color:rgba(255,255,255,0.88);font-size:20px;font-weight:300;
+  line-height:1.6;letter-spacing:0.01em;max-width:480px;
+  opacity:0;transform:translateY(8px);
+  animation:narrateIn 0.7s ease-out forwards;
+  white-space:pre-line;
+}
+@keyframes narrateIn{to{opacity:1;transform:translateY(0)}}
+
+/* PHONE FRAME */
+.phone-frame{
+  width:280px;height:605px;border-radius:36px;
+  overflow:hidden;position:relative;background:#F0F4F8;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.06),
+    0 0 0 2px rgba(0,0,0,0.25),
+    0 25px 60px rgba(0,0,0,0.5),
+    0 10px 20px rgba(0,0,0,0.3);
+}
+.phone-frame::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:100px;height:24px;background:#0c1222;
+  border-radius:0 0 16px 16px;z-index:100;
+}
+
+/* STATUS BAR */
+.status-bar{
+  position:absolute;top:0;left:0;right:0;height:44px;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 20px 4px;z-index:50;font-size:11px;font-weight:600;
+}
+.status-icons{display:flex;gap:4px;align-items:center}
+.signal{display:flex;gap:1px;align-items:flex-end;height:10px}
+.signal-bar{width:3px;border-radius:1px}
+.battery{
+  width:20px;height:9px;border:1.5px solid;border-radius:2px;position:relative;
+}
+.battery::after{
+  content:'';position:absolute;right:-3px;top:2px;
+  width:2px;height:3px;border-radius:0 1px 1px 0;background:currentColor;
+}
+.battery-fill{position:absolute;inset:1px;border-radius:0.5px;background:currentColor}
+
+/* SCENES */
+.scene{
+  position:absolute;inset:0;opacity:0;
+  transition:opacity 0.5s ease;pointer-events:none;
+}
+.scene.active{opacity:1;pointer-events:auto}
+
+/* SCENE 0: PROBLEM */
+.problem-scene{
+  background:#141926;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:32px 20px;
+}
+.problem-columns{
+  display:flex;gap:16px;width:100%;margin-bottom:12px;
+}
+.problem-col{
+  flex:1;background:rgba(255,255,255,0.04);border-radius:12px;
+  padding:14px 10px;text-align:center;
+  border:1px solid rgba(255,255,255,0.06);
+  opacity:0;transform:translateY(14px);
+}
+.problem-scene.active .pc1{animation:fadeUp 0.7s ease-out 0.3s forwards}
+.problem-scene.active .pc2{animation:fadeUp 0.7s ease-out 0.6s forwards}
+.problem-source{
+  font-size:7px;letter-spacing:0.8px;text-transform:uppercase;
+  color:rgba(255,255,255,0.3);margin-bottom:8px;font-weight:500;
+}
+.problem-number{
+  font-size:32px;font-weight:200;color:rgba(255,255,255,0.9);
+  text-align:center;letter-spacing:-1px;line-height:1.1;
+}
+.problem-number-sm{font-size:22px}
+.problem-sublabel{
+  font-size:9px;color:rgba(255,255,255,0.4);margin-top:3px;
+  letter-spacing:0.2px;line-height:1.3;
+}
+.problem-detail{
+  font-size:9px;color:rgba(88,86,214,0.7);margin-top:8px;
+  letter-spacing:0.2px;
+}
+.problem-divider{
+  width:32px;height:1px;background:rgba(88,86,214,0.35);
+  margin:6px auto;opacity:0;
+}
+.problem-scene.active .pd1{animation:fadeUp 0.6s ease-out 1.5s forwards}
+.problem-stat{opacity:0;transform:translateY(14px)}
+.problem-scene.active .p-bottom{animation:fadeUp 0.8s ease-out 1.8s forwards}
+.problem-label{
+  font-size:12px;color:rgba(255,255,255,0.45);text-align:center;
+  margin-top:4px;letter-spacing:0.3px;line-height:1.4;
+}
+
+/* SCENE 1: WELCOME */
+.welcome-scene{
+  background:#F0F4F8;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.welcome-brand{
+  font-family:'Courier Prime',monospace;font-size:36px;font-weight:400;
+  letter-spacing:5px;color:#1A202C;opacity:0;transform:translateY(10px);
+}
+.welcome-scene.active .welcome-brand{animation:fadeUp 1.6s ease-out 0.2s forwards}
+.welcome-line{
+  height:2px;background:#5856D6;margin-top:10px;width:0;border-radius:1px;
+}
+.welcome-scene.active .welcome-line{animation:lineGrow 1s ease-out 1s forwards}
+.welcome-tagline{
+  font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:3px;
+  color:#4A5568;margin-top:20px;opacity:0;
+}
+.welcome-scene.active .welcome-tagline{animation:fadeUp 0.8s ease-out 1.8s forwards}
+
+/* SCENE 2: GIVE */
+.give-scene{background:#F0F4F8;display:flex;flex-direction:column}
+.app-header{
+  padding:48px 16px 10px;background:rgba(255,255,255,0.75);
+  border-bottom:1px solid rgba(0,0,0,0.06);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.app-header-brand{font-size:20px;font-weight:300;letter-spacing:2px;color:#1A202C}
+.theme-toggle{
+  width:18px;height:18px;border:2px solid #1A202C;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+}
+.theme-toggle-dot{width:7px;height:7px;border-radius:50%;background:#1A202C}
+.give-content{flex:1;padding:14px 16px;overflow:hidden}
+
+/* Tier card */
+.tier-card{
+  background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.06);
+  border-radius:14px;padding:14px;margin-bottom:14px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.06);
+  opacity:0;transform:translateY(14px);
+}
+.give-scene.active .tier-card{animation:slideUp 0.6s ease-out 0.3s forwards}
+.tier-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.tier-amount{font-size:28px;font-weight:300;color:#1A202C}
+.tier-icon{
+  width:34px;height:34px;border-radius:17px;
+  background:rgba(88,86,214,0.12);border:2px solid #5856D6;
+  display:flex;align-items:center;justify-content:center;
+}
+.tier-icon-inner{width:12px;height:12px;border-radius:6px;border:2px solid #5856D6}
+.tier-title{font-size:14px;font-weight:600;color:#1A202C;margin-bottom:2px;line-height:1.3}
+.tier-partner{font-size:10px;color:#4A5568;letter-spacing:0.2px;margin-bottom:10px}
+.donate-btn{
+  background:#5856D6;border-radius:10px;padding:11px;text-align:center;
+  color:white;font-size:13px;font-weight:600;letter-spacing:0.3px;
+  box-shadow:0 3px 10px rgba(88,86,214,0.3);
+}
+
+/* Custom giving */
+.custom-giving{
+  background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.06);
+  border-radius:14px;padding:14px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.06);
+  opacity:0;transform:translateY(14px);
+}
+.give-scene.active .custom-giving{animation:slideUp 0.6s ease-out 1.2s forwards}
+.cg-title{font-size:15px;font-weight:600;color:#1A202C;margin-bottom:10px}
+.cg-label{font-size:11px;font-weight:500;color:#4A5568;margin-bottom:4px}
+.cg-dropdown{
+  background:#F0F4F8;border:1px solid rgba(0,0,0,0.06);border-radius:9px;
+  padding:9px 12px;display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;font-size:13px;color:#1A202C;
+}
+.chevron{
+  width:7px;height:7px;border-right:1.5px solid #718096;
+  border-bottom:1.5px solid #718096;transform:rotate(45deg);margin-top:-3px;
+}
+.cg-amount-row{
+  background:#F0F4F8;border:1px solid rgba(0,0,0,0.06);border-radius:9px;
+  padding:7px 12px;display:flex;align-items:center;margin-bottom:3px;
+}
+.cg-dollar{font-size:18px;font-weight:300;color:#4A5568;margin-right:3px}
+.cg-amount-val{font-size:18px;font-weight:300;color:#1A202C}
+.cg-give-btn{
+  background:#5856D6;border-radius:10px;padding:11px;text-align:center;
+  color:white;font-size:13px;font-weight:600;margin-top:10px;
+  box-shadow:0 3px 10px rgba(88,86,214,0.3);
+}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  position:absolute;bottom:0;left:0;right:0;height:60px;
+  background:rgba(255,255,255,0.92);border-top:1px solid rgba(0,0,0,0.06);
+  display:flex;justify-content:space-around;align-items:flex-start;
+  padding-top:7px;z-index:10;
+}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.nav-icon-info{
+  width:16px;height:16px;border:1.5px solid;border-radius:8px;
+}
+.nav-icon-heart{
+  width:14px;height:14px;border:1.5px solid;border-radius:3px;
+  transform:rotate(45deg);
+}
+.nav-icon-rect{width:14px;height:14px;border:1.5px solid;border-radius:3px}
+.nav-label{font-size:8px;font-weight:500;letter-spacing:0.3px}
+.nav-dot{width:3px;height:3px;border-radius:50%;background:#5856D6;margin-top:1px}
+
+/* SCENE 3: WALLET */
+.wallet-scene{background:#F0F4F8}
+.wallet-bg{
+  position:absolute;inset:0;opacity:0.15;filter:blur(2px);
+  background:#F0F4F8;padding:48px 16px 0;
+}
+.wallet-overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,0.45);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;
+}
+.wallet-scene.active .wallet-overlay{animation:fadeIn 0.4s ease-out 0.2s forwards}
+.wallet-modal{
+  background:white;border-radius:18px;padding:22px;width:100%;
+  text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.25);
+}
+.wm-title{font-size:16px;font-weight:600;color:#1A202C;margin-bottom:12px}
+.wm-status{font-size:13px;color:#4A5568;margin-bottom:10px}
+.wm-address{
+  font-family:'Courier Prime',monospace;font-size:10px;color:#718096;
+  background:#F0F4F8;padding:7px 10px;border-radius:7px;margin-bottom:12px;
+}
+.wm-check{
+  width:44px;height:44px;border-radius:22px;background:#34C759;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 10px;color:white;font-size:22px;font-weight:700;
+}
+.wm-confirmed{font-size:15px;font-weight:600;color:#34C759;margin-bottom:6px}
+.wm-tx{font-family:'Courier Prime',monospace;font-size:9px;color:#718096}
+.wm-solana{font-size:10px;color:#718096;margin-top:6px}
+.connecting-dots span{
+  animation:pulse 1.2s ease-in-out infinite;font-size:18px;
+}
+.connecting-dots span:nth-child(2){animation-delay:0.2s}
+.connecting-dots span:nth-child(3){animation-delay:0.4s}
+@keyframes pulse{0%,100%{opacity:0.3}50%{opacity:1}}
+
+/* SCENE 4: GLIMPSES */
+.glimpses-scene{background:#F0F4F8;display:flex;flex-direction:column}
+.glimpses-content{flex:1;padding:14px 16px;overflow:hidden}
+.impact-card{
+  background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.06);
+  border-radius:14px;overflow:hidden;
+  box-shadow:0 4px 16px rgba(0,0,0,0.06);
+  opacity:0;transform:translateY(14px);
+}
+.glimpses-scene.active .impact-card{animation:slideUp 0.6s ease-out 0.4s forwards}
+.impact-photo{
+  height:150px;
+  background:linear-gradient(135deg,#E8D5B7 0%,#C4A87C 40%,#8B7355 100%);
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.impact-photo-label{
+  position:absolute;bottom:6px;right:10px;font-size:8px;
+  color:rgba(255,255,255,0.7);background:rgba(0,0,0,0.25);
+  padding:2px 7px;border-radius:4px;
+}
+.person-icon-head{
+  width:14px;height:14px;border-radius:50%;
+  background:rgba(255,255,255,0.5);margin:0 auto 2px;
+}
+.person-icon-body{
+  width:22px;height:11px;border-radius:11px 11px 0 0;
+  background:rgba(255,255,255,0.5);margin:0 auto;
+}
+.impact-body{padding:12px 14px}
+.impact-name{font-size:16px;font-weight:600;color:#1A202C;margin-bottom:3px}
+.impact-desc{font-size:12px;color:#4A5568;line-height:1.4;margin-bottom:8px}
+.impact-meta{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.verified-badge{
+  background:rgba(52,199,89,0.12);color:#34C759;font-size:9px;
+  font-weight:600;padding:3px 7px;border-radius:4px;
+  display:flex;align-items:center;gap:3px;
+}
+.impact-date{font-size:9px;color:#718096}
+.receipt-row{
+  display:flex;align-items:center;gap:8px;padding:7px;
+  background:#F0F4F8;border-radius:7px;
+}
+.receipt-thumb{
+  width:32px;height:32px;border-radius:5px;
+  background:linear-gradient(135deg,#E2E8F0,#CBD5E0);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:#718096;
+}
+.receipt-label{font-weight:600;color:#1A202C;font-size:11px}
+.receipt-info{font-size:10px;color:#4A5568}
+
+/* SCENE 5: CLOSING */
+.closing-scene{
+  background:#F0F4F8;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.closing-brand{
+  font-family:'Courier Prime',monospace;font-size:34px;font-weight:400;
+  letter-spacing:5px;color:#1A202C;opacity:0;
+}
+.closing-scene.active .closing-brand{animation:fadeIn 0.8s ease-out 0.3s forwards}
+.closing-line{
+  width:0;height:2px;background:#5856D6;margin-top:10px;border-radius:1px;
+}
+.closing-scene.active .closing-line{animation:lineGrow 0.8s ease-out 0.8s forwards}
+.closing-tagline{
+  font-size:11px;color:#4A5568;margin-top:18px;letter-spacing:0.5px;opacity:0;
+}
+.closing-scene.active .closing-tagline{animation:fadeUp 0.8s ease-out 1.2s forwards}
+
+/* PROGRESS DOTS */
+.progress-dots{display:flex;gap:8px;margin-top:6px}
+.progress-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,0.18);transition:all 0.4s ease;
+}
+.progress-dot.active{background:#5856D6;transform:scale(1.4)}
+.progress-dot.done{background:rgba(88,86,214,0.45)}
+
+/* REPLAY */
+.replay-btn{
+  margin-top:12px;background:transparent;
+  border:1px solid rgba(255,255,255,0.18);
+  color:rgba(255,255,255,0.5);padding:7px 20px;border-radius:18px;
+  font-size:11px;font-weight:500;cursor:pointer;letter-spacing:1px;
+  opacity:0;transition:all 0.3s ease;font-family:inherit;
+}
+.replay-btn.visible{opacity:1}
+.replay-btn:hover{
+  background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.85);
+  border-color:rgba(255,255,255,0.35);
+}
+
+/* KEYFRAMES */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(12px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(14px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes lineGrow{from{width:0}to{width:56px}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useCallback} = React;
+
+const DURATIONS = [5500, 3800, 7000, 6000, 7000, 6500];
+const TOTAL = 6;
+const NARRATIONS = [
+  "$593 billion donated in 2024. $1 billion in crypto alone.\nBut the connection between giver and impact? Lost.",
+  "So we built Glimpse.",
+  "Pick a direction. No fees.\nYour full gift goes to work.",
+  "Every donation recorded on Solana.\nTransparent. Permanent.",
+  "Then you see the proof.",
+  "Coming to the Seeker dApp Store soon.",
+];
+
+function StatusBar({light}) {
+  const c = light ? 'rgba(255,255,255,0.8)' : '#1A202C';
+  return (
+    <div className="status-bar" style={{color:c}}>
+      <span>9:41</span>
+      <div className="status-icons">
+        <div className="signal">
+          {[4,6,8,10].map((h,i) => (
+            <div key={i} className="signal-bar" style={{height:h,background:c}} />
+          ))}
+        </div>
+        <div className="battery" style={{borderColor:c}}>
+          <div className="battery-fill" style={{background:c}} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BottomNav({active='give'}) {
+  const items = [
+    {id:'about',icon:'info',label:'About'},
+    {id:'give',icon:'heart',label:'Give'},
+    {id:'glimpses',icon:'rect',label:'Glimpses'},
+  ];
+  return (
+    <div className="bottom-nav">
+      {items.map(({id,icon,label}) => {
+        const isActive = active === id;
+        const color = isActive ? '#1A202C' : '#A0AEC0';
+        return (
+          <div key={id} className="nav-item" style={{color}}>
+            <div style={{width:20,height:20,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              {icon==='info' && <div className="nav-icon-info" style={{borderColor:color}} />}
+              {icon==='heart' && <div className="nav-icon-heart" style={{borderColor:color}} />}
+              {icon==='rect' && <div className="nav-icon-rect" style={{borderColor:color}} />}
+            </div>
+            <span className="nav-label" style={{color}}>{label}</span>
+            {isActive && <div className="nav-dot" />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ProblemScene({active}) {
+  return (
+    <div className={`scene problem-scene ${active?'active':''}`}>
+      <div className="problem-columns">
+        <div className="problem-col pc1">
+          <div className="problem-source">Giving USA 2025</div>
+          <div className="problem-number">$593B</div>
+          <div className="problem-sublabel">total U.S. charitable<br/>giving in 2024</div>
+          <div className="problem-detail">+6.3% year over year</div>
+        </div>
+        <div className="problem-col pc2">
+          <div className="problem-source">The Giving Block 2025</div>
+          <div className="problem-number problem-number-sm">$1B+</div>
+          <div className="problem-sublabel">crypto donated to<br/>nonprofits in 2024</div>
+          <div className="problem-detail">64% Bitcoin &middot; record year</div>
+        </div>
+      </div>
+      <div className="problem-divider pd1" />
+      <div className="problem-stat p-bottom">
+        <div className="problem-number" style={{fontSize:30,color:'rgba(255,255,255,0.3)'}}>0</div>
+        <div className="problem-label">connection between donor and impact</div>
+      </div>
+    </div>
+  );
+}
+
+function WelcomeScene({active}) {
+  return (
+    <div className={`scene welcome-scene ${active?'active':''}`}>
+      <StatusBar />
+      <div className="welcome-brand">GLIMPSE</div>
+      <div className="welcome-line" />
+      <div className="welcome-tagline">DOCUMENTING KINDNESS.</div>
+    </div>
+  );
+}
+
+function GiveScene({active}) {
+  return (
+    <div className={`scene give-scene ${active?'active':''}`}>
+      <StatusBar />
+      <div className="app-header">
+        <span className="app-header-brand">Glimpse</span>
+        <div className="theme-toggle"><div className="theme-toggle-dot" /></div>
+      </div>
+      <div className="give-content">
+        <div className="tier-card">
+          <div className="tier-top">
+            <div className="tier-amount">$25</div>
+            <div className="tier-icon"><div className="tier-icon-inner" /></div>
+          </div>
+          <div className="tier-title">A clean shower and fresh clothes</div>
+          <div className="tier-partner">BeHeard Movement &middot; Tulsa, OK</div>
+          <div className="donate-btn">Donate $25</div>
+        </div>
+        <div className="custom-giving">
+          <div className="cg-title">Give Your Way</div>
+          <div className="cg-label">Direction</div>
+          <div className="cg-dropdown">
+            <span>Single moms</span>
+            <div className="chevron" />
+          </div>
+          <div className="cg-label">Amount</div>
+          <div className="cg-amount-row">
+            <span className="cg-dollar">$</span>
+            <span className="cg-amount-val">50</span>
+          </div>
+          <div className="cg-give-btn">Give Now</div>
+        </div>
+      </div>
+      <BottomNav active="give" />
+    </div>
+  );
+}
+
+function WalletScene({active}) {
+  const [step,setStep] = useState(0);
+  useEffect(() => {
+    if (!active) { setStep(0); return; }
+    const t1 = setTimeout(() => setStep(1), 1800);
+    const t2 = setTimeout(() => setStep(2), 3200);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [active]);
+
+  return (
+    <div className={`scene wallet-scene ${active?'active':''}`}>
+      <StatusBar />
+      <div className="wallet-bg">
+        <div style={{padding:'10px 0',opacity:0.4}}>
+          <div style={{background:'rgba(255,255,255,0.5)',borderRadius:12,padding:14,marginBottom:12}}>
+            <div style={{fontSize:26,fontWeight:300,color:'#1A202C'}}>$25</div>
+            <div style={{fontSize:13,fontWeight:600,color:'#1A202C',marginTop:4}}>A clean shower and fresh clothes</div>
+          </div>
+        </div>
+      </div>
+      <div className="wallet-overlay">
+        <div className="wallet-modal">
+          {step === 0 && (
+            <>
+              <div className="wm-title">Connecting Wallet</div>
+              <div className="wm-status">
+                <span className="connecting-dots">
+                  <span>.</span><span>.</span><span>.</span>
+                </span>
+              </div>
+            </>
+          )}
+          {step === 1 && (
+            <>
+              <div className="wm-title">Wallet Connected</div>
+              <div className="wm-address">7xKX...F4m2</div>
+              <div className="wm-status">Sending $25...</div>
+            </>
+          )}
+          {step === 2 && (
+            <>
+              <div className="wm-check">&#10003;</div>
+              <div className="wm-confirmed">Transaction Confirmed</div>
+              <div className="wm-tx">Tx: 4sGjR...8KwP &middot; 0.4s &middot; $0.0001 fee</div>
+              <div className="wm-solana">Recorded on Solana</div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GlimpsesScene({active}) {
+  return (
+    <div className={`scene glimpses-scene ${active?'active':''}`}>
+      <StatusBar />
+      <div className="app-header">
+        <span className="app-header-brand">Glimpse</span>
+      </div>
+      <div className="glimpses-content">
+        <div className="impact-card">
+          <div className="impact-photo">
+            <div>
+              <div className="person-icon-head" />
+              <div className="person-icon-body" />
+            </div>
+            <div className="impact-photo-label">Impact photo</div>
+          </div>
+          <div className="impact-body">
+            <div className="impact-name">James T.</div>
+            <div className="impact-desc">
+              Hot shower and fresh clothes through BeHeard Movement in Tulsa
+            </div>
+            <div className="impact-meta">
+              <div className="verified-badge">&#10003; Verified</div>
+              <div className="impact-date">Feb 5, 2026</div>
+            </div>
+            <div className="receipt-row">
+              <div className="receipt-thumb">R</div>
+              <div>
+                <div className="receipt-label">Receipt attached</div>
+                <div className="receipt-info">Photographed &amp; timestamped</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <BottomNav active="glimpses" />
+    </div>
+  );
+}
+
+function ClosingScene({active}) {
+  return (
+    <div className={`scene closing-scene ${active?'active':''}`}>
+      <div className="closing-brand">GLIMPSE</div>
+      <div className="closing-line" />
+      <div className="closing-tagline">documenting kindness</div>
+    </div>
+  );
+}
+
+function App() {
+  const [scene,setScene] = useState(-1);
+  const [replay,setReplay] = useState(false);
+
+  const start = useCallback(() => {
+    setScene(0);
+    setReplay(false);
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(start, 800);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (scene < 0 || scene >= TOTAL) return;
+    const t = setTimeout(() => {
+      if (scene < TOTAL - 1) {
+        setScene(s => s + 1);
+      } else {
+        setTimeout(() => setReplay(true), 3000);
+      }
+    }, DURATIONS[scene]);
+    return () => clearTimeout(t);
+  }, [scene]);
+
+  const handleReplay = () => {
+    setScene(-1);
+    setTimeout(start, 400);
+  };
+
+  return (
+    <div className="demo-container">
+      <div className="narration-area">
+        {scene >= 0 && scene < TOTAL && (
+          <div className="narration-text" key={scene}>
+            {NARRATIONS[scene]}
+          </div>
+        )}
+      </div>
+      <div className="phone-frame">
+        <ProblemScene active={scene===0} />
+        <WelcomeScene active={scene===1} />
+        <GiveScene active={scene===2} />
+        <WalletScene active={scene===3} />
+        <GlimpsesScene active={scene===4} />
+        <ClosingScene active={scene===5} />
+      </div>
+      <div className="progress-dots">
+        {Array.from({length:TOTAL}).map((_,i) => (
+          <div key={i} className={`progress-dot ${scene===i?'active':scene>i?'done':''}`} />
+        ))}
+      </div>
+      <button
+        className={`replay-btn ${replay?'visible':''}`}
+        onClick={handleReplay}
+      >
+        REPLAY
+      </button>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
