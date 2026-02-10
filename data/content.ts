@@ -178,6 +178,8 @@ export const CUSTOM_TIER = {
   cta: 'Connect \u2192',
 };
 
+export const PRESET_AMOUNTS = [10, 25, 50, 100] as const;
+
 export const ONBOARDING_SLIDES = [
   {
     id: 'transparency',
