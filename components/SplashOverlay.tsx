@@ -115,16 +115,17 @@ export default function SplashOverlay({onComplete}: SplashOverlayProps) {
   const combinedScale = Animated.multiply(brandScale, brandScaleTransition);
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.background,
-          opacity: overlayOpacity,
-        },
-      ]}
-      pointerEvents="none">
-      {/* Art frame — centered in screen */}
+    <View style={styles.container} pointerEvents="none">
+      {/* Background + art — these fade out */}
+      <Animated.View
+        style={[
+          styles.backgroundLayer,
+          {
+            backgroundColor: colors.background,
+            opacity: overlayOpacity,
+          },
+        ]}
+      />
       <Animated.View
         style={[styles.artWrapper, {opacity: artOpacity}]}
         pointerEvents="none">
@@ -154,7 +155,7 @@ export default function SplashOverlay({onComplete}: SplashOverlayProps) {
         </View>
       </Animated.View>
 
-      {/* Brand text — overlaid on art, animates up to header */}
+      {/* Brand text — stays fully visible, moves up to header */}
       <Animated.View
         style={[
           styles.brandContainer,
@@ -170,7 +171,7 @@ export default function SplashOverlay({onComplete}: SplashOverlayProps) {
           Glimpse
         </Text>
       </Animated.View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -180,6 +181,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
+  },
+  backgroundLayer: {
+    ...StyleSheet.absoluteFillObject,
   },
   artWrapper: {
     position: 'absolute',
