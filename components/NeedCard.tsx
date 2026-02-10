@@ -27,15 +27,32 @@ const smoothLayout = {
 
 const DISPLAY_FONT = Platform.OS === 'ios' ? 'Georgia' : 'serif';
 
+// Amount size scales with magnitude — visual weight matches the ask
+function getAmountSize(amount: number): number {
+  if (amount >= 1000) return 40;
+  if (amount >= 400) return 36;
+  if (amount >= 250) return 33;
+  if (amount >= 100) return 30;
+  return 28;
+}
+
 interface NeedCardProps {
   need: Need;
   delay: number;
+  index: number;
   onGive: (need: Need) => void;
 }
 
-export default function NeedCard({need, delay, onGive}: NeedCardProps) {
+export default function NeedCard({need, delay, index, onGive}: NeedCardProps) {
   const {colors} = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const padOffset = 24;
+  const amountSize = getAmountSize(need.amount);
+  const accentColors = [colors.primary, colors.accent, colors.secondary];
+  const accentColor = accentColors[index % accentColors.length];
+  // Breathing room before the big ask ($1,000)
+  const bottomMargin = index === 3 ? 28 : 16;
 
   // Entrance animation
   const opacity = useRef(new Animated.Value(0)).current;
@@ -72,7 +89,7 @@ export default function NeedCard({need, delay, onGive}: NeedCardProps) {
   };
 
   return (
-    <Animated.View style={[cardStyles.wrapper, {opacity, transform: [{translateY}, {scale}]}]}>
+    <Animated.View style={[{marginBottom: bottomMargin}, {opacity, transform: [{translateY}, {scale}]}]}>
       <TouchableOpacity
         activeOpacity={1}
         onPress={toggleExpand}
@@ -80,14 +97,31 @@ export default function NeedCard({need, delay, onGive}: NeedCardProps) {
         onPressOut={onPressOut}>
         <GlassCard variant="primary">
           <View style={cardStyles.content}>
-            {/* Title — the emotional hook */}
-            <Text style={[cardStyles.title, {color: colors.textPrimary}]}>
-              {need.title}
+            {/* Accent bar — brand thread along left edge */}
+            <View
+              style={[
+                cardStyles.accentBar,
+                {
+                  backgroundColor: accentColor,
+                  left: -padOffset,
+                  top: -padOffset,
+                  bottom: -padOffset,
+                },
+              ]}
+            />
+
+            {/* Amount — hero, scaled by magnitude */}
+            <Text
+              style={[
+                cardStyles.amount,
+                {color: colors.textPrimary, fontSize: amountSize},
+              ]}>
+              ${need.amount.toLocaleString()}
             </Text>
 
-            {/* Amount in serif — meaningful number */}
-            <Text style={[cardStyles.amount, {color: colors.textTertiary}]}>
-              ${need.amount.toLocaleString()}
+            {/* Title — emotional context beneath the number */}
+            <Text style={[cardStyles.title, {color: colors.textPrimary}]}>
+              {need.title}
             </Text>
 
             {/* Expanded: description + Give button */}
@@ -120,19 +154,21 @@ export default function NeedCard({need, delay, onGive}: NeedCardProps) {
 }
 
 const cardStyles = StyleSheet.create({
-  wrapper: {marginBottom: 20},
   content: {padding: 0},
-  title: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: '500',
-    lineHeight: Typography.body.lineHeight,
-    marginBottom: 4,
+  accentBar: {
+    position: 'absolute',
+    width: 3,
   },
   amount: {
-    fontSize: 16,
     fontWeight: '300',
     fontFamily: DISPLAY_FONT,
     letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  title: {
+    fontSize: Typography.body.fontSize,
+    fontWeight: '400',
+    lineHeight: Typography.body.lineHeight,
   },
   expandedInner: {paddingTop: 20},
   divider: {height: 1, marginBottom: 16},
