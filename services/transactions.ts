@@ -2,7 +2,7 @@
  * Transaction recording and history service.
  */
 
-import {supabase} from './supabase';
+import {getSupabase} from './supabase';
 import {SUPABASE_URL} from '../config/env';
 
 export interface TransactionRecord {
@@ -11,26 +11,30 @@ export interface TransactionRecord {
   need_id: string | null;
   tx_signature: string;
   amount: number;
+  note: string | null;
   created_at: string;
 }
 
 /**
  * Record a completed donation transaction.
- * Uses the service-role client via an Edge Function or direct insert
- * depending on your RLS policy setup.
  */
 export async function recordTransaction(
   walletAddress: string,
   txSignature: string,
   amount: number,
   needSlug?: string,
+  note?: string,
 ): Promise<void> {
   if (!SUPABASE_URL) {
     return;
   }
 
+  const supabase = getSupabase();
+  if (!supabase) {
+    return;
+  }
+
   try {
-    // Look up the need ID from slug if provided
     let needId: string | null = null;
     if (needSlug) {
       const {data} = await supabase
@@ -46,6 +50,7 @@ export async function recordTransaction(
       need_id: needId,
       tx_signature: txSignature,
       amount,
+      note: note || null,
     });
   } catch {
     // Silently fail — transaction is already on-chain
@@ -59,6 +64,11 @@ export async function fetchMyTransactions(
   walletAddress: string,
 ): Promise<TransactionRecord[]> {
   if (!SUPABASE_URL) {
+    return [];
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
     return [];
   }
 
