@@ -19,6 +19,7 @@ import {useNeeds} from '../hooks/useNeeds';
 import type {Need} from '../data/content';
 import {MOCK_GLIMPSES} from '../data/content';
 import {transferUSDC, RECIPIENT_WALLET} from '../utils/transfer';
+import {handleMWAError, handleTransactionError} from '../utils/errors';
 import {recordTransaction} from '../services/transactions';
 import NeedCard from '../components/NeedCard';
 import GlimpseCard from '../components/GlimpseCard';
@@ -130,6 +131,7 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
         RECIPIENT_WALLET,
         confirmAmount,
         signAndSendTransaction,
+        selectedNeed?.id,
       );
       setTxSignature(signature);
       setTxSuccess(true);
@@ -143,7 +145,12 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
         note,
       ).catch(() => {});
     } catch (err: any) {
-      setTxError(err?.message || 'Transaction failed. Please try again.');
+      const mwaResult = handleMWAError(err);
+      if (mwaResult.message !== (err?.message ?? String(err))) {
+        setTxError(mwaResult.message);
+      } else {
+        setTxError(handleTransactionError(err));
+      }
     } finally {
       setTxLoading(false);
     }

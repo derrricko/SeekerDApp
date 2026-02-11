@@ -3,6 +3,9 @@
  *
  * Builds a USDC transfer transaction and sends it via wallet-standard
  * signAndSendTransaction (from WalletProvider).
+ *
+ * When a `slug` is provided, routes through the Glimpse Escrow program.
+ * Falls back to direct transfer if escrow fails or no slug given.
  */
 
 import {
@@ -22,6 +25,7 @@ import {
   USDC_DECIMALS,
   RECIPIENT_WALLET,
 } from '../config/env';
+import {buildDonateTransaction} from './escrow';
 import bs58 from 'bs58';
 
 // Re-export for consumers
@@ -91,6 +95,10 @@ export async function buildUSDCTransferTransaction(
 
 /**
  * Execute a USDC transfer via wallet-standard signAndSendTransaction.
+ *
+ * When `slug` is provided, attempts the escrow program path first.
+ * Falls back to direct transfer on escrow failure.
+ *
  * Returns the transaction signature as a base58 string.
  */
 export async function transferUSDC(
@@ -99,13 +107,35 @@ export async function transferUSDC(
   recipientPublicKey: PublicKey,
   amount: number,
   signAndSendTransaction: (transaction: Uint8Array) => Promise<Uint8Array>,
+  slug?: string,
 ): Promise<string> {
-  const transaction = await buildUSDCTransferTransaction(
-    connection,
-    senderPublicKey,
-    recipientPublicKey,
-    amount,
-  );
+  let transaction: Transaction;
+
+  if (slug) {
+    try {
+      transaction = await buildDonateTransaction(
+        connection,
+        senderPublicKey,
+        slug,
+        amount,
+      );
+    } catch (escrowErr) {
+      console.warn('Escrow build failed, falling back to direct transfer:', escrowErr);
+      transaction = await buildUSDCTransferTransaction(
+        connection,
+        senderPublicKey,
+        recipientPublicKey,
+        amount,
+      );
+    }
+  } else {
+    transaction = await buildUSDCTransferTransaction(
+      connection,
+      senderPublicKey,
+      recipientPublicKey,
+      amount,
+    );
+  }
 
   // Serialize the transaction for wallet-standard
   const serialized = transaction.serialize({

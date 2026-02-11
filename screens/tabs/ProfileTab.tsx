@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import {useTheme, Typography} from '../../components/theme';
 import {useWallet} from '../../components/providers/WalletProvider';
+import {useAuth} from '../../components/providers/AuthProvider';
 import {FAQ_DATA} from '../../data/content';
 import GlassCard from '../../components/GlassCard';
 import {smoothLayout} from '../../utils/animations';
@@ -104,6 +105,7 @@ function FAQItem({item, isExpanded, onToggle}: FAQItemProps) {
 export default function ProfileTab() {
   const {colors, mode, toggleMode} = useTheme();
   const {publicKey, connected, connect, disconnect} = useWallet();
+  const {isAuthenticated, loading: authLoading, signInWithSolana, error: authError} = useAuth();
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
   const handleConnect = async () => {
@@ -142,6 +144,23 @@ export default function ProfileTab() {
                 <Text style={[profileStyles.walletStatus, {color: colors.textSecondary}]}>Connected</Text>
               </View>
               <Text style={[profileStyles.walletAddress, {color: colors.textTertiary}]}>{shortAddress}</Text>
+              {!isAuthenticated && (
+                <TouchableOpacity
+                  style={[profileStyles.connectButton, {backgroundColor: colors.accent, marginTop: 12}]}
+                  onPress={() => {
+                    triggerHaptic('impactMedium');
+                    signInWithSolana();
+                  }}
+                  activeOpacity={0.8}
+                  disabled={authLoading}>
+                  <Text style={[profileStyles.connectText, {color: '#FFFFFF'}]}>
+                    {authLoading ? 'Signing in...' : 'Sign In With Solana'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {authError && (
+                <Text style={[profileStyles.authError, {color: colors.error || '#D35F5F'}]}>{authError}</Text>
+              )}
               <TouchableOpacity
                 style={[profileStyles.disconnectButton, {borderColor: colors.border}]}
                 onPress={handleDisconnect}
@@ -237,6 +256,7 @@ const profileStyles = StyleSheet.create({
   connectText: {...Typography.buttonLarge},
   disconnectButton: {paddingVertical: 12, borderRadius: 12, borderWidth: 1, alignItems: 'center', marginTop: 12},
   disconnectText: {fontSize: Typography.bodySmall.fontSize, fontWeight: '500'},
+  authError: {fontSize: Typography.caption.fontSize, marginTop: 8, textAlign: 'center' as const},
   themeRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: 14},
   themeLabel: {...Typography.label, marginLeft: 12, flex: 1},
   themeCycle: {...Typography.caption},

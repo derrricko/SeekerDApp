@@ -24,6 +24,7 @@ import {fetchNonce, verifySIWS, setSupabaseSession} from '../../services/auth';
 import {fetchProfile} from '../../services/profiles';
 import type {Profile} from '../../services/profiles';
 import {SUPABASE_URL} from '../../config/env';
+import {handleMWAError} from '../../utils/errors';
 
 interface AuthContextState {
   /** The authenticated profile, or null */
@@ -32,6 +33,8 @@ interface AuthContextState {
   loading: boolean;
   /** Whether the user is authenticated with Supabase */
   isAuthenticated: boolean;
+  /** Last auth error message, if any */
+  error: string | null;
   /** Trigger SIWS auth flow */
   signInWithSolana: () => Promise<void>;
   /** Clear session */
@@ -42,14 +45,16 @@ const AuthContext = createContext<AuthContextState>({
   profile: null,
   loading: false,
   isAuthenticated: false,
+  error: null,
   signInWithSolana: async () => {},
   signOut: () => {},
 });
 
 export function AuthProvider({children}: {children: ReactNode}) {
-  const {publicKey, signIn: walletSignIn, connected} = useWallet();
+  const {publicKey, signIn: walletSignIn, connected, disconnect} = useWallet();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const isAuthenticated = profile !== null;
 
@@ -70,6 +75,7 @@ export function AuthProvider({children}: {children: ReactNode}) {
     }
 
     setLoading(true);
+    setError(null);
     try {
       // 1. Fetch nonce
       const nonce = await fetchNonce();
@@ -104,12 +110,23 @@ export function AuthProvider({children}: {children: ReactNode}) {
 
       // 6. Update profile state
       setProfile(serverProfile);
-    } catch (err) {
+    } catch (err: any) {
+      const mwaResult = handleMWAError(err);
+      setError(mwaResult.message);
+      // Clear cached auth on authorization failure (per Solana Mobile pattern)
+      if (mwaResult.clearAuth) {
+        setProfile(null);
+        try {
+          await disconnect();
+        } catch {
+          // Ignore disconnect errors
+        }
+      }
       console.warn('SIWS auth failed:', err);
     } finally {
       setLoading(false);
     }
-  }, [walletSignIn]);
+  }, [walletSignIn, disconnect]);
 
   const signOut = useCallback(() => {
     setProfile(null);
@@ -117,7 +134,7 @@ export function AuthProvider({children}: {children: ReactNode}) {
 
   return (
     <AuthContext.Provider
-      value={{profile, loading, isAuthenticated, signInWithSolana, signOut}}>
+      value={{profile, loading, isAuthenticated, error, signInWithSolana, signOut}}>
       {children}
     </AuthContext.Provider>
   );

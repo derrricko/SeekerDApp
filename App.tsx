@@ -25,11 +25,9 @@ function AppContent() {
   const [showJourney, setShowJourney] = useState(false);
   const isFirstLaunchRef = useRef(false);
 
-  // Check AsyncStorage on mount — resolves well before splash finishes (~4s)
+  // TODO: remove force-show — temp override for testing
   useEffect(() => {
-    AsyncStorage.getItem(JOURNEY_SEEN_KEY).then(value => {
-      isFirstLaunchRef.current = value !== 'true';
-    });
+    isFirstLaunchRef.current = true;
   }, []);
 
   const handleSplashDone = () => {
