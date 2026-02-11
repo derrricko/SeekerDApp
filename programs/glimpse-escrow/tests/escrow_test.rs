@@ -2,17 +2,27 @@
 //!
 //! These tests load the compiled .so from target/deploy/ and exercise
 //! all three instructions: initialize_need, donate, and disburse.
+//!
+//! The program enforces:
+//! - USDC mint must match the hardcoded devnet address
+//! - Only ADMIN_PUBKEY can call initialize_need
+//! - Slug must be 1-32 bytes
+//!
+//! We inject a synthetic mint at the known USDC address and disable
+//! signature verification so we can sign as ADMIN_PUBKEY in tests.
 
 use litesvm::LiteSVM;
 use solana_sdk::{
+    account::Account,
     instruction::{AccountMeta, Instruction},
     program_pack::Pack,
     pubkey::Pubkey,
-    signature::Keypair,
+    signature::{Keypair, Signature},
     signer::Signer,
     system_program,
     transaction::Transaction,
 };
+use std::sync::atomic::{AtomicU64, Ordering};
 use spl_associated_token_account::{
     get_associated_token_address, instruction::create_associated_token_account,
 };
@@ -21,11 +31,19 @@ use spl_token::state::Mint;
 use std::path::PathBuf;
 
 // ---------------------------------------------------------------------------
-// Constants
+// Constants (must match program's constants.rs)
 // ---------------------------------------------------------------------------
 
 /// Escrow program ID — must match declare_id! in lib.rs
 const PROGRAM_ID: Pubkey = solana_sdk::pubkey!("7Ma28eiEEd4WKDCwbfejbPevcsuchePsvYvdw6Tme6NE");
+
+/// Devnet USDC mint — hardcoded in program's constants.rs
+const USDC_MINT_ADDR: Pubkey =
+    solana_sdk::pubkey!("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
+
+/// Admin pubkey — hardcoded in program's constants.rs
+const ADMIN_ADDR: Pubkey =
+    solana_sdk::pubkey!("HQ5C58Tu11cy8Q8Lfjpj8sRTW25wY7VnwgoW61cfMsY5");
 
 /// SPL Token program
 const TOKEN_PROGRAM_ID: Pubkey =
@@ -69,7 +87,6 @@ fn derive_vault_pda(slug: &str) -> (Pubkey, u8) {
 // Instruction data serialization
 // ---------------------------------------------------------------------------
 
-/// Anchor serializes String as: 4-byte LE length prefix + UTF-8 bytes
 fn serialize_string(s: &str) -> Vec<u8> {
     let mut buf = Vec::new();
     buf.extend_from_slice(&(s.len() as u32).to_le_bytes());
@@ -103,14 +120,13 @@ fn build_disburse_data() -> Vec<u8> {
 
 struct TestEnv {
     svm: LiteSVM,
-    authority: Keypair,
-    usdc_mint: Keypair,
+    /// A real keypair used as the admin. We fund the ADMIN_ADDR separately
+    /// and use sigverify(false) so we can sign as ADMIN_ADDR.
+    admin_payer: Keypair,
     recipient: Keypair,
 }
 
 fn program_so_path() -> PathBuf {
-    // The .so lives at the workspace root: target/deploy/glimpse_escrow.so
-    // Tests run from the crate directory, so go up two levels.
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.pop(); // programs/
     path.pop(); // project root
@@ -120,70 +136,86 @@ fn program_so_path() -> PathBuf {
     path
 }
 
-fn setup() -> TestEnv {
-    let mut svm = LiteSVM::new();
+/// Inject a pre-built SPL Mint account at `mint_addr` with given decimals
+/// and `mint_authority`. This avoids needing a keypair for the mint address.
+fn inject_mint(svm: &mut LiteSVM, mint_addr: &Pubkey, decimals: u8, mint_authority: &Pubkey) {
+    let mut mint_data = vec![0u8; Mint::LEN];
+    let mint = spl_token::state::Mint {
+        mint_authority: solana_sdk::program_option::COption::Some(*mint_authority),
+        supply: 0,
+        decimals,
+        is_initialized: true,
+        freeze_authority: solana_sdk::program_option::COption::None,
+    };
+    spl_token::state::Mint::pack(mint, &mut mint_data).unwrap();
 
-    // Load the escrow program from the compiled .so
+    let rent = svm.minimum_balance_for_rent_exemption(Mint::LEN);
+    svm.set_account(
+        *mint_addr,
+        Account {
+            lamports: rent,
+            data: mint_data,
+            owner: TOKEN_PROGRAM_ID,
+            executable: false,
+            rent_epoch: 0,
+        },
+    )
+    .unwrap();
+}
+
+fn setup() -> TestEnv {
+    let mut svm = LiteSVM::new()
+        .with_sigverify(false); // Allow signing as ADMIN_ADDR without private key
+
+    // Load the escrow program
     let program_bytes = std::fs::read(program_so_path()).expect(
-        "Failed to read glimpse_escrow.so — run `anchor build` or `cargo-build-sbf` first",
+        "Failed to read glimpse_escrow.so — run `cargo-build-sbf` first",
     );
     svm.add_program(PROGRAM_ID, &program_bytes);
 
-    // Create keypairs
-    let authority = Keypair::new();
-    let usdc_mint = Keypair::new();
+    // A real keypair we use as the "payer" for transactions.
+    // With sigverify off, we'll construct transactions that claim ADMIN_ADDR
+    // as a signer but use this keypair's signature slot.
+    let admin_payer = Keypair::new();
     let recipient = Keypair::new();
 
-    // Fund authority with plenty of SOL for rent + fees
-    svm.airdrop(&authority.pubkey(), 10_000_000_000).unwrap();
-    // Fund recipient so their account exists
+    // Fund the ADMIN_ADDR (the hardcoded admin) and the payer
+    svm.airdrop(&ADMIN_ADDR, 10_000_000_000).unwrap();
+    svm.airdrop(&admin_payer.pubkey(), 10_000_000_000).unwrap();
     svm.airdrop(&recipient.pubkey(), 1_000_000_000).unwrap();
 
-    // Create the USDC mint
-    create_spl_mint(&mut svm, &authority, &usdc_mint, USDC_DECIMALS);
+    // Inject USDC mint at the hardcoded address with admin_payer as mint authority
+    // (we use admin_payer since we have its keypair for mint_to instructions)
+    inject_mint(&mut svm, &USDC_MINT_ADDR, USDC_DECIMALS, &admin_payer.pubkey());
 
     TestEnv {
         svm,
-        authority,
-        usdc_mint,
+        admin_payer,
         recipient,
     }
 }
 
-/// Creates an SPL Token mint account.
-fn create_spl_mint(svm: &mut LiteSVM, payer: &Keypair, mint_kp: &Keypair, decimals: u8) {
-    let rent = svm.minimum_balance_for_rent_exemption(Mint::LEN);
+/// Monotonic counter to ensure each admin tx has a unique signature.
+/// Without this, LiteSVM deduplicates identical all-zero signatures.
+static TX_COUNTER: AtomicU64 = AtomicU64::new(1);
 
-    let create_account_ix = solana_sdk::system_instruction::create_account(
-        &payer.pubkey(),
-        &mint_kp.pubkey(),
-        rent,
-        Mint::LEN as u64,
-        &TOKEN_PROGRAM_ID,
-    );
-
-    let init_mint_ix = spl_token::instruction::initialize_mint(
-        &TOKEN_PROGRAM_ID,
-        &mint_kp.pubkey(),
-        &payer.pubkey(), // mint authority
-        None,            // freeze authority
-        decimals,
-    )
-    .unwrap();
-
-    let tx = Transaction::new_signed_with_payer(
-        &[create_account_ix, init_mint_ix],
-        Some(&payer.pubkey()),
-        &[payer, mint_kp],
-        svm.latest_blockhash(),
-    );
-    svm.send_transaction(tx).unwrap();
+/// Build and send a transaction with ADMIN_ADDR as fee payer.
+/// Since sigverify is off, we don't need the actual admin private key.
+fn send_admin_tx(svm: &mut LiteSVM, ixs: &[Instruction]) -> Result<(), Box<dyn std::error::Error>> {
+    let mut tx = Transaction::new_with_payer(ixs, Some(&ADMIN_ADDR));
+    tx.message.recent_blockhash = svm.latest_blockhash();
+    // Assign a unique signature to avoid LiteSVM AlreadyProcessed dedup
+    let counter = TX_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let mut sig_bytes = [0u8; 64];
+    sig_bytes[..8].copy_from_slice(&counter.to_le_bytes());
+    tx.signatures = vec![Signature::from(sig_bytes)];
+    svm.send_transaction(tx).map(|_| ()).map_err(|e| format!("{:?}", e).into())
 }
 
-/// Creates an associated token account for `owner` on `mint`, funded by `payer`.
-fn create_ata(svm: &mut LiteSVM, payer: &Keypair, owner: &Pubkey, mint: &Pubkey) -> Pubkey {
-    let ata = get_associated_token_address(owner, mint);
-    let ix = create_associated_token_account(&payer.pubkey(), owner, mint, &TOKEN_PROGRAM_ID);
+/// Creates an associated token account for `owner` on USDC_MINT_ADDR.
+fn create_ata(svm: &mut LiteSVM, payer: &Keypair, owner: &Pubkey) -> Pubkey {
+    let ata = get_associated_token_address(owner, &USDC_MINT_ADDR);
+    let ix = create_associated_token_account(&payer.pubkey(), owner, &USDC_MINT_ADDR, &TOKEN_PROGRAM_ID);
     let tx = Transaction::new_signed_with_payer(
         &[ix],
         Some(&payer.pubkey()),
@@ -194,17 +226,24 @@ fn create_ata(svm: &mut LiteSVM, payer: &Keypair, owner: &Pubkey, mint: &Pubkey)
     ata
 }
 
+/// Creates an ATA using ADMIN_ADDR as payer (unsigned, sigverify off).
+fn create_ata_admin(svm: &mut LiteSVM, owner: &Pubkey) -> Pubkey {
+    let ata = get_associated_token_address(owner, &USDC_MINT_ADDR);
+    let ix = create_associated_token_account(&ADMIN_ADDR, owner, &USDC_MINT_ADDR, &TOKEN_PROGRAM_ID);
+    send_admin_tx(svm, &[ix]).unwrap();
+    ata
+}
+
 /// Mints `amount` tokens to `dest_ata`. `payer` must be the mint authority.
 fn mint_tokens(
     svm: &mut LiteSVM,
     payer: &Keypair,
-    mint: &Pubkey,
     dest_ata: &Pubkey,
     amount: u64,
 ) {
     let ix = spl_token::instruction::mint_to(
         &TOKEN_PROGRAM_ID,
-        mint,
+        &USDC_MINT_ADDR,
         dest_ata,
         &payer.pubkey(), // mint authority
         &[],
@@ -233,21 +272,19 @@ fn get_token_balance(svm: &LiteSVM, ata: &Pubkey) -> u64 {
 // ---------------------------------------------------------------------------
 
 fn initialize_need_ix(
-    authority: &Pubkey,
     slug: &str,
     target: u64,
     disburse_to: &Pubkey,
-    usdc_mint: &Pubkey,
 ) -> Instruction {
     let (vault_pda, _) = derive_vault_pda(slug);
-    let vault_ata = get_associated_token_address(&vault_pda, usdc_mint);
+    let vault_ata = get_associated_token_address(&vault_pda, &USDC_MINT_ADDR);
 
     Instruction {
         program_id: PROGRAM_ID,
         accounts: vec![
-            AccountMeta::new(*authority, true),
+            AccountMeta::new(ADMIN_ADDR, true),
             AccountMeta::new(vault_pda, false),
-            AccountMeta::new_readonly(*usdc_mint, false),
+            AccountMeta::new_readonly(USDC_MINT_ADDR, false),
             AccountMeta::new(vault_ata, false),
             AccountMeta::new_readonly(system_program::ID, false),
             AccountMeta::new_readonly(TOKEN_PROGRAM_ID, false),
@@ -258,17 +295,17 @@ fn initialize_need_ix(
     }
 }
 
-fn donate_ix(donor: &Pubkey, slug: &str, usdc_mint: &Pubkey, amount: u64) -> Instruction {
+fn donate_ix(donor: &Pubkey, slug: &str, amount: u64) -> Instruction {
     let (vault_pda, _) = derive_vault_pda(slug);
-    let donor_ata = get_associated_token_address(donor, usdc_mint);
-    let vault_ata = get_associated_token_address(&vault_pda, usdc_mint);
+    let donor_ata = get_associated_token_address(donor, &USDC_MINT_ADDR);
+    let vault_ata = get_associated_token_address(&vault_pda, &USDC_MINT_ADDR);
 
     Instruction {
         program_id: PROGRAM_ID,
         accounts: vec![
             AccountMeta::new(*donor, true),
             AccountMeta::new(vault_pda, false),
-            AccountMeta::new_readonly(*usdc_mint, false),
+            AccountMeta::new_readonly(USDC_MINT_ADDR, false),
             AccountMeta::new(donor_ata, false),
             AccountMeta::new(vault_ata, false),
             AccountMeta::new_readonly(TOKEN_PROGRAM_ID, false),
@@ -277,22 +314,17 @@ fn donate_ix(donor: &Pubkey, slug: &str, usdc_mint: &Pubkey, amount: u64) -> Ins
     }
 }
 
-fn disburse_ix(
-    authority: &Pubkey,
-    slug: &str,
-    usdc_mint: &Pubkey,
-    disburse_to: &Pubkey,
-) -> Instruction {
+fn disburse_ix(slug: &str, disburse_to: &Pubkey) -> Instruction {
     let (vault_pda, _) = derive_vault_pda(slug);
-    let vault_ata = get_associated_token_address(&vault_pda, usdc_mint);
-    let disburse_ata = get_associated_token_address(disburse_to, usdc_mint);
+    let vault_ata = get_associated_token_address(&vault_pda, &USDC_MINT_ADDR);
+    let disburse_ata = get_associated_token_address(disburse_to, &USDC_MINT_ADDR);
 
     Instruction {
         program_id: PROGRAM_ID,
         accounts: vec![
-            AccountMeta::new(*authority, true),
+            AccountMeta::new(ADMIN_ADDR, true),
             AccountMeta::new(vault_pda, false),
-            AccountMeta::new_readonly(*usdc_mint, false),
+            AccountMeta::new_readonly(USDC_MINT_ADDR, false),
             AccountMeta::new(vault_ata, false),
             AccountMeta::new(disburse_ata, false),
             AccountMeta::new_readonly(*disburse_to, false),
@@ -303,56 +335,38 @@ fn disburse_ix(
 }
 
 // ---------------------------------------------------------------------------
-// Vault state deserialization (matches NeedVault layout)
+// Vault state deserialization
 // ---------------------------------------------------------------------------
 
-/// Manually deserialize NeedVault from on-chain account data.
-/// Layout: 8-byte discriminator + fields in struct order.
 fn read_vault_state(svm: &LiteSVM, vault: &Pubkey) -> VaultState {
     let account = svm.get_account(vault).expect("Vault account not found");
     let data = &account.data;
 
-    // Skip 8-byte Anchor discriminator
-    let mut offset = 8;
+    let mut offset = 8; // skip discriminator
 
-    // authority: Pubkey (32 bytes)
     let authority = Pubkey::new_from_array(data[offset..offset + 32].try_into().unwrap());
     offset += 32;
 
-    // slug: String (4-byte len + bytes)
     let slug_len = u32::from_le_bytes(data[offset..offset + 4].try_into().unwrap()) as usize;
     offset += 4;
     let slug = String::from_utf8(data[offset..offset + slug_len].to_vec()).unwrap();
     offset += slug_len;
 
-    // target: u64
     let target = u64::from_le_bytes(data[offset..offset + 8].try_into().unwrap());
     offset += 8;
 
-    // funded: u64
     let funded = u64::from_le_bytes(data[offset..offset + 8].try_into().unwrap());
     offset += 8;
 
-    // disburse_to: Pubkey (32 bytes)
     let disburse_to = Pubkey::new_from_array(data[offset..offset + 32].try_into().unwrap());
     offset += 32;
 
-    // disbursed: bool (1 byte)
     let disbursed = data[offset] != 0;
     offset += 1;
 
-    // bump: u8
     let bump = data[offset];
 
-    VaultState {
-        authority,
-        slug,
-        target,
-        funded,
-        disburse_to,
-        disbursed,
-        bump,
-    }
+    VaultState { authority, slug, target, funded, disburse_to, disbursed, bump }
 }
 
 #[derive(Debug)]
@@ -373,9 +387,8 @@ struct VaultState {
 
 struct DonationEnv {
     svm: LiteSVM,
-    authority: Keypair,
+    admin_payer: Keypair,
     donor: Keypair,
-    usdc_mint_pubkey: Pubkey,
     recipient: Keypair,
     slug: String,
     vault_pda: Pubkey,
@@ -387,50 +400,31 @@ struct DonationEnv {
 
 fn setup_with_vault_and_donor(slug: &str, target: u64, donor_balance: u64) -> DonationEnv {
     let mut env = setup();
-    let mint_pk = env.usdc_mint.pubkey();
 
-    // Initialize the vault
-    let ix = initialize_need_ix(
-        &env.authority.pubkey(),
-        slug,
-        target,
-        &env.recipient.pubkey(),
-        &mint_pk,
-    );
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&env.authority.pubkey()),
-        &[&env.authority],
-        env.svm.latest_blockhash(),
-    );
-    env.svm.send_transaction(tx).unwrap();
+    // Initialize the vault (as ADMIN_ADDR)
+    let ix = initialize_need_ix(slug, target, &env.recipient.pubkey());
+    send_admin_tx(&mut env.svm, &[ix]).unwrap();
 
-    // Create a donor
+    // Create a donor with real keypair
     let donor = Keypair::new();
     env.svm.airdrop(&donor.pubkey(), 5_000_000_000).unwrap();
 
     // Create donor ATA and fund it
-    let donor_ata = create_ata(&mut env.svm, &donor, &donor.pubkey(), &mint_pk);
+    let donor_ata = create_ata(&mut env.svm, &donor, &donor.pubkey());
     if donor_balance > 0 {
-        mint_tokens(&mut env.svm, &env.authority, &mint_pk, &donor_ata, donor_balance);
+        mint_tokens(&mut env.svm, &env.admin_payer, &donor_ata, donor_balance);
     }
 
     // Create recipient ATA
-    let recipient_ata = create_ata(
-        &mut env.svm,
-        &env.authority,
-        &env.recipient.pubkey(),
-        &mint_pk,
-    );
+    let recipient_ata = create_ata_admin(&mut env.svm, &env.recipient.pubkey());
 
     let (vault_pda, _) = derive_vault_pda(slug);
-    let vault_ata = get_associated_token_address(&vault_pda, &mint_pk);
+    let vault_ata = get_associated_token_address(&vault_pda, &USDC_MINT_ADDR);
 
     DonationEnv {
         svm: env.svm,
-        authority: env.authority,
+        admin_payer: env.admin_payer,
         donor,
-        usdc_mint_pubkey: mint_pk,
         recipient: env.recipient,
         slug: slug.to_string(),
         vault_pda,
@@ -449,30 +443,15 @@ fn test_initialize_need() {
     let mut env = setup();
     let slug = "shower";
     let target = 25_000_000u64; // 25 USDC
-    let mint_pk = env.usdc_mint.pubkey();
 
-    let ix = initialize_need_ix(
-        &env.authority.pubkey(),
-        slug,
-        target,
-        &env.recipient.pubkey(),
-        &mint_pk,
-    );
-
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&env.authority.pubkey()),
-        &[&env.authority],
-        env.svm.latest_blockhash(),
-    );
-
-    env.svm.send_transaction(tx).unwrap();
+    let ix = initialize_need_ix(slug, target, &env.recipient.pubkey());
+    send_admin_tx(&mut env.svm, &[ix]).unwrap();
 
     // Verify vault state
     let (vault_pda, expected_bump) = derive_vault_pda(slug);
     let state = read_vault_state(&env.svm, &vault_pda);
 
-    assert_eq!(state.authority, env.authority.pubkey());
+    assert_eq!(state.authority, ADMIN_ADDR);
     assert_eq!(state.slug, slug);
     assert_eq!(state.target, target);
     assert_eq!(state.funded, 0);
@@ -480,8 +459,8 @@ fn test_initialize_need() {
     assert!(!state.disbursed);
     assert_eq!(state.bump, expected_bump);
 
-    // Verify the vault ATA was created
-    let vault_ata = get_associated_token_address(&vault_pda, &mint_pk);
+    // Verify the vault ATA was created with zero balance
+    let vault_ata = get_associated_token_address(&vault_pda, &USDC_MINT_ADDR);
     let balance = get_token_balance(&env.svm, &vault_ata);
     assert_eq!(balance, 0);
 }
@@ -491,44 +470,50 @@ fn test_initialize_need_duplicate() {
     let mut env = setup();
     let slug = "groceries";
     let target = 100_000_000u64;
-    let mint_pk = env.usdc_mint.pubkey();
 
-    // First initialization — should succeed
-    let ix = initialize_need_ix(
-        &env.authority.pubkey(),
-        slug,
-        target,
-        &env.recipient.pubkey(),
-        &mint_pk,
-    );
+    let ix = initialize_need_ix(slug, target, &env.recipient.pubkey());
+    send_admin_tx(&mut env.svm, &[ix]).unwrap();
+
+    // Second init with same slug — should fail
+    let ix2 = initialize_need_ix(slug, target, &env.recipient.pubkey());
+    let result = send_admin_tx(&mut env.svm, &[ix2]);
+    assert!(result.is_err(), "Duplicate initialize_need should fail");
+}
+
+#[test]
+fn test_initialize_need_non_admin() {
+    let mut env = setup();
+    let slug = "hacked";
+    let target = 1_000_000u64;
+
+    let imposter = Keypair::new();
+    env.svm.airdrop(&imposter.pubkey(), 5_000_000_000).unwrap();
+
+    // Build init ix but with imposter as authority (not ADMIN_ADDR)
+    let (vault_pda, _) = derive_vault_pda(slug);
+    let vault_ata = get_associated_token_address(&vault_pda, &USDC_MINT_ADDR);
+    let ix = Instruction {
+        program_id: PROGRAM_ID,
+        accounts: vec![
+            AccountMeta::new(imposter.pubkey(), true),
+            AccountMeta::new(vault_pda, false),
+            AccountMeta::new_readonly(USDC_MINT_ADDR, false),
+            AccountMeta::new(vault_ata, false),
+            AccountMeta::new_readonly(system_program::ID, false),
+            AccountMeta::new_readonly(TOKEN_PROGRAM_ID, false),
+            AccountMeta::new_readonly(ATA_PROGRAM_ID, false),
+            AccountMeta::new_readonly(RENT_SYSVAR, false),
+        ],
+        data: build_initialize_need_data(slug, target, &imposter.pubkey()),
+    };
     let tx = Transaction::new_signed_with_payer(
         &[ix],
-        Some(&env.authority.pubkey()),
-        &[&env.authority],
+        Some(&imposter.pubkey()),
+        &[&imposter],
         env.svm.latest_blockhash(),
     );
-    env.svm.send_transaction(tx).unwrap();
-
-    // Second initialization with same slug — should fail
-    let ix2 = initialize_need_ix(
-        &env.authority.pubkey(),
-        slug,
-        target,
-        &env.recipient.pubkey(),
-        &mint_pk,
-    );
-    let tx2 = Transaction::new_signed_with_payer(
-        &[ix2],
-        Some(&env.authority.pubkey()),
-        &[&env.authority],
-        env.svm.latest_blockhash(),
-    );
-
-    let result = env.svm.send_transaction(tx2);
-    assert!(
-        result.is_err(),
-        "Duplicate initialize_need should fail but succeeded"
-    );
+    let result = env.svm.send_transaction(tx);
+    assert!(result.is_err(), "Non-admin init should fail");
 }
 
 #[test]
@@ -536,12 +521,7 @@ fn test_donate_happy_path() {
     let donate_amount = 5_000_000u64; // 5 USDC
     let mut denv = setup_with_vault_and_donor("shower", 25_000_000, 50_000_000);
 
-    let ix = donate_ix(
-        &denv.donor.pubkey(),
-        &denv.slug,
-        &denv.usdc_mint_pubkey,
-        donate_amount,
-    );
+    let ix = donate_ix(&denv.donor.pubkey(), &denv.slug, donate_amount);
     let tx = Transaction::new_signed_with_payer(
         &[ix],
         Some(&denv.donor.pubkey()),
@@ -550,15 +530,9 @@ fn test_donate_happy_path() {
     );
     denv.svm.send_transaction(tx).unwrap();
 
-    // Verify donor balance decreased
-    let donor_balance = get_token_balance(&denv.svm, &denv.donor_ata);
-    assert_eq!(donor_balance, 50_000_000 - donate_amount);
+    assert_eq!(get_token_balance(&denv.svm, &denv.donor_ata), 50_000_000 - donate_amount);
+    assert_eq!(get_token_balance(&denv.svm, &denv.vault_ata), donate_amount);
 
-    // Verify vault ATA balance increased
-    let vault_balance = get_token_balance(&denv.svm, &denv.vault_ata);
-    assert_eq!(vault_balance, donate_amount);
-
-    // Verify vault state funded counter
     let state = read_vault_state(&denv.svm, &denv.vault_pda);
     assert_eq!(state.funded, donate_amount);
     assert!(!state.disbursed);
@@ -568,130 +542,72 @@ fn test_donate_happy_path() {
 fn test_donate_zero_amount() {
     let mut denv = setup_with_vault_and_donor("shower", 25_000_000, 50_000_000);
 
-    let ix = donate_ix(
-        &denv.donor.pubkey(),
-        &denv.slug,
-        &denv.usdc_mint_pubkey,
-        0, // zero amount
-    );
+    let ix = donate_ix(&denv.donor.pubkey(), &denv.slug, 0);
     let tx = Transaction::new_signed_with_payer(
         &[ix],
         Some(&denv.donor.pubkey()),
         &[&denv.donor],
         denv.svm.latest_blockhash(),
     );
-
     let result = denv.svm.send_transaction(tx);
-    assert!(
-        result.is_err(),
-        "Zero-amount donation should fail but succeeded"
-    );
+    assert!(result.is_err(), "Zero-amount donation should fail");
 }
 
 #[test]
 fn test_donate_after_disburse() {
-    let donate_amount = 10_000_000u64; // 10 USDC
+    let donate_amount = 10_000_000u64;
     let mut denv = setup_with_vault_and_donor("rent", 1_000_000_000, 100_000_000);
 
-    // Donate first
-    let donate_ix_1 = donate_ix(
-        &denv.donor.pubkey(),
-        &denv.slug,
-        &denv.usdc_mint_pubkey,
-        donate_amount,
-    );
+    // Donate
+    let ix1 = donate_ix(&denv.donor.pubkey(), &denv.slug, donate_amount);
     let tx1 = Transaction::new_signed_with_payer(
-        &[donate_ix_1],
+        &[ix1],
         Some(&denv.donor.pubkey()),
         &[&denv.donor],
         denv.svm.latest_blockhash(),
     );
     denv.svm.send_transaction(tx1).unwrap();
 
-    // Disburse
-    let disburse = disburse_ix(
-        &denv.authority.pubkey(),
-        &denv.slug,
-        &denv.usdc_mint_pubkey,
-        &denv.recipient.pubkey(),
-    );
-    let tx2 = Transaction::new_signed_with_payer(
-        &[disburse],
-        Some(&denv.authority.pubkey()),
-        &[&denv.authority],
-        denv.svm.latest_blockhash(),
-    );
-    denv.svm.send_transaction(tx2).unwrap();
+    // Disburse (as admin)
+    let ix2 = disburse_ix(&denv.slug, &denv.recipient.pubkey());
+    send_admin_tx(&mut denv.svm, &[ix2]).unwrap();
 
-    // Try to donate after disburse — should fail with AlreadyDisbursed
-    let donate_ix_2 = donate_ix(
-        &denv.donor.pubkey(),
-        &denv.slug,
-        &denv.usdc_mint_pubkey,
-        5_000_000,
-    );
+    // Try donate after disburse — should fail
+    let ix3 = donate_ix(&denv.donor.pubkey(), &denv.slug, 5_000_000);
     let tx3 = Transaction::new_signed_with_payer(
-        &[donate_ix_2],
+        &[ix3],
         Some(&denv.donor.pubkey()),
         &[&denv.donor],
         denv.svm.latest_blockhash(),
     );
-
     let result = denv.svm.send_transaction(tx3);
-    assert!(
-        result.is_err(),
-        "Donation after disburse should fail but succeeded"
-    );
+    assert!(result.is_err(), "Donation after disburse should fail");
 }
 
 #[test]
 fn test_disburse_happy_path() {
-    let donate_amount = 25_000_000u64; // 25 USDC
+    let donate_amount = 25_000_000u64;
     let mut denv = setup_with_vault_and_donor("shower", 25_000_000, 50_000_000);
 
     // Donate
-    let donate = donate_ix(
-        &denv.donor.pubkey(),
-        &denv.slug,
-        &denv.usdc_mint_pubkey,
-        donate_amount,
-    );
+    let ix1 = donate_ix(&denv.donor.pubkey(), &denv.slug, donate_amount);
     let tx1 = Transaction::new_signed_with_payer(
-        &[donate],
+        &[ix1],
         Some(&denv.donor.pubkey()),
         &[&denv.donor],
         denv.svm.latest_blockhash(),
     );
     denv.svm.send_transaction(tx1).unwrap();
 
-    // Verify vault has funds
-    let vault_balance_before = get_token_balance(&denv.svm, &denv.vault_ata);
-    assert_eq!(vault_balance_before, donate_amount);
+    assert_eq!(get_token_balance(&denv.svm, &denv.vault_ata), donate_amount);
 
-    // Disburse
-    let disburse = disburse_ix(
-        &denv.authority.pubkey(),
-        &denv.slug,
-        &denv.usdc_mint_pubkey,
-        &denv.recipient.pubkey(),
-    );
-    let tx2 = Transaction::new_signed_with_payer(
-        &[disburse],
-        Some(&denv.authority.pubkey()),
-        &[&denv.authority],
-        denv.svm.latest_blockhash(),
-    );
-    denv.svm.send_transaction(tx2).unwrap();
+    // Disburse (as admin)
+    let ix2 = disburse_ix(&denv.slug, &denv.recipient.pubkey());
+    send_admin_tx(&mut denv.svm, &[ix2]).unwrap();
 
-    // Verify vault ATA is drained
-    let vault_balance_after = get_token_balance(&denv.svm, &denv.vault_ata);
-    assert_eq!(vault_balance_after, 0);
+    assert_eq!(get_token_balance(&denv.svm, &denv.vault_ata), 0);
+    assert_eq!(get_token_balance(&denv.svm, &denv.recipient_ata), donate_amount);
 
-    // Verify recipient received the funds
-    let recipient_balance = get_token_balance(&denv.svm, &denv.recipient_ata);
-    assert_eq!(recipient_balance, donate_amount);
-
-    // Verify vault state is marked disbursed
     let state = read_vault_state(&denv.svm, &denv.vault_pda);
     assert!(state.disbursed);
     assert_eq!(state.funded, donate_amount);
@@ -702,109 +618,73 @@ fn test_disburse_unauthorized() {
     let donate_amount = 10_000_000u64;
     let mut denv = setup_with_vault_and_donor("tires", 400_000_000, 100_000_000);
 
-    // Donate first
-    let donate = donate_ix(
-        &denv.donor.pubkey(),
-        &denv.slug,
-        &denv.usdc_mint_pubkey,
-        donate_amount,
-    );
+    // Donate
+    let ix1 = donate_ix(&denv.donor.pubkey(), &denv.slug, donate_amount);
     let tx1 = Transaction::new_signed_with_payer(
-        &[donate],
+        &[ix1],
         Some(&denv.donor.pubkey()),
         &[&denv.donor],
         denv.svm.latest_blockhash(),
     );
     denv.svm.send_transaction(tx1).unwrap();
 
-    // Create imposter
+    // Attempt disburse with imposter
     let imposter = Keypair::new();
     denv.svm.airdrop(&imposter.pubkey(), 1_000_000_000).unwrap();
 
-    // Attempt disburse with imposter — should fail
-    let disburse = disburse_ix(
-        &imposter.pubkey(),
-        &denv.slug,
-        &denv.usdc_mint_pubkey,
-        &denv.recipient.pubkey(),
-    );
-    let tx2 = Transaction::new_signed_with_payer(
-        &[disburse],
+    let (vault_pda, _) = derive_vault_pda(&denv.slug);
+    let vault_ata = get_associated_token_address(&vault_pda, &USDC_MINT_ADDR);
+    let disburse_ata = get_associated_token_address(&denv.recipient.pubkey(), &USDC_MINT_ADDR);
+
+    let ix = Instruction {
+        program_id: PROGRAM_ID,
+        accounts: vec![
+            AccountMeta::new(imposter.pubkey(), true),
+            AccountMeta::new(vault_pda, false),
+            AccountMeta::new_readonly(USDC_MINT_ADDR, false),
+            AccountMeta::new(vault_ata, false),
+            AccountMeta::new(disburse_ata, false),
+            AccountMeta::new_readonly(denv.recipient.pubkey(), false),
+            AccountMeta::new_readonly(TOKEN_PROGRAM_ID, false),
+        ],
+        data: build_disburse_data(),
+    };
+    let tx = Transaction::new_signed_with_payer(
+        &[ix],
         Some(&imposter.pubkey()),
         &[&imposter],
         denv.svm.latest_blockhash(),
     );
+    let result = denv.svm.send_transaction(tx);
+    assert!(result.is_err(), "Unauthorized disburse should fail");
 
-    let result = denv.svm.send_transaction(tx2);
-    assert!(
-        result.is_err(),
-        "Unauthorized disburse should fail but succeeded"
-    );
-
-    // Verify vault NOT disbursed
     let state = read_vault_state(&denv.svm, &denv.vault_pda);
     assert!(!state.disbursed);
-
-    // Verify vault ATA still has funds
-    let vault_balance = get_token_balance(&denv.svm, &denv.vault_ata);
-    assert_eq!(vault_balance, donate_amount);
+    assert_eq!(get_token_balance(&denv.svm, &denv.vault_ata), donate_amount);
 }
 
 #[test]
 fn test_disburse_double() {
-    let donate_amount = 50_000_000u64; // 50 USDC
+    let donate_amount = 50_000_000u64;
     let mut denv = setup_with_vault_and_donor("wardrobe", 250_000_000, 100_000_000);
 
     // Donate
-    let donate = donate_ix(
-        &denv.donor.pubkey(),
-        &denv.slug,
-        &denv.usdc_mint_pubkey,
-        donate_amount,
-    );
+    let ix1 = donate_ix(&denv.donor.pubkey(), &denv.slug, donate_amount);
     let tx1 = Transaction::new_signed_with_payer(
-        &[donate],
+        &[ix1],
         Some(&denv.donor.pubkey()),
         &[&denv.donor],
         denv.svm.latest_blockhash(),
     );
     denv.svm.send_transaction(tx1).unwrap();
 
-    // First disburse — should succeed
-    let disburse1 = disburse_ix(
-        &denv.authority.pubkey(),
-        &denv.slug,
-        &denv.usdc_mint_pubkey,
-        &denv.recipient.pubkey(),
-    );
-    let tx2 = Transaction::new_signed_with_payer(
-        &[disburse1],
-        Some(&denv.authority.pubkey()),
-        &[&denv.authority],
-        denv.svm.latest_blockhash(),
-    );
-    denv.svm.send_transaction(tx2).unwrap();
-
-    let state = read_vault_state(&denv.svm, &denv.vault_pda);
-    assert!(state.disbursed);
+    // First disburse — ok
+    let ix2 = disburse_ix(&denv.slug, &denv.recipient.pubkey());
+    send_admin_tx(&mut denv.svm, &[ix2]).unwrap();
+    assert!(read_vault_state(&denv.svm, &denv.vault_pda).disbursed);
 
     // Second disburse — should fail
-    let disburse2 = disburse_ix(
-        &denv.authority.pubkey(),
-        &denv.slug,
-        &denv.usdc_mint_pubkey,
-        &denv.recipient.pubkey(),
-    );
-    let tx3 = Transaction::new_signed_with_payer(
-        &[disburse2],
-        Some(&denv.authority.pubkey()),
-        &[&denv.authority],
-        denv.svm.latest_blockhash(),
-    );
-
-    let result = denv.svm.send_transaction(tx3);
-    assert!(
-        result.is_err(),
-        "Double disburse should fail but succeeded"
-    );
+    let ix3 = disburse_ix(&denv.slug, &denv.recipient.pubkey());
+    let result = send_admin_tx(&mut denv.svm, &[ix3]);
+    assert!(result.is_err(), "Double disburse should fail");
 }

@@ -54,6 +54,8 @@ const ANCHOR_ERROR_MAP: Record<number, string> = {
   6001: 'This need has already been fulfilled and disbursed.', // AlreadyDisbursed
   6002: 'Donation amount must be greater than zero.', // ZeroAmount
   6003: 'Unauthorized action.', // Unauthorized
+  6004: 'Invalid token mint.', // InvalidMint
+  6005: 'Invalid slug (must be 1-32 characters).', // InvalidSlug
 };
 
 /**

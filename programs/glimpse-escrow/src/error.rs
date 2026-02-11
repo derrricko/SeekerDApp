@@ -10,4 +10,8 @@ pub enum GlimpseError {
     ZeroAmount,
     #[msg("Unauthorized — only the vault authority can perform this action")]
     Unauthorized,
+    #[msg("Invalid USDC mint address")]
+    InvalidMint,
+    #[msg("Slug must be 1-32 bytes")]
+    InvalidSlug,
 }

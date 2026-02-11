@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
+use crate::constants::USDC_MINT;
 use crate::state::NeedVault;
 use crate::error::GlimpseError;
 
@@ -15,7 +16,8 @@ pub struct Donate<'info> {
     )]
     pub vault: Account<'info, NeedVault>,
 
-    /// USDC mint
+    /// USDC mint — pinned to known address
+    #[account(address = USDC_MINT @ GlimpseError::InvalidMint)]
     pub usdc_mint: Account<'info, Mint>,
 
     /// Donor's USDC associated token account

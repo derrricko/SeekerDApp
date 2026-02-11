@@ -1,12 +1,17 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use anchor_spl::associated_token::AssociatedToken;
+use crate::constants::{ADMIN_PUBKEY, USDC_MINT};
+use crate::error::GlimpseError;
 use crate::state::NeedVault;
 
 #[derive(Accounts)]
 #[instruction(slug: String)]
 pub struct InitializeNeed<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = authority.key() == ADMIN_PUBKEY @ GlimpseError::Unauthorized,
+    )]
     pub authority: Signer<'info>,
 
     #[account(
@@ -18,7 +23,8 @@ pub struct InitializeNeed<'info> {
     )]
     pub vault: Account<'info, NeedVault>,
 
-    /// The USDC mint
+    /// The USDC mint — pinned to known address
+    #[account(address = USDC_MINT @ GlimpseError::InvalidMint)]
     pub usdc_mint: Account<'info, Mint>,
 
     /// The vault's associated token account for USDC
@@ -42,6 +48,8 @@ pub fn handler(
     target: u64,
     disburse_to: Pubkey,
 ) -> Result<()> {
+    require!(!slug.is_empty() && slug.len() <= 32, GlimpseError::InvalidSlug);
+
     let vault = &mut ctx.accounts.vault;
     vault.authority = ctx.accounts.authority.key();
     vault.slug = slug;
