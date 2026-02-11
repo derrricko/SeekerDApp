@@ -6,7 +6,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("GLmpSEescroW1111111111111111111111111111111");
+declare_id!("7Ma28eiEEd4WKDCwbfejbPevcsuchePsvYvdw6Tme6NE");
 
 #[program]
 pub mod glimpse_escrow {

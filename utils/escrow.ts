@@ -26,7 +26,7 @@ import {ESCROW_PROGRAM_ID, USDC_MINT, USDC_DECIMALS} from '../config/env';
 // Pre-computed to avoid runtime crypto dependency.
 // Verify after `anchor build` against target/idl/glimpse_escrow.json
 const DONATE_DISCRIMINATOR = Buffer.from([
-  121, 186, 218, 211, 73, 210, 13, 56,
+  121, 186, 218, 211, 73, 70, 196, 180,
 ]);
 
 // Borsh schema matching the Rust `donate(amount: u64)` args

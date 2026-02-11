@@ -35,7 +35,7 @@ export const USDC_MINT = USDC_MINTS[SOLANA_CLUSTER];
 // ─── Escrow Program ────────────────────────────────────────────────────────
 
 export const ESCROW_PROGRAM_ID = new PublicKey(
-  'GLmpSEescroW1111111111111111111111111111111', // Update after `anchor deploy`
+  '7Ma28eiEEd4WKDCwbfejbPevcsuchePsvYvdw6Tme6NE',
 );
 
 // ─── Recipient wallet (org treasury — fallback for direct transfers) ───────
@@ -46,5 +46,5 @@ export const RECIPIENT_WALLET = new PublicKey(
 
 // ─── Supabase ───────────────────────────────────────────────────────────────
 
-export const SUPABASE_URL = ''; // Fill when Supabase project is created
-export const SUPABASE_ANON_KEY = ''; // Fill when Supabase project is created
+export const SUPABASE_URL = 'https://knvagydrbbvuumabmxcg.supabase.co';
+export const SUPABASE_ANON_KEY = 'sb_publishable_INS4usT4WBv9Z5nZ2Y-i2g_RZC7WG9N';
