@@ -1,7 +1,8 @@
 /**
  * USDC SPL Token Transfer Utility
  *
- * Handles building and sending USDC transfer transactions via MWA.
+ * Builds a USDC transfer transaction and sends it via wallet-standard
+ * signAndSendTransaction (from WalletProvider).
  */
 
 import {
@@ -17,16 +18,11 @@ import {
   getAccount,
 } from '@solana/spl-token';
 import {
-  transact,
-  Web3MobileWallet,
-} from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
-import {
-  APP_IDENTITY,
-  SOLANA_CLUSTER,
   USDC_MINT,
   USDC_DECIMALS,
   RECIPIENT_WALLET,
 } from '../config/env';
+import bs58 from 'bs58';
 
 // Re-export for consumers
 export {USDC_MINT, USDC_DECIMALS, RECIPIENT_WALLET};
@@ -94,14 +90,15 @@ export async function buildUSDCTransferTransaction(
 }
 
 /**
- * Execute a USDC transfer via Mobile Wallet Adapter.
- * Returns the transaction signature on success.
+ * Execute a USDC transfer via wallet-standard signAndSendTransaction.
+ * Returns the transaction signature as a base58 string.
  */
 export async function transferUSDC(
   connection: Connection,
   senderPublicKey: PublicKey,
   recipientPublicKey: PublicKey,
   amount: number,
+  signAndSendTransaction: (transaction: Uint8Array) => Promise<Uint8Array>,
 ): Promise<string> {
   const transaction = await buildUSDCTransferTransaction(
     connection,
@@ -110,30 +107,24 @@ export async function transferUSDC(
     amount,
   );
 
-  const txSignature = await transact(
-    async (wallet: Web3MobileWallet) => {
-      // Authorize / reauthorize the session
-      const authResult = await wallet.authorize({
-        cluster: SOLANA_CLUSTER,
-        identity: APP_IDENTITY,
-      });
+  // Serialize the transaction for wallet-standard
+  const serialized = transaction.serialize({
+    requireAllSignatures: false,
+    verifySignatures: false,
+  });
 
-      // Sign and send the transaction
-      const signedTransactions = await wallet.signAndSendTransactions({
-        transactions: [transaction],
-      });
+  const signatureBytes = await signAndSendTransaction(serialized);
 
-      return signedTransactions[0];
-    },
-  );
+  // Convert signature bytes to base58 string
+  const signature = bs58.encode(Buffer.from(signatureBytes));
 
   // Confirm the transaction
   const latestBlockhash = await connection.getLatestBlockhash();
   await connection.confirmTransaction({
-    signature: txSignature,
+    signature,
     blockhash: latestBlockhash.blockhash,
     lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
   });
 
-  return txSignature;
+  return signature;
 }
