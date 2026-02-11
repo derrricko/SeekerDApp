@@ -35,7 +35,7 @@ export const USDC_MINT = USDC_MINTS[SOLANA_CLUSTER];
 // ─── Recipient wallet (org treasury) ────────────────────────────────────────
 
 export const RECIPIENT_WALLET = new PublicKey(
-  '11111111111111111111111111111111', // TODO: Replace with actual org wallet
+  '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T',
 );
 
 // ─── Supabase ───────────────────────────────────────────────────────────────
