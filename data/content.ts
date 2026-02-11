@@ -151,7 +151,7 @@ export const NEEDS: Need[] = [
     description:
       "For someone living on the street, a hot shower and clean clothes aren't just hygiene\u2014they're dignity. The feeling of being human again. Walking into a room without the weight of shame.",
     partner: 'BeHeard Movement \u00B7 Tulsa, OK',
-    funded: 0,
+    funded: 18,
     icon: 'shower',
   },
   {
@@ -160,7 +160,7 @@ export const NEEDS: Need[] = [
     title: 'Groceries for a single mom',
     description:
       "She skips meals so her kids don't have to. Your gift fills a fridge, quiets the worry at 2am, and lets a mom sit at the table with her family instead of staring at an empty one.",
-    funded: 0,
+    funded: 45,
     icon: 'basket-shopping',
   },
   {
@@ -178,7 +178,7 @@ export const NEEDS: Need[] = [
     title: 'New tires for a family in need',
     description:
       "She white-knuckles the steering wheel every morning, praying the bald tires hold\u2014to get her kids to school, herself to work, and everyone home safe. New tires mean she can stop holding her breath.",
-    funded: 0,
+    funded: 125,
     icon: 'car',
   },
   {
@@ -189,6 +189,47 @@ export const NEEDS: Need[] = [
       "An eviction notice doesn't just mean losing a home\u2014it means a child wondering where they'll sleep tomorrow. One month's rent buys a family the one thing money can't usually buy: time to breathe.",
     funded: 0,
     icon: 'house',
+  },
+];
+
+// ─── Mock Glimpse proofs ────────────────────────────────────────────────────
+
+export interface GlimpseProof {
+  id: string;
+  needTitle: string;
+  amount: number;
+  caption: string;
+  date: string;
+  txSignature: string;
+}
+
+export const MOCK_GLIMPSES: GlimpseProof[] = [
+  {
+    id: 'glimpse-1',
+    needTitle: 'A clean shower and fresh clothes',
+    amount: 25,
+    caption:
+      'Marcus walked into the BeHeard center carrying everything he owned in a backpack. He walked out in clean clothes, freshly showered, and told the volunteer: "I forgot what it felt like to be clean."',
+    date: '2 days ago',
+    txSignature: '4xK9v...mP3q',
+  },
+  {
+    id: 'glimpse-2',
+    needTitle: 'Groceries for a single mom',
+    amount: 100,
+    caption:
+      'Tamika cried in the parking lot when the bags were loaded into her car. She said it was the first time in months she didn\u2019t have to choose between feeding her kids and keeping the lights on.',
+    date: '5 days ago',
+    txSignature: '7jR2b...nW8x',
+  },
+  {
+    id: 'glimpse-3',
+    needTitle: 'New tires for a family in need',
+    amount: 400,
+    caption:
+      'Rosa drove her kids to school on bald tires for six months, praying every morning. New tires were installed at Discount Tire in Muscatine. She texted us: "I can finally breathe on the highway."',
+    date: '1 week ago',
+    txSignature: '2mN5c...kL4y',
   },
 ];
 
