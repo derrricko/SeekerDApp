@@ -12,6 +12,8 @@ android/captures/
 android/local.properties
 *.apk
 *.aab
+android/app/*.keystore
+android/app/*.jks
 
 # iOS
 ios/build/
@@ -27,9 +29,12 @@ ios/link-assets-manifest.json
 *.hbc
 *.jsbundle
 
-# IDE
+# IDE & AI tools
 .idea/
 .vscode/
+.cursor/
+.agents/
+.claude/skills/
 *.swp
 *.swo
 *~
