@@ -48,11 +48,37 @@ export function handleMWAError(err: any): {
   return {message: msg, clearAuth: false};
 }
 
+// Anchor program error codes (from programs/glimpse-escrow/src/error.rs)
+const ANCHOR_ERROR_MAP: Record<number, string> = {
+  6000: 'An internal error occurred. Please try again.', // Overflow
+  6001: 'This need has already been fulfilled and disbursed.', // AlreadyDisbursed
+  6002: 'Donation amount must be greater than zero.', // ZeroAmount
+  6003: 'Unauthorized action.', // Unauthorized
+};
+
 /**
  * Classify a transaction/RPC error into a user-friendly message.
  */
 export function handleTransactionError(err: any): string {
   const msg = err?.message ?? String(err);
+
+  // Check for Anchor program custom error codes (format: "custom program error: 0x1770")
+  const hexMatch = msg.match(/custom program error:\s*0x([0-9a-fA-F]+)/);
+  if (hexMatch) {
+    const code = parseInt(hexMatch[1], 16);
+    if (ANCHOR_ERROR_MAP[code]) {
+      return ANCHOR_ERROR_MAP[code];
+    }
+  }
+
+  // Also check decimal error code format (some RPC responses use decimal)
+  const decMatch = msg.match(/Custom\((\d+)\)/);
+  if (decMatch) {
+    const code = parseInt(decMatch[1], 10);
+    if (ANCHOR_ERROR_MAP[code]) {
+      return ANCHOR_ERROR_MAP[code];
+    }
+  }
 
   if (msg.includes('insufficient funds') || msg.includes('Insufficient')) {
     return 'Insufficient USDC balance for this donation.';
