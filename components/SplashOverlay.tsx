@@ -66,13 +66,13 @@ export default function SplashOverlay({onAnimationDone}: SplashOverlayProps) {
     ]);
 
     // Phase 2: Hold (1000–2200ms)
-    // Phase 3: Art fades + brand moves to header (2200–3600ms)
+    // Phase 3: Art fades + brand moves to header (2200–4000ms)
     const autoTransition = Animated.parallel([
       Animated.timing(transitionProgress, {
         toValue: 1,
-        duration: 1400,
+        duration: 1800,
         delay: 2200,
-        easing: Easing.out(Easing.quad),
+        easing: Easing.out(Easing.exp),
         useNativeDriver: true,
       }),
       Animated.timing(artOpacity, {
@@ -88,7 +88,7 @@ export default function SplashOverlay({onAnimationDone}: SplashOverlayProps) {
     const revealHome = Animated.timing(overlayOpacity, {
       toValue: 0,
       duration: 600,
-      delay: 3600, // 2200 + 1400 = brand at header
+      delay: 4000, // 2200 + 1800 = brand at header
       easing: EASE_OUT,
       useNativeDriver: true,
     });

@@ -8,6 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import GlassCard from './GlassCard';
 import PresetChip from './PresetChip';
@@ -36,6 +37,9 @@ export default function GiveChoiceModal({
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
+  // Progress bar animation
+  const progressWidth = useRef(new Animated.Value(0)).current;
+
   // Local chip-in state
   const [chipMode, setChipMode] = useState<'preset' | 'custom' | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
@@ -49,18 +53,33 @@ export default function GiveChoiceModal({
       : 0;
   const isChipInValid = chipInAmount >= 10;
 
+  const hasFunding = need ? need.funded > 0 : false;
+  const fundedPct = need ? Math.min(need.funded / need.amount, 1) : 0;
+
   // Reset local state when modal opens
   useEffect(() => {
     if (visible) {
       setChipMode(null);
       setSelectedPreset(null);
       setCustomAmount('');
+      progressWidth.setValue(0);
       scaleAnim.setValue(0.9);
       opacityAnim.setValue(0);
       Animated.parallel([
         Animated.spring(scaleAnim, {toValue: 1, useNativeDriver: true, friction: 8, tension: 65}),
         Animated.timing(opacityAnim, {toValue: 1, duration: 200, easing: EASE_OUT, useNativeDriver: true}),
       ]).start();
+
+      // Animate progress bar after modal entrance
+      if (hasFunding) {
+        Animated.timing(progressWidth, {
+          toValue: fundedPct,
+          duration: 600,
+          delay: 250,
+          easing: EASE_OUT,
+          useNativeDriver: false,
+        }).start();
+      }
     }
   }, [visible]);
 
@@ -115,6 +134,29 @@ export default function GiveChoiceModal({
               <Text style={[modalStyles.title, {color: colors.textPrimary}]}>
                 {need.title}
               </Text>
+
+              {/* Progress bar — only show if there's funding */}
+              {hasFunding && (
+                <View style={modalStyles.progressSection}>
+                  <View style={[modalStyles.progressTrack, {backgroundColor: colors.glassBorder}]}>
+                    <Animated.View
+                      style={[
+                        modalStyles.progressFill,
+                        {
+                          backgroundColor: colors.primary,
+                          width: progressWidth.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: ['0%', '100%'],
+                          }),
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={[modalStyles.progressLabel, {color: colors.textTertiary}]}>
+                    ${need.funded} of ${need.amount} raised
+                  </Text>
+                </View>
+              )}
 
               {/* Fund the entire need — hero button */}
               <TouchableOpacity
@@ -207,6 +249,24 @@ const modalStyles = StyleSheet.create({
   title: {
     ...Typography.subheading,
     marginBottom: 24,
+    textAlign: 'center',
+  },
+  progressSection: {
+    marginBottom: 20,
+  },
+  progressTrack: {
+    height: 3,
+    borderRadius: 1.5,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 1.5,
+  },
+  progressLabel: {
+    fontSize: Typography.caption.fontSize,
+    letterSpacing: Typography.caption.letterSpacing,
+    marginTop: 6,
     textAlign: 'center',
   },
   fundFullButton: {

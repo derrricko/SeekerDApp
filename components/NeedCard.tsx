@@ -27,6 +27,14 @@ const smoothLayout = {
 
 const DISPLAY_FONT = Platform.OS === 'ios' ? 'Georgia' : 'serif';
 
+// Convert hex color to a very light rgba tint for card backgrounds
+function lightTint(hex: string, alpha: number = 0.08): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 // Amount size scales with magnitude — visual weight matches the ask
 function getAmountSize(amount: number): number {
   if (amount >= 1000) return 40;
@@ -51,18 +59,13 @@ export default function NeedCard({need, delay, index, onGive}: NeedCardProps) {
   const amountSize = getAmountSize(need.amount);
   const accentColors = [colors.primary, colors.accent, colors.secondary];
   const accentColor = accentColors[index % accentColors.length];
+  const cardTint = lightTint(accentColor, 0.12);
   // Breathing room before the big ask ($1,000)
   const bottomMargin = index === 3 ? 28 : 16;
-
-  const hasFunding = need.funded > 0;
-  const fundedPct = hasFunding ? Math.min(need.funded / need.amount, 1) : 0;
 
   // Entrance animation
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(15)).current;
-
-  // Progress bar width animation
-  const progressWidth = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const anim = Animated.parallel([
@@ -70,18 +73,6 @@ export default function NeedCard({need, delay, index, onGive}: NeedCardProps) {
       Animated.timing(translateY, {toValue: 0, duration: ENTRANCE_DURATION, delay, easing: EASE_OUT, useNativeDriver: true}),
     ]);
     anim.start();
-
-    // Animate progress bar after entrance
-    if (hasFunding) {
-      Animated.timing(progressWidth, {
-        toValue: fundedPct,
-        duration: 600,
-        delay: delay + ENTRANCE_DURATION,
-        easing: EASE_OUT,
-        useNativeDriver: false,
-      }).start();
-    }
-
     return () => anim.stop();
   }, []);
 
@@ -113,7 +104,7 @@ export default function NeedCard({need, delay, index, onGive}: NeedCardProps) {
         onPress={toggleExpand}
         onPressIn={onPressIn}
         onPressOut={onPressOut}>
-        <GlassCard variant="primary">
+        <GlassCard variant="primary" glassColor={cardTint}>
           <View style={cardStyles.content}>
             {/* Accent bar — brand thread along left edge */}
             <View
@@ -141,29 +132,6 @@ export default function NeedCard({need, delay, index, onGive}: NeedCardProps) {
             <Text style={[cardStyles.title, {color: colors.textPrimary}]}>
               {need.title}
             </Text>
-
-            {/* Progress bar — only show if there's funding */}
-            {hasFunding && (
-              <View style={cardStyles.progressSection}>
-                <View style={[cardStyles.progressTrack, {backgroundColor: colors.glassBorder}]}>
-                  <Animated.View
-                    style={[
-                      cardStyles.progressFill,
-                      {
-                        backgroundColor: accentColor,
-                        width: progressWidth.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: ['0%', '100%'],
-                        }),
-                      },
-                    ]}
-                  />
-                </View>
-                <Text style={[cardStyles.progressLabel, {color: colors.textTertiary}]}>
-                  ${need.funded} of ${need.amount} raised
-                </Text>
-              </View>
-            )}
 
             {/* Expanded: description + Give button */}
             {isExpanded && (
@@ -210,23 +178,6 @@ const cardStyles = StyleSheet.create({
     fontSize: Typography.body.fontSize,
     fontWeight: '400',
     lineHeight: Typography.body.lineHeight,
-  },
-  progressSection: {
-    marginTop: 12,
-  },
-  progressTrack: {
-    height: 3,
-    borderRadius: 1.5,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 1.5,
-  },
-  progressLabel: {
-    fontSize: Typography.caption.fontSize,
-    letterSpacing: Typography.caption.letterSpacing,
-    marginTop: 6,
   },
   expandedInner: {paddingTop: 20},
   divider: {height: 1, marginBottom: 16},

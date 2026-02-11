@@ -16,6 +16,7 @@ interface GlassCardProps {
   children: ReactNode;
   style?: ViewStyle;
   variant?: GlassCardVariant;
+  glassColor?: string;
   onPress?: () => void;
 }
 
@@ -23,6 +24,7 @@ export default function GlassCard({
   children,
   style,
   variant = 'secondary',
+  glassColor,
   onPress,
 }: GlassCardProps) {
   const {colors, isDark} = useTheme();
@@ -53,29 +55,31 @@ export default function GlassCard({
   const innerPadding = variant === 'primary' ? 24 : 20;
 
   const glassBackground =
-    variant === 'primary' ? colors.primaryLight : colors.glass;
+    glassColor ?? (variant === 'primary' ? colors.primaryLight : colors.glass);
 
   const cardStyle: ViewStyle = {
     borderRadius: 16,
     overflow: 'hidden',
-    borderWidth,
-    borderColor: colors.glassBorder,
-    shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 8},
-    shadowOpacity,
-    shadowRadius,
-    elevation: variant === 'subtle' ? 4 : 8,
+    borderWidth: glassColor ? 0 : borderWidth,
+    borderColor: glassColor ? undefined : colors.glassBorder,
+    shadowColor: glassColor ? 'transparent' : colors.shadow,
+    shadowOffset: {width: 0, height: glassColor ? 0 : 8},
+    shadowOpacity: glassColor ? 0 : shadowOpacity,
+    shadowRadius: glassColor ? 0 : shadowRadius,
+    elevation: glassColor ? 0 : (variant === 'subtle' ? 4 : 8),
     ...style,
   };
 
   const content = (
     <View style={cardStyle}>
-      <BlurView
-        style={StyleSheet.absoluteFill}
-        blurType={isDark ? 'dark' : 'light'}
-        blurAmount={12}
-        reducedTransparencyFallbackColor={colors.card}
-      />
+      {!glassColor && (
+        <BlurView
+          style={StyleSheet.absoluteFill}
+          blurType={isDark ? 'dark' : 'light'}
+          blurAmount={12}
+          reducedTransparencyFallbackColor={colors.card}
+        />
+      )}
       <View style={{backgroundColor: glassBackground, padding: innerPadding}}>
         {children}
       </View>
