@@ -17,9 +17,11 @@ import {useWallet} from '../components/providers/WalletProvider';
 import {useConnection} from '../components/providers/ConnectionProvider';
 import {useNeeds} from '../hooks/useNeeds';
 import type {Need} from '../data/content';
+import {MOCK_GLIMPSES} from '../data/content';
 import {transferUSDC, RECIPIENT_WALLET} from '../utils/transfer';
 import {recordTransaction} from '../services/transactions';
 import NeedCard from '../components/NeedCard';
+import GlimpseCard from '../components/GlimpseCard';
 import GiveChoiceModal from '../components/GiveChoiceModal';
 import OnboardingModal from '../components/OnboardingModal';
 import ConfirmModal from '../components/ConfirmModal';
@@ -42,7 +44,7 @@ interface HomeScreenProps {
 export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
   const insets = useSafeAreaInsets();
   const {colors, isDark} = useTheme();
-  const {publicKey, connect} = useWallet();
+  const {publicKey, connect, signAndSendTransaction} = useWallet();
   const {connection} = useConnection();
   const {needs} = useNeeds();
   const [activeTab, setActiveTab] = useState('give');
@@ -92,6 +94,7 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
   const [txSuccess, setTxSuccess] = useState<boolean | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
   const [txSignature, setTxSignature] = useState<string | null>(null);
+  const [donationNote, setDonationNote] = useState<string | undefined>();
 
   const handleDonate = (amount: number, direction: string) => {
     setConfirmAmount(amount);
@@ -100,12 +103,14 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
     setTxSuccess(null);
     setTxError(null);
     setTxSignature(null);
+    setDonationNote(undefined);
     setConfirmVisible(true);
   };
 
-  const handleConfirmSend = async () => {
+  const handleConfirmSend = async (note?: string) => {
     setTxLoading(true);
     setTxError(null);
+    if (note) setDonationNote(note);
 
     try {
       let pubKey = publicKey;
@@ -124,6 +129,7 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
         pubKey,
         RECIPIENT_WALLET,
         confirmAmount,
+        signAndSendTransaction,
       );
       setTxSignature(signature);
       setTxSuccess(true);
@@ -134,6 +140,7 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
         signature,
         confirmAmount,
         selectedNeed?.id,
+        note,
       ).catch(() => {});
     } catch (err: any) {
       setTxError(err?.message || 'Transaction failed. Please try again.');
@@ -144,6 +151,10 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
 
   const handleCloseModal = () => {
     setConfirmVisible(false);
+  };
+
+  const handleViewGlimpses = () => {
+    switchTab('glimpses');
   };
 
   return (
@@ -209,21 +220,17 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
           )}
 
           {activeTab === 'glimpses' && (
-            <View style={styles.comingSoon}>
-              <View style={[styles.comingSoonCircle, {borderColor: colors.border}]}>
-                <View style={[styles.comingSoonCardStack]}>
-                  <View style={[styles.comingSoonCard1, {backgroundColor: colors.primary, opacity: 0.15}]} />
-                  <View style={[styles.comingSoonCard2, {backgroundColor: colors.primary, opacity: 0.3}]} />
-                  <View style={[styles.comingSoonCard3, {backgroundColor: colors.primary, opacity: 0.5}]} />
-                </View>
-              </View>
-              <Text style={[styles.comingSoonTitle, {color: colors.textPrimary}]}>Glimpses</Text>
-              <Text style={[styles.comingSoonText, {color: colors.textTertiary}]}>
-                Impact stories are coming soon.
+            <View style={styles.glimpsesContainer}>
+              <Text style={[styles.glimpsesIntro, {color: colors.textTertiary}]}>
+                Real stories. Real impact. Verified on-chain.
               </Text>
-              <Text style={[styles.comingSoonSubtext, {color: colors.textTertiary}]}>
-                You'll see photos, receipts, and proof that your gift made a difference.
-              </Text>
+              {MOCK_GLIMPSES.map((glimpse, index) => (
+                <GlimpseCard
+                  key={glimpse.id}
+                  glimpse={glimpse}
+                  delay={ENTRANCE_STAGGER * (index + 1)}
+                />
+              ))}
             </View>
           )}
 
@@ -282,6 +289,7 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
         onConfirm={handleConfirmSend}
         onRetry={handleConfirmSend}
         onClose={handleCloseModal}
+        onViewGlimpses={handleViewGlimpses}
       />
 
       {/* Onboarding replay */}
@@ -334,16 +342,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-  // Coming soon (Glimpses)
-  comingSoon: {alignItems: 'center', justifyContent: 'center', paddingVertical: 100},
-  comingSoonCircle: {width: 96, height: 96, borderRadius: 48, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', marginBottom: 28},
-  comingSoonCardStack: {width: 36, height: 36, position: 'relative'},
-  comingSoonCard1: {position: 'absolute', width: 24, height: 24, borderRadius: 4, top: 0, left: 0},
-  comingSoonCard2: {position: 'absolute', width: 24, height: 24, borderRadius: 4, top: 4, left: 4},
-  comingSoonCard3: {position: 'absolute', width: 24, height: 24, borderRadius: 4, top: 8, left: 8},
-  comingSoonTitle: {...Typography.subheading, marginBottom: 12},
-  comingSoonText: {fontSize: Typography.body.fontSize, textAlign: 'center', lineHeight: Typography.body.lineHeight, paddingHorizontal: 20},
-  comingSoonSubtext: {fontSize: Typography.bodySmall.fontSize, textAlign: 'center', lineHeight: 22, paddingHorizontal: 32, marginTop: 8},
+  // Glimpses tab
+  glimpsesContainer: {paddingTop: 8},
+  glimpsesIntro: {
+    fontSize: 15,
+    fontStyle: 'italic' as const,
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    fontWeight: '300',
+    letterSpacing: 0.3,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
 
   // Bottom nav
   bottomNav: {
