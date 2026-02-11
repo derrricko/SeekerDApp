@@ -7,13 +7,19 @@ import {
   Easing,
   Image,
   Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTheme, Typography} from './theme';
 
-const {height: SCREEN_HEIGHT} = Dimensions.get('window');
-
 const EASE_OUT = Easing.out(Easing.cubic);
+
+// Portrait art frame — fill the screen, maintaining ~290:640 aspect ratio
+const {width: SCREEN_W, height: SCREEN_H} = Dimensions.get('window');
+const ART_WIDTH = SCREEN_W - 32; // 16px margin each side
+const ART_HEIGHT = Math.max(ART_WIDTH * 2.2, SCREEN_H * 0.88);
+// The two hands meet at ~39% from the top of the image
+const HANDS_RATIO = 0.48;
 
 interface SplashOverlayProps {
   onAnimationDone: () => void;
@@ -22,6 +28,7 @@ interface SplashOverlayProps {
 export default function SplashOverlay({onAnimationDone}: SplashOverlayProps) {
   const insets = useSafeAreaInsets();
   const {colors} = useTheme();
+  const {height: SCREEN_HEIGHT} = useWindowDimensions();
 
   // Animation values
   const brandOpacity = useRef(new Animated.Value(0)).current;
@@ -32,13 +39,14 @@ export default function SplashOverlay({onAnimationDone}: SplashOverlayProps) {
   // Transition: brand moves from center to header
   const transitionProgress = useRef(new Animated.Value(0)).current;
 
-  // Calculate positions
+  // Calculate positions — brand starts at the hands, not screen center
+  const handsOffsetFromCenter = ART_HEIGHT * (HANDS_RATIO - 0.39); // hands are above center
   const headerCenterY = insets.top + 12 + Typography.brand.lineHeight / 2;
-  const screenCenterY = SCREEN_HEIGHT / 2;
-  const translateDistance = screenCenterY - headerCenterY + 20;
+  const brandStartY = SCREEN_HEIGHT / 2 - handsOffsetFromCenter;
+  const translateDistance = brandStartY - headerCenterY;
 
-  // Scale from 52px to 24px brand size
-  const brandSizeScale = 24 / 52; // ~0.462
+  // Scale from 28px to 24px brand size
+  const brandSizeScale = 24 / 28; // ~0.857
 
   useEffect(() => {
     // Phase 1: Brand entrance (0–1000ms)
@@ -57,35 +65,39 @@ export default function SplashOverlay({onAnimationDone}: SplashOverlayProps) {
       }),
     ]);
 
-    // Phase 2: Hold (1000–2800ms)
-    // Phase 3: Auto-transition (2800–4200ms)
+    // Phase 2: Hold (1000–2200ms)
+    // Phase 3: Art fades + brand moves to header (2200–3600ms)
     const autoTransition = Animated.parallel([
       Animated.timing(transitionProgress, {
         toValue: 1,
         duration: 1400,
-        delay: 2800,
+        delay: 2200,
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
       Animated.timing(artOpacity, {
         toValue: 0,
         duration: 1000,
-        delay: 2800,
+        delay: 2200,
         easing: EASE_OUT,
-        useNativeDriver: true,
-      }),
-      Animated.timing(overlayOpacity, {
-        toValue: 0,
-        duration: 1400,
-        delay: 2800,
-        easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
     ]);
 
-    Animated.parallel([brandEntrance, autoTransition]).start(() => {
-      onAnimationDone();
+    // Phase 4: Background fades to reveal Give page after brand is at top
+    const revealHome = Animated.timing(overlayOpacity, {
+      toValue: 0,
+      duration: 600,
+      delay: 3600, // 2200 + 1400 = brand at header
+      easing: EASE_OUT,
+      useNativeDriver: true,
     });
+
+    Animated.parallel([brandEntrance, autoTransition, revealHome]).start(
+      () => {
+        onAnimationDone();
+      },
+    );
 
     return () => {
       brandOpacity.stopAnimation();
@@ -124,7 +136,15 @@ export default function SplashOverlay({onAnimationDone}: SplashOverlayProps) {
         ]}
       />
       <Animated.View
-        style={[styles.artWrapper, {opacity: artOpacity}]}
+        style={[
+          styles.artWrapper,
+          {
+            opacity: artOpacity,
+            top: SCREEN_HEIGHT / 2 - ART_HEIGHT * HANDS_RATIO,
+            width: ART_WIDTH,
+            height: ART_HEIGHT,
+          },
+        ]}
         pointerEvents="none">
         <View
           style={[
@@ -136,7 +156,7 @@ export default function SplashOverlay({onAnimationDone}: SplashOverlayProps) {
             },
           ]}>
           <Image
-            source={require('../assets/creationofadam.jpg')}
+            source={require('../assets/creation_of_adam_vertical.jpg')}
             style={styles.artImage}
             resizeMode="cover"
           />
@@ -152,11 +172,12 @@ export default function SplashOverlay({onAnimationDone}: SplashOverlayProps) {
         </View>
       </Animated.View>
 
-      {/* Brand text — stays mounted forever as the header brand */}
+      {/* Brand text — positioned at the hands, transitions to header */}
       <Animated.View
         style={[
           styles.brandContainer,
           {
+            top: brandStartY - 14, // center the 28px text at hands Y
             opacity: brandOpacity,
             transform: [
               {translateY: brandTranslateY},
@@ -176,7 +197,6 @@ const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
-    justifyContent: 'center',
     zIndex: 100,
   },
   backgroundLayer: {
@@ -184,11 +204,7 @@ const styles = StyleSheet.create({
   },
   artWrapper: {
     position: 'absolute',
-    left: 24,
-    right: 24,
     alignSelf: 'center',
-    top: SCREEN_HEIGHT / 2 - 140,
-    height: 240,
   },
   artFrame: {
     flex: 1,
@@ -202,10 +218,10 @@ const styles = StyleSheet.create({
   },
   artImage: {
     position: 'absolute',
-    top: -30,
-    left: -30,
-    width: '120%',
-    height: '120%',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
     opacity: 0.95,
   },
   artWash: {
@@ -235,10 +251,12 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   brandContainer: {
+    position: 'absolute',
+    alignSelf: 'center',
     alignItems: 'center',
   },
   brand: {
-    fontSize: 52,
+    fontSize: 28,
     fontWeight: Typography.brand.fontWeight,
     letterSpacing: Typography.brand.letterSpacing,
     fontFamily: Typography.brand.fontFamily,
