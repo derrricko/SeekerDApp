@@ -85,18 +85,27 @@ export function WalletProvider({children}: {children: ReactNode}) {
   // Create the wallet-standard wallet instance once
   const walletRef = useRef<LocalSolanaMobileWalletAdapterWallet | null>(null);
   if (walletRef.current === null) {
-    walletRef.current = new LocalSolanaMobileWalletAdapterWallet({
-      appIdentity: APP_IDENTITY,
-      authorizationCache: createDefaultAuthorizationCache(),
-      chains: [CHAIN],
-      chainSelector: createDefaultChainSelector(),
-      onWalletNotFound: createDefaultWalletNotFoundHandler(),
-    });
+    try {
+      walletRef.current = new LocalSolanaMobileWalletAdapterWallet({
+        appIdentity: APP_IDENTITY,
+        authorizationCache: createDefaultAuthorizationCache(),
+        chains: [CHAIN],
+        chainSelector: createDefaultChainSelector(),
+        onWalletNotFound: createDefaultWalletNotFoundHandler(),
+      });
+    } catch {
+      // Wallet adapter may fail on non-Android or misconfigured devices
+      console.warn('Failed to initialize wallet adapter');
+    }
   }
   const wallet = walletRef.current;
 
   // Listen for account changes via wallet-standard events
   useEffect(() => {
+    if (!wallet) {
+      return;
+    }
+
     const eventsFeature = wallet.features['standard:events'];
     if (!eventsFeature) {
       return;
@@ -127,15 +136,21 @@ export function WalletProvider({children}: {children: ReactNode}) {
     }
   }, [account]);
 
-  const connected = wallet.connected;
+  const connected = wallet?.connected ?? false;
 
   const connect = useCallback(async () => {
+    if (!wallet) {
+      throw new Error('Wallet adapter not available');
+    }
     const connectFeature = wallet.features['standard:connect'];
     const result = await connectFeature.connect();
     setAccounts(result.accounts);
   }, [wallet]);
 
   const disconnect = useCallback(async () => {
+    if (!wallet) {
+      return;
+    }
     const disconnectFeature = wallet.features['standard:disconnect'];
     await disconnectFeature.disconnect();
     setAccounts([]);
@@ -143,6 +158,9 @@ export function WalletProvider({children}: {children: ReactNode}) {
 
   const signIn = useCallback(
     async (input?: SolanaSignInInput): Promise<SolanaSignInOutput | null> => {
+      if (!wallet) {
+        return null;
+      }
       const signInFeature = wallet.features['solana:signIn'];
       if (!signInFeature) {
         return null;
@@ -163,6 +181,9 @@ export function WalletProvider({children}: {children: ReactNode}) {
     async (transaction: Uint8Array): Promise<Uint8Array> => {
       if (!account) {
         throw new Error('Wallet not connected');
+      }
+      if (!wallet) {
+        throw new Error('Wallet adapter not available');
       }
 
       const feature = wallet.features['solana:signAndSendTransaction'];
