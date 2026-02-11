@@ -2,7 +2,7 @@ import {ConnectionProvider} from './components/providers/ConnectionProvider';
 import {WalletProvider} from './components/providers/WalletProvider';
 import {AuthProvider} from './components/providers/AuthProvider';
 import {clusterApiUrl} from '@solana/web3.js';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {StyleSheet, StatusBar, View} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {ThemeProvider, useTheme} from './components/theme';
@@ -11,19 +11,31 @@ import {SOLANA_CLUSTER} from './config/env';
 
 import HomeScreen from './screens/HomeScreen';
 import SplashOverlay from './components/SplashOverlay';
-import OnboardingModal from './components/OnboardingModal';
+import OnboardingJourney from './screens/OnboardingJourney';
+
+const JOURNEY_SEEN_KEY = '@glimpse_onboarding_journey_seen';
 
 function AppContent() {
   const {isDark, colors} = useTheme();
-  const [splashDone, setSplashDone] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [isFirstLaunch] = useState(true);
+  const [showJourney, setShowJourney] = useState(false);
+  const isFirstLaunchRef = useRef(false);
+
+  // Check AsyncStorage on mount — resolves well before splash finishes (~4s)
+  useEffect(() => {
+    AsyncStorage.getItem(JOURNEY_SEEN_KEY).then(value => {
+      isFirstLaunchRef.current = value !== 'true';
+    });
+  }, []);
 
   const handleSplashDone = () => {
-    setSplashDone(true);
-    if (isFirstLaunch) {
-      setTimeout(() => setShowOnboarding(true), 100);
+    if (isFirstLaunchRef.current) {
+      setTimeout(() => setShowJourney(true), 100);
     }
+  };
+
+  const handleJourneyComplete = () => {
+    AsyncStorage.setItem(JOURNEY_SEEN_KEY, 'true');
+    setShowJourney(false);
   };
 
   return (
@@ -36,8 +48,8 @@ function AppContent() {
       <View style={[styles.container, {backgroundColor: colors.background}]}>
         <HomeScreen hideHeaderBrand />
         <SplashOverlay onAnimationDone={handleSplashDone} />
-        {showOnboarding && (
-          <OnboardingModal onComplete={() => setShowOnboarding(false)} />
+        {showJourney && (
+          <OnboardingJourney onComplete={handleJourneyComplete} />
         )}
       </View>
     </>
