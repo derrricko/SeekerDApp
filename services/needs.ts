@@ -3,7 +3,7 @@
  * Fetches active needs from Supabase, falls back to static data.
  */
 
-import {supabase} from './supabase';
+import {getSupabase} from './supabase';
 import {NEEDS} from '../data/content';
 import type {Need} from '../data/content';
 import {SUPABASE_URL} from '../config/env';
@@ -41,6 +41,11 @@ function rowToNeed(row: NeedRow): Need {
  */
 export async function fetchActiveNeeds(): Promise<Need[]> {
   if (!SUPABASE_URL) {
+    return NEEDS;
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
     return NEEDS;
   }
 

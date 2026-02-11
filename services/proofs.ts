@@ -2,7 +2,7 @@
  * Proof media service — fetches documented impact for fulfilled needs.
  */
 
-import {supabase} from './supabase';
+import {getSupabase} from './supabase';
 import {SUPABASE_URL} from '../config/env';
 
 export interface Proof {
@@ -19,6 +19,11 @@ export interface Proof {
  */
 export async function fetchProofsForNeed(needId: string): Promise<Proof[]> {
   if (!SUPABASE_URL) {
+    return [];
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
     return [];
   }
 

@@ -3,7 +3,7 @@
  * Communicates with the nonce and siws-verify Edge Functions.
  */
 
-import {supabase} from './supabase';
+import {getSupabase} from './supabase';
 import {SUPABASE_URL} from '../config/env';
 
 /**
@@ -49,6 +49,10 @@ export async function verifySIWS(
  * Set a custom JWT on the Supabase client (from SIWS verification).
  */
 export async function setSupabaseSession(token: string) {
+  const supabase = getSupabase();
+  if (!supabase) {
+    return;
+  }
   await supabase.auth.setSession({
     access_token: token,
     refresh_token: '',

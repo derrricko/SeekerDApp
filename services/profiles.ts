@@ -2,7 +2,7 @@
  * Profile service — fetch and update user profiles.
  */
 
-import {supabase} from './supabase';
+import {getSupabase} from './supabase';
 import {SUPABASE_URL} from '../config/env';
 
 export interface Profile {
@@ -19,6 +19,11 @@ export async function fetchProfile(
   walletAddress: string,
 ): Promise<Profile | null> {
   if (!SUPABASE_URL) {
+    return null;
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
     return null;
   }
 
@@ -47,6 +52,11 @@ export async function updateProfile(
   updates: Partial<Pick<Profile, 'display_name' | 'avatar_url'>>,
 ): Promise<Profile | null> {
   if (!SUPABASE_URL) {
+    return null;
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
     return null;
   }
 
