@@ -32,7 +32,13 @@ const USDC_MINTS = {
 
 export const USDC_MINT = USDC_MINTS[SOLANA_CLUSTER];
 
-// ─── Recipient wallet (org treasury) ────────────────────────────────────────
+// ─── Escrow Program ────────────────────────────────────────────────────────
+
+export const ESCROW_PROGRAM_ID = new PublicKey(
+  'GLmpSEescroW1111111111111111111111111111111', // Update after `anchor deploy`
+);
+
+// ─── Recipient wallet (org treasury — fallback for direct transfers) ───────
 
 export const RECIPIENT_WALLET = new PublicKey(
   '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T',
