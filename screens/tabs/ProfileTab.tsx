@@ -130,6 +130,7 @@ function FAQItem({item, isExpanded, onToggle}: FAQItemProps) {
       friction: 14,
       tension: 120,
     }).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rotateAnim is a stable Animated.Value ref
   }, [isExpanded]);
 
   const rotate = rotateAnim.interpolate({

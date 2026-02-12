@@ -1,0 +1,8 @@
+archive/
+supabase/
+scripts/
+programs/
+node_modules/
+android/
+ios/
+target/

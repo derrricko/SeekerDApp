@@ -38,6 +38,7 @@ export default function GlimpseCard({glimpse, delay}: GlimpseCardProps) {
     ]);
     anim.start();
     return () => anim.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, delay is constant per mount
   }, []);
 
   return (

@@ -119,7 +119,7 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
   const [txSuccess, setTxSuccess] = useState<boolean | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
   const [txSignature, setTxSignature] = useState<string | null>(null);
-  const [donationNote, setDonationNote] = useState<string | undefined>();
+  const [, setDonationNote] = useState<string | undefined>();
 
   const handleDonate = (amount: number, direction: string) => {
     setConfirmAmount(amount);

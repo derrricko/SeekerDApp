@@ -103,6 +103,7 @@ export default function NeedCard({need, delay, index, onGive}: NeedCardProps) {
     ]);
     anim.start();
     return () => anim.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, delay is constant per mount
   }, []);
 
   // Press animation

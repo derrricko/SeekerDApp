@@ -104,6 +104,7 @@ export default function SplashOverlay({onAnimationDone}: SplashOverlayProps) {
       overlayOpacity.stopAnimation();
       transitionProgress.stopAnimation();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, runs once on mount
   }, []);
 
   // Interpolate brand translateY: 0 → -translateDistance (moves up)

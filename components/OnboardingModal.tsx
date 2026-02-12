@@ -450,6 +450,7 @@ export default function OnboardingModal({onComplete}: OnboardingModalProps) {
         useNativeDriver: true,
       }),
     ]).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, runs once on mount
   }, []);
 
   const onViewableItemsChanged = useRef(

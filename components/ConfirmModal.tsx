@@ -106,6 +106,7 @@ export default function ConfirmModal({
         }),
       ]).start();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs
   }, [visible]);
 
   // Celebration animation sequence on success
@@ -163,6 +164,7 @@ export default function ConfirmModal({
     } else if (error) {
       triggerHaptic('notificationError');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs
   }, [success, error]);
 
   const handleClose = () => {

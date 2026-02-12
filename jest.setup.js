@@ -1,3 +1,5 @@
+/* eslint-env jest */
+/* global Buffer */
 // Polyfills required before any Solana import
 require('./globals');
 

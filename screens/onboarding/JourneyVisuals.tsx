@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useMemo, useRef} from 'react';
 import {Animated, Easing, StyleSheet, Text, View} from 'react-native';
 import GlassCard from '../../components/GlassCard';
 import {useTheme, Typography} from '../../components/theme';
@@ -45,11 +45,10 @@ export default function JourneyVisual({
 // Concentric circles radiating outward — proximity, closeness, "right here"
 function NeighborVisual({isVisible}: {isVisible: boolean}) {
   const {colors} = useTheme();
-  const rings = [
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
-  ];
+  const ring0 = useRef(new Animated.Value(0)).current;
+  const ring1 = useRef(new Animated.Value(0)).current;
+  const ring2 = useRef(new Animated.Value(0)).current;
+  const rings = useMemo(() => [ring0, ring1, ring2], [ring0, ring1, ring2]);
   const centerOpacity = useRef(new Animated.Value(0)).current;
   const hasAnimated = useRef(false);
 
@@ -811,6 +810,7 @@ function ImpactVisual({isVisible}: {isVisible: boolean}) {
         }, i * 100);
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- cardAnims are stable Animated.Value refs
   }, [isVisible]);
 
   const needs = [

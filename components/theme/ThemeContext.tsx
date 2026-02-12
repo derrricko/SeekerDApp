@@ -40,7 +40,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
   // Listen for system color scheme changes
   useEffect(() => {
-    const subscription = Appearance.addChangeListener(({colorScheme}) => {
+    const subscription = Appearance.addChangeListener(({colorScheme: _}) => {
       // Only triggers re-render if mode is 'system'
       if (mode === 'system') {
         // Force update by toggling state

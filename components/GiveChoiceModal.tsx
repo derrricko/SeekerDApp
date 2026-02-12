@@ -8,7 +8,6 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import GlassCard from './GlassCard';
 import PresetChip from './PresetChip';
@@ -91,6 +90,7 @@ export default function GiveChoiceModal({
         }).start();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, hasFunding/fundedPct derived from need prop
   }, [visible]);
 
   const handleClose = () => {

@@ -60,6 +60,7 @@ export function useEntrance(delay: number = 0) {
     ]);
     anim.start();
     return () => anim.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, delay is constant per mount
   }, []);
 
   return {opacity, translateY};
