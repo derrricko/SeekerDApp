@@ -43,6 +43,13 @@ ios/link-assets-manifest.json
 .DS_Store
 Thumbs.db
 
+# Package manager (using npm — ignore yarn)
+yarn.lock
+
+# Presentations & design binaries
+*.pptx
+*.ppt
+
 # Environment
 .env
 .env.*

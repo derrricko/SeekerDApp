@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Glimpse - Mobile Demo (Current App)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #f7f1e9;
+  --bg-2: #efe3d5;
+  --text: #2a1c12;
+  --text-2: #5c4b40;
+  --text-3: #8b776b;
+  --primary: #d07a4f;
+  --primary-soft: rgba(208, 122, 79, 0.2);
+  --line: rgba(72, 51, 38, 0.15);
+  --card: rgba(255, 255, 255, 0.72);
+  --ok: #2f7b6d;
+  --danger: #bf5d5d;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  background:
+    radial-gradient(1200px 700px at 20% 0%, #f9f2e8 0%, rgba(249, 242, 232, 0) 70%),
+    radial-gradient(900px 500px at 100% 20%, #ebd8c4 0%, rgba(235, 216, 196, 0) 65%),
+    linear-gradient(180deg, #eee2d2 0%, #e7d8c5 100%);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.13;
+  background-image: radial-gradient(#000 0.55px, transparent 0.55px);
+  background-size: 3px 3px;
+}
+
+.stage {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 20px;
+  justify-items: center;
+}
+
+.narration {
+  min-height: 60px;
+  max-width: 620px;
+  text-align: center;
+  color: rgba(42, 28, 18, 0.78);
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 360ms ease, transform 360ms ease;
+}
+
+.narration.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.shell {
+  width: 305px;
+  height: 640px;
+  border-radius: 42px;
+  padding: 8px;
+  background:
+    linear-gradient(160deg, rgba(255,255,255,0.92), rgba(208,122,79,0.15) 45%, rgba(80,58,46,0.38)),
+    #1f1510;
+  box-shadow:
+    0 30px 80px rgba(41, 25, 13, 0.35),
+    inset 0 1px 1px rgba(255,255,255,0.7);
+}
+
+.phone {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 35px;
+  overflow: hidden;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35);
+}
+
+.notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 116px;
+  height: 28px;
+  background: #22170f;
+  border-radius: 0 0 17px 17px;
+  z-index: 100;
+}
+
+.status {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  z-index: 90;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 22px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(42, 28, 18, 0.82);
+}
+
+.sig {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.sig i {
+  display: block;
+  width: 2.7px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.sig i:nth-child(1) { height: 4px; }
+.sig i:nth-child(2) { height: 6px; }
+.sig i:nth-child(3) { height: 8px; }
+.sig i:nth-child(4) { height: 10px; }
+
+.bat {
+  width: 20px;
+  height: 10px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  position: relative;
+}
+
+.bat::after {
+  content: "";
+  position: absolute;
+  right: -3px;
+  top: 2px;
+  width: 2px;
+  height: 4px;
+  border-radius: 0 1px 1px 0;
+  background: currentColor;
+}
+
+.bat-fill {
+  position: absolute;
+  inset: 1px;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px) scale(0.995);
+  transition: opacity 540ms cubic-bezier(.2,.8,.2,1), transform 540ms cubic-bezier(.2,.8,.2,1);
+}
+
+.scene.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.glass {
+  background: var(--card);
+  border: 1px solid rgba(84, 62, 49, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(63, 43, 30, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #684734;
+  background: rgba(208, 122, 79, 0.18);
+  border: 1px solid rgba(208, 122, 79, 0.3);
+}
+
+.brand {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.brand-inner {
+  text-align: center;
+}
+
+.wordmark {
+  font-family: "Bodoni Moda", serif;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  font-size: 46px;
+  color: #2b1d13;
+}
+
+.brand-line {
+  height: 2px;
+  width: 64px;
+  margin: 12px auto 18px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}
+
+.brand-sub {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(53, 38, 27, 0.65);
+}
+
+.brand-pilot {
+  margin-top: 20px;
+}
+
+.screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-top: 44px;
+}
+
+.header {
+  padding: 12px 22px 14px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header h2 {
+  font-family: "Bodoni Moda", serif;
+  font-size: 25px;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+.q {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #7f695d;
+  border: 1px solid var(--line);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.content {
+  flex: 1;
+  padding: 18px;
+  overflow: hidden;
+}
+
+.hero-tag {
+  text-align: center;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--text-3);
+  margin-bottom: 16px;
+}
+
+.need {
+  margin-bottom: 12px;
+  padding: 14px;
+}
+
+.need-amt {
+  font-family: "Bodoni Moda", serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: #2d1d14;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.need-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.need-meta {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.need-btn {
+  margin-top: 12px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 12px;
+  text-align: center;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.nav {
+  border-top: 1px solid var(--line);
+  padding: 10px 6px 13px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  text-align: center;
+  background: rgba(255,255,255,0.55);
+}
+
+.nav-item {
+  font-size: 10px;
+  color: var(--text-3);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.nav-item.active {
+  color: var(--primary);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(28, 17, 10, 0.42);
+  display: grid;
+  place-items: center;
+  padding: 22px;
+}
+
+.modal {
+  width: 100%;
+  border-radius: 20px;
+  padding: 18px;
+}
+
+.modal h3 {
+  font-size: 20px;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.note {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  min-height: 70px;
+  padding: 10px;
+  font-size: 12px;
+  color: var(--text-2);
+  background: rgba(255,255,255,0.45);
+}
+
+.actions {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.btn {
+  border-radius: 12px;
+  padding: 11px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.btn.light {
+  border: 1px solid var(--line);
+  color: var(--text-2);
+}
+
+.btn.primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.loading {
+  text-align: center;
+  padding: 30px 10px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid rgba(208,122,79,0.25);
+  border-top-color: var(--primary);
+  margin: 0 auto 12px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.success {
+  text-align: center;
+  padding: 12px 4px;
+}
+
+.success .amt {
+  font-family: "Bodoni Moda", serif;
+  font-size: 56px;
+  color: var(--primary);
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.success .toward {
+  font-size: 14px;
+  color: var(--text-2);
+  margin-bottom: 14px;
+}
+
+.success .thanks {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.45;
+  margin-bottom: 13px;
+}
+
+.linkish {
+  display: inline-block;
+  font-size: 11px;
+  color: var(--text-3);
+  border-bottom: 1px dashed rgba(139,119,107,0.8);
+  margin-bottom: 14px;
+}
+
+.glimpses-wrap {
+  padding: 10px 18px 18px;
+  overflow: hidden;
+}
+
+.g-intro {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-3);
+  font-style: italic;
+  margin: 6px 0 16px;
+}
+
+.tx-card {
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.tx-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.tx-top .money {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.tx-note {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.tx-sig {
+  font-size: 10px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty {
+  text-align: center;
+  padding: 48px 20px;
+}
+
+.empty h4 {
+  font-size: 22px;
+  font-family: "Bodoni Moda", serif;
+  color: #6f5a4d;
+  margin-bottom: 10px;
+}
+
+.empty p {
+  font-size: 13px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+
+.closer {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  height: 100%;
+  padding: 20px;
+}
+
+.closer h1 {
+  font-family: "Bodoni Moda", serif;
+  letter-spacing: 0.12em;
+  font-size: 44px;
+  margin-bottom: 10px;
+}
+
+.closer p {
+  color: var(--text-2);
+  margin-bottom: 16px;
+}
+
+.trust {
+  max-width: 220px;
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.45;
+}
+
+.progress {
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(110, 87, 66, 0.22);
+  transition: all 260ms ease;
+}
+
+.dot.active {
+  transform: scale(1.45);
+  background: var(--primary);
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+}
+
+.control {
+  border: 1px solid rgba(70, 48, 33, 0.2);
+  background: rgba(255,255,255,0.35);
+  color: #523a2a;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.control:hover {
+  background: rgba(255,255,255,0.6);
+}
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="narration" id="narration"></div>
+
+    <div class="shell">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status">
+          <div>9:41</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="sig"><i></i><i></i><i></i><i></i></span>
+            <span class="bat"><span class="bat-fill"></span></span>
+          </div>
+        </div>
+
+        <section class="scene" data-scene="0">
+          <div class="brand">
+            <div class="brand-inner">
+              <div class="wordmark">GLIMPSE</div>
+              <div class="brand-line"></div>
+              <div class="brand-sub">documenting kindness, creating connections</div>
+              <div class="brand-pilot"><span class="pill">Devnet Pilot · Live MVP</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="scene" data-scene="1">
+          <div class="screen">
+            <header class="header">
+              <h2>Glimpse</h2>
+              <span class="q">?</span>
+            </header>
+            <div class="content">
+              <div class="hero-tag">documenting kindness, creating connections</div>
+
+              <article class="need glass">
+                <div class="need-amt">$25</div>
+                <div class="need-title">A clean shower and fresh clothes</div>
+                <div class="need-meta">BeHeard Movement · Tulsa, OK</div>
+                <div class="need-btn">Give This Gift</div>
+              </article>
+
+              <article class="need glass" style="opacity:0.93;">
+                <div class="need-amt">$100</div>
+                <div class="need-title">Groceries for a single mom</div>
+                <div class="need-meta">Chip in or fund full need</div>
+              </article>
+            </div>
+            <nav class="nav">
+              <div class="nav-item active">Give</div>
+              <div class="nav-item">Glimpses</div>
+              <div class="nav-item">Profile</div>
+            </nav>
+          </div>
+        </section>
+
+        <section class="scene" data-scene="2">
+          <div class="screen" style="filter: blur(1px) saturate(0.85); opacity:0.75;">
+            <header class="header"><h2>Glimpse</h2><span class="q">?</span></header>
+            <div class="content"></div>
+            <nav class="nav"><div class="nav-item active">Give</div><div class="nav-item">Glimpses</div><div class="nav-item">Profile</div></nav>
+          </div>
+          <div class="overlay">
+            <div class="modal glass">
+              <span class="pill" style="margin-bottom:10px;">Select amount</span>
+              <h3>A clean shower and fresh clothes</h3>
+              <div class="row"><span>Fund full need</span><strong>$25</strong></div>
+              <div class="row"><span>Chip in options</span><strong>$10 · $25 · $50</strong></div>
+              <div class="row"><span>Progress</span><strong>$18 of $25 raised</strong></div>
+              <div class="actions" style="grid-template-columns: 1fr; margin-top: 14px;">
+                <div class="btn primary">Chip In $25</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="scene" data-scene="3">
+          <div class="screen" style="filter: blur(1px) saturate(0.85); opacity:0.75;">
+            <header class="header"><h2>Glimpse</h2><span class="q">?</span></header>
+            <div class="content"></div>
+            <nav class="nav"><div class="nav-item active">Give</div><div class="nav-item">Glimpses</div><div class="nav-item">Profile</div></nav>
+          </div>
+          <div class="overlay">
+            <div class="modal glass">
+              <span class="pill" style="margin-bottom:10px;">Confirm your gift · final check</span>
+              <h3>Send Gift</h3>
+              <div class="row"><span>Amount</span><strong>$25</strong></div>
+              <div class="row"><span>Toward</span><strong>A clean shower and fresh clothes</strong></div>
+              <div class="note">"You are seen. Keep going." (optional note)</div>
+              <div class="actions">
+                <div class="btn light">Cancel</div>
+                <div class="btn primary">Send Gift</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="scene" data-scene="4">
+          <div class="screen" style="filter: blur(1px) saturate(0.85); opacity:0.78;">
+            <header class="header"><h2>Glimpse</h2><span class="q">?</span></header>
+            <div class="content"></div>
+            <nav class="nav"><div class="nav-item active">Give</div><div class="nav-item">Glimpses</div><div class="nav-item">Profile</div></nav>
+          </div>
+          <div class="overlay">
+            <div class="modal glass">
+              <div class="loading" id="loadingState">
+                <div class="spinner"></div>
+                <p style="font-size:13px;color:var(--text-2);">Sending your gift...</p>
+              </div>
+              <div class="success" id="successState" style="display:none;">
+                <div class="amt">$25</div>
+                <div class="toward">toward a clean shower and fresh clothes</div>
+                <p class="thanks">Transaction confirmed on Solana devnet. Signature and timestamp are now publicly verifiable.</p>
+                <span class="linkish">Open this exact transaction in Solana Explorer</span>
+                <div class="actions" style="grid-template-columns:1fr;">
+                  <div class="btn primary">View Your Glimpses</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="scene" data-scene="5">
+          <div class="screen">
+            <header class="header">
+              <h2>Glimpse</h2>
+              <span class="pill">Devnet Pilot · Donation History</span>
+            </header>
+            <div class="glimpses-wrap">
+              <div class="g-intro">See the impact trail for every gift.</div>
+              <article class="tx-card glass">
+                <div class="tx-top"><span class="money">$25</span><span style="color:var(--text-3);">2/12/2026</span></div>
+                <p class="tx-note">"You are seen. Keep going."</p>
+                <p class="tx-sig">tx: 4xK9v2fA9rN3n2Mpj8Lx7mU6Y7P9aK2Q8bD4tCw1hR6</p>
+              </article>
+              <article class="tx-card glass" style="opacity:0.92;">
+                <div class="tx-top"><span class="money">$10</span><span style="color:var(--text-3);">2/11/2026</span></div>
+                <p class="tx-note">Devnet donation recorded successfully.</p>
+                <p class="tx-sig">tx: 9nL8e3Kq2fP5tR1zY7mC4bV6aJ2uX9dW3qS8hM5kL1</p>
+              </article>
+            </div>
+            <nav class="nav">
+              <div class="nav-item">Give</div>
+              <div class="nav-item active">Glimpses</div>
+              <div class="nav-item">Profile</div>
+            </nav>
+          </div>
+        </section>
+
+        <section class="scene" data-scene="6">
+          <div class="closer">
+            <div>
+              <h1>GLIMPSE</h1>
+              <p>Mobile-first giving with verifiable impact.</p>
+              <span class="pill">Current Demo: Working Devnet MVP</span>
+              <p class="trust" style="margin-top:15px;">
+                On-chain: transaction signatures, timestamps, and token movement.<br />
+                Off-chain: partner context and proof-media delivery.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="progress" id="progress"></div>
+    <div class="controls">
+      <button class="control" id="replay">REPLAY</button>
+      <button class="control" id="pause">PAUSE</button>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const scenes = Array.from(document.querySelectorAll('.scene'));
+  const narration = document.getElementById('narration');
+  const progress = document.getElementById('progress');
+  const replayBtn = document.getElementById('replay');
+  const pauseBtn = document.getElementById('pause');
+
+  const timeline = [
+    { t: 9000, text: 'Most giving apps ask for trust. Glimpse is built to show proof.' },
+    { t: 12000, text: 'Step 1: open Give, pick a real need, and commit an amount in seconds.' },
+    { t: 11000, text: 'Step 2: chip in or fund full need. The flow stays simple and mobile-first.' },
+    { t: 11000, text: 'Step 3: final confirmation before send, including optional encouragement note.' },
+    { t: 13000, text: 'Step 4: transaction confirms on Solana devnet, with direct explorer verification.' },
+    { t: 13000, text: 'Step 5: Glimpses shows donation history and signatures for transparent tracking.' },
+    { t: 12000, text: 'Glimpse: mobile-first giving with a verifiable trust loop.' }
+  ];
+
+  timeline.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    dot.dataset.index = i;
+    progress.appendChild(dot);
+  });
+
+  const dots = Array.from(progress.querySelectorAll('.dot'));
+
+  let idx = -1;
+  let timer = null;
+  let paused = false;
+
+  function setScene(next) {
+    scenes.forEach((scene, i) => {
+      scene.classList.toggle('active', i === next);
+    });
+
+    dots.forEach((d, i) => d.classList.toggle('active', i === next));
+
+    narration.classList.remove('active');
+    setTimeout(() => {
+      narration.textContent = timeline[next].text;
+      narration.classList.add('active');
+    }, 80);
+
+    if (next === 4) {
+      const loading = document.getElementById('loadingState');
+      const success = document.getElementById('successState');
+      loading.style.display = 'block';
+      success.style.display = 'none';
+      setTimeout(() => {
+        if (idx === 4) {
+          loading.style.display = 'none';
+          success.style.display = 'block';
+        }
+      }, 1700);
+    }
+  }
+
+  function clear() {
+    if (timer) clearTimeout(timer);
+    timer = null;
+  }
+
+  function tick() {
+    clear();
+    if (paused) return;
+
+    idx += 1;
+    if (idx >= timeline.length) {
+      idx = 0;
+    }
+
+    setScene(idx);
+    timer = setTimeout(tick, timeline[idx].t);
+  }
+
+  replayBtn.addEventListener('click', () => {
+    idx = -1;
+    tick();
+  });
+
+  pauseBtn.addEventListener('click', () => {
+    paused = !paused;
+    pauseBtn.textContent = paused ? 'RESUME' : 'PAUSE';
+    if (!paused) {
+      tick();
+    } else {
+      clear();
+    }
+  });
+
+  setTimeout(tick, 500);
+})();
+</script>
+</body>
+</html>
