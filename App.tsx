@@ -25,9 +25,12 @@ function AppContent() {
   const [showJourney, setShowJourney] = useState(false);
   const isFirstLaunchRef = useRef(false);
 
-  // TODO: remove force-show — temp override for testing
   useEffect(() => {
-    isFirstLaunchRef.current = true;
+    AsyncStorage.getItem(JOURNEY_SEEN_KEY).then(value => {
+      if (value === null) {
+        isFirstLaunchRef.current = true;
+      }
+    });
   }, []);
 
   const handleSplashDone = () => {

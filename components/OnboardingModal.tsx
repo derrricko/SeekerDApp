@@ -42,13 +42,37 @@ function SlideIcon({index}: {index: number}) {
           ]}
         />
         <View style={iconStyles.arrowRow}>
-          <View style={[iconStyles.arrowDot, {backgroundColor: colors.secondary}]} />
-          <View style={[iconStyles.arrowShaft, {backgroundColor: colors.primary}]} />
+          <View
+            style={[iconStyles.arrowDot, {backgroundColor: colors.secondary}]}
+          />
+          <View
+            style={[iconStyles.arrowShaft, {backgroundColor: colors.primary}]}
+          />
           <View style={iconStyles.chevronWrap}>
-            <View style={[iconStyles.chevronArm, {backgroundColor: colors.primary, transform: [{rotate: '-35deg'}], marginBottom: -1}]} />
-            <View style={[iconStyles.chevronArm, {backgroundColor: colors.primary, transform: [{rotate: '35deg'}], marginTop: -1}]} />
+            <View
+              style={[
+                iconStyles.chevronArm,
+                {
+                  backgroundColor: colors.primary,
+                  transform: [{rotate: '-35deg'}],
+                  marginBottom: -1,
+                },
+              ]}
+            />
+            <View
+              style={[
+                iconStyles.chevronArm,
+                {
+                  backgroundColor: colors.primary,
+                  transform: [{rotate: '35deg'}],
+                  marginTop: -1,
+                },
+              ]}
+            />
           </View>
-          <View style={[iconStyles.arrowDot, {backgroundColor: colors.success}]} />
+          <View
+            style={[iconStyles.arrowDot, {backgroundColor: colors.success}]}
+          />
         </View>
       </View>
     );
@@ -59,10 +83,18 @@ function SlideIcon({index}: {index: number}) {
     return (
       <View style={iconStyles.container}>
         <View style={iconStyles.grid}>
-          <View style={[iconStyles.tileFilled, {backgroundColor: colors.primary}]}>
+          <View
+            style={[iconStyles.tileFilled, {backgroundColor: colors.primary}]}>
             <View style={iconStyles.tileCheckWrap}>
-              <View style={[iconStyles.tileCheckShort, {backgroundColor: '#FFFFFF'}]} />
-              <View style={[iconStyles.tileCheckLong, {backgroundColor: '#FFFFFF'}]} />
+              <View
+                style={[
+                  iconStyles.tileCheckShort,
+                  {backgroundColor: '#FFFFFF'},
+                ]}
+              />
+              <View
+                style={[iconStyles.tileCheckLong, {backgroundColor: '#FFFFFF'}]}
+              />
             </View>
           </View>
           <View style={[iconStyles.tile, {borderColor: colors.accent}]} />
@@ -78,19 +110,55 @@ function SlideIcon({index}: {index: number}) {
     return (
       <View style={iconStyles.container}>
         <View style={[iconStyles.receipt, {borderColor: colors.accent}]}>
-          <View style={[iconStyles.receiptLine, {width: 24, backgroundColor: colors.accent, opacity: 0.5}]} />
-          <View style={[iconStyles.receiptLine, {width: 18, backgroundColor: colors.accent, opacity: 0.5}]} />
-          <View style={[iconStyles.receiptLine, {width: 12, backgroundColor: colors.accent, opacity: 0.5}]} />
-          <View style={[iconStyles.receiptDivider, {backgroundColor: colors.accent, opacity: 0.3}]} />
+          <View
+            style={[
+              iconStyles.receiptLine,
+              {width: 24, backgroundColor: colors.accent, opacity: 0.5},
+            ]}
+          />
+          <View
+            style={[
+              iconStyles.receiptLine,
+              {width: 18, backgroundColor: colors.accent, opacity: 0.5},
+            ]}
+          />
+          <View
+            style={[
+              iconStyles.receiptLine,
+              {width: 12, backgroundColor: colors.accent, opacity: 0.5},
+            ]}
+          />
+          <View
+            style={[
+              iconStyles.receiptDivider,
+              {backgroundColor: colors.accent, opacity: 0.3},
+            ]}
+          />
           <View style={iconStyles.receiptDotsRow}>
-            <View style={[iconStyles.receiptDot, {backgroundColor: colors.success}]} />
-            <View style={[iconStyles.receiptDot, {backgroundColor: colors.success}]} />
-            <View style={[iconStyles.receiptDot, {backgroundColor: colors.success}]} />
+            <View
+              style={[iconStyles.receiptDot, {backgroundColor: colors.success}]}
+            />
+            <View
+              style={[iconStyles.receiptDot, {backgroundColor: colors.success}]}
+            />
+            <View
+              style={[iconStyles.receiptDot, {backgroundColor: colors.success}]}
+            />
           </View>
         </View>
         <View style={iconStyles.chainWrap}>
-          <View style={[iconStyles.chainCircle, {left: 0, borderColor: colors.primary}]} />
-          <View style={[iconStyles.chainCircle, {right: 0, borderColor: colors.primary}]} />
+          <View
+            style={[
+              iconStyles.chainCircle,
+              {left: 0, borderColor: colors.primary},
+            ]}
+          />
+          <View
+            style={[
+              iconStyles.chainCircle,
+              {right: 0, borderColor: colors.primary},
+            ]}
+          />
         </View>
       </View>
     );
@@ -99,43 +167,136 @@ function SlideIcon({index}: {index: number}) {
   // Scale — concentric ripples + heart center
   return (
     <View style={iconStyles.container}>
-      <View style={[iconStyles.rippleOuter, {borderColor: colors.secondary, opacity: 0.25}]} />
-      <View style={[iconStyles.rippleMiddle, {borderColor: colors.accent, opacity: 0.5}]} />
-      <View style={[iconStyles.rippleInner, {borderColor: colors.primary, opacity: 0.8}]} />
-      <View style={[iconStyles.heartCenter, {backgroundColor: colors.primary}]} />
+      <View
+        style={[
+          iconStyles.rippleOuter,
+          {borderColor: colors.secondary, opacity: 0.25},
+        ]}
+      />
+      <View
+        style={[
+          iconStyles.rippleMiddle,
+          {borderColor: colors.accent, opacity: 0.5},
+        ]}
+      />
+      <View
+        style={[
+          iconStyles.rippleInner,
+          {borderColor: colors.primary, opacity: 0.8},
+        ]}
+      />
+      <View
+        style={[iconStyles.heartCenter, {backgroundColor: colors.primary}]}
+      />
     </View>
   );
 }
 
 const iconStyles = StyleSheet.create({
-  container: {width: 72, height: 72, alignItems: 'center', justifyContent: 'center', marginBottom: 24},
+  container: {
+    width: 72,
+    height: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
   // Slide 0 — Direct
-  dashedRing: {position: 'absolute', width: 44, height: 44, borderRadius: 22, borderWidth: 2},
+  dashedRing: {
+    position: 'absolute',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+  },
   arrowRow: {flexDirection: 'row', alignItems: 'center'},
   arrowDot: {width: 7, height: 7, borderRadius: 3.5},
   arrowShaft: {width: 36, height: 2.5, borderRadius: 1.25},
-  chevronWrap: {width: 10, height: 14, justifyContent: 'center', marginRight: 2},
+  chevronWrap: {
+    width: 10,
+    height: 14,
+    justifyContent: 'center',
+    marginRight: 2,
+  },
   chevronArm: {width: 10, height: 2.5, borderRadius: 1.25},
   // Slide 1 — Choose
   grid: {width: 56, height: 56, flexDirection: 'row', flexWrap: 'wrap', gap: 6},
   tile: {width: 25, height: 25, borderRadius: 6, borderWidth: 2},
-  tileFilled: {width: 25, height: 25, borderRadius: 6, alignItems: 'center', justifyContent: 'center'},
+  tileFilled: {
+    width: 25,
+    height: 25,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tileCheckWrap: {width: 12, height: 10, position: 'relative'},
-  tileCheckShort: {position: 'absolute', width: 2.5, height: 7, borderRadius: 1.25, bottom: 0, left: 1, transform: [{rotate: '-45deg'}]},
-  tileCheckLong: {position: 'absolute', width: 2.5, height: 11, borderRadius: 1.25, bottom: 0, right: 1, transform: [{rotate: '30deg'}]},
+  tileCheckShort: {
+    position: 'absolute',
+    width: 2.5,
+    height: 7,
+    borderRadius: 1.25,
+    bottom: 0,
+    left: 1,
+    transform: [{rotate: '-45deg'}],
+  },
+  tileCheckLong: {
+    position: 'absolute',
+    width: 2.5,
+    height: 11,
+    borderRadius: 1.25,
+    bottom: 0,
+    right: 1,
+    transform: [{rotate: '30deg'}],
+  },
   // Slide 2 — Proof
-  receipt: {width: 40, height: 52, borderWidth: 2, borderRadius: 6, paddingHorizontal: 6, paddingTop: 8, alignItems: 'flex-start'},
+  receipt: {
+    width: 40,
+    height: 52,
+    borderWidth: 2,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingTop: 8,
+    alignItems: 'flex-start',
+  },
   receiptLine: {height: 2.5, borderRadius: 1.25, marginBottom: 5},
   receiptDivider: {width: '100%' as any, height: 1, marginBottom: 5},
   receiptDotsRow: {flexDirection: 'row', gap: 4},
   receiptDot: {width: 4, height: 4, borderRadius: 2},
   chainWrap: {position: 'absolute', bottom: 4, right: 8, width: 22, height: 14},
-  chainCircle: {position: 'absolute', width: 14, height: 14, borderRadius: 7, borderWidth: 2},
+  chainCircle: {
+    position: 'absolute',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
+  },
   // Slide 3 — Scale
-  rippleOuter: {position: 'absolute', width: 64, height: 64, borderRadius: 32, borderWidth: 1.5},
-  rippleMiddle: {position: 'absolute', width: 44, height: 44, borderRadius: 22, borderWidth: 1.5},
-  rippleInner: {position: 'absolute', width: 28, height: 28, borderRadius: 14, borderWidth: 1.5},
-  heartCenter: {width: 14, height: 14, borderRadius: 3, transform: [{rotate: '45deg'}]},
+  rippleOuter: {
+    position: 'absolute',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 1.5,
+  },
+  rippleMiddle: {
+    position: 'absolute',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+  },
+  rippleInner: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  heartCenter: {
+    width: 14,
+    height: 14,
+    borderRadius: 3,
+    transform: [{rotate: '45deg'}],
+  },
 });
 
 // Staggered entrance for slide content
@@ -161,35 +322,86 @@ function AnimatedSlideContent({
       hasAnimated.current = true;
 
       Animated.parallel([
-        Animated.timing(iconOpacity, {toValue: 1, duration: 300, easing: EASE_OUT, useNativeDriver: true}),
-        Animated.timing(iconTranslateY, {toValue: 0, duration: 300, easing: EASE_OUT, useNativeDriver: true}),
+        Animated.timing(iconOpacity, {
+          toValue: 1,
+          duration: 300,
+          easing: EASE_OUT,
+          useNativeDriver: true,
+        }),
+        Animated.timing(iconTranslateY, {
+          toValue: 0,
+          duration: 300,
+          easing: EASE_OUT,
+          useNativeDriver: true,
+        }),
       ]).start();
 
       setTimeout(() => {
         Animated.parallel([
-          Animated.timing(headlineOpacity, {toValue: 1, duration: 300, easing: EASE_OUT, useNativeDriver: true}),
-          Animated.timing(headlineTranslateY, {toValue: 0, duration: 300, easing: EASE_OUT, useNativeDriver: true}),
+          Animated.timing(headlineOpacity, {
+            toValue: 1,
+            duration: 300,
+            easing: EASE_OUT,
+            useNativeDriver: true,
+          }),
+          Animated.timing(headlineTranslateY, {
+            toValue: 0,
+            duration: 300,
+            easing: EASE_OUT,
+            useNativeDriver: true,
+          }),
         ]).start();
       }, 100);
 
       setTimeout(() => {
         Animated.parallel([
-          Animated.timing(bodyOpacity, {toValue: 1, duration: 300, easing: EASE_OUT, useNativeDriver: true}),
-          Animated.timing(bodyTranslateY, {toValue: 0, duration: 300, easing: EASE_OUT, useNativeDriver: true}),
+          Animated.timing(bodyOpacity, {
+            toValue: 1,
+            duration: 300,
+            easing: EASE_OUT,
+            useNativeDriver: true,
+          }),
+          Animated.timing(bodyTranslateY, {
+            toValue: 0,
+            duration: 300,
+            easing: EASE_OUT,
+            useNativeDriver: true,
+          }),
         ]).start();
       }, 200);
     }
-  }, [index, currentIndex, iconOpacity, iconTranslateY, headlineOpacity, headlineTranslateY, bodyOpacity, bodyTranslateY]);
+  }, [
+    index,
+    currentIndex,
+    iconOpacity,
+    iconTranslateY,
+    headlineOpacity,
+    headlineTranslateY,
+    bodyOpacity,
+    bodyTranslateY,
+  ]);
 
   return (
     <>
-      <Animated.View style={{opacity: iconOpacity, transform: [{translateY: iconTranslateY}]}}>
+      <Animated.View
+        style={{
+          opacity: iconOpacity,
+          transform: [{translateY: iconTranslateY}],
+        }}>
         {children[0]}
       </Animated.View>
-      <Animated.View style={{opacity: headlineOpacity, transform: [{translateY: headlineTranslateY}]}}>
+      <Animated.View
+        style={{
+          opacity: headlineOpacity,
+          transform: [{translateY: headlineTranslateY}],
+        }}>
         {children[1]}
       </Animated.View>
-      <Animated.View style={{opacity: bodyOpacity, transform: [{translateY: bodyTranslateY}]}}>
+      <Animated.View
+        style={{
+          opacity: bodyOpacity,
+          transform: [{translateY: bodyTranslateY}],
+        }}>
         {children[2]}
       </Animated.View>
     </>
@@ -219,10 +431,26 @@ export default function OnboardingModal({onComplete}: OnboardingModalProps) {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(modalScale, {toValue: 1, useNativeDriver: true, friction: 8, tension: 65}),
-      Animated.timing(modalOpacity, {toValue: 1, duration: 300, easing: EASE_OUT, useNativeDriver: true}),
-      Animated.timing(backdropOpacity, {toValue: 1, duration: 300, easing: EASE_OUT, useNativeDriver: true}),
+      Animated.spring(modalScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        friction: 8,
+        tension: 65,
+      }),
+      Animated.timing(modalOpacity, {
+        toValue: 1,
+        duration: 300,
+        easing: EASE_OUT,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: 1,
+        duration: 300,
+        easing: EASE_OUT,
+        useNativeDriver: true,
+      }),
     ]).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, runs once on mount
   }, []);
 
   const onViewableItemsChanged = useRef(
@@ -233,7 +461,9 @@ export default function OnboardingModal({onComplete}: OnboardingModalProps) {
     },
   ).current;
 
-  const viewabilityConfig = useRef({viewAreaCoveragePercentThreshold: 50}).current;
+  const viewabilityConfig = useRef({
+    viewAreaCoveragePercentThreshold: 50,
+  }).current;
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -252,15 +482,34 @@ export default function OnboardingModal({onComplete}: OnboardingModalProps) {
     } else {
       // Last slide — animate out and complete
       Animated.parallel([
-        Animated.timing(modalScale, {toValue: 0.9, duration: 300, easing: EASE_IN, useNativeDriver: true}),
-        Animated.timing(modalOpacity, {toValue: 0, duration: 300, easing: EASE_IN, useNativeDriver: true}),
-        Animated.timing(backdropOpacity, {toValue: 0, duration: 300, easing: EASE_IN, useNativeDriver: true}),
+        Animated.timing(modalScale, {
+          toValue: 0.9,
+          duration: 300,
+          easing: EASE_IN,
+          useNativeDriver: true,
+        }),
+        Animated.timing(modalOpacity, {
+          toValue: 0,
+          duration: 300,
+          easing: EASE_IN,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backdropOpacity, {
+          toValue: 0,
+          duration: 300,
+          easing: EASE_IN,
+          useNativeDriver: true,
+        }),
       ]).start(() => onComplete());
     }
   };
 
   const onCtaPressIn = () => {
-    Animated.timing(ctaScale, {toValue: 0.97, duration: 100, useNativeDriver: true}).start();
+    Animated.timing(ctaScale, {
+      toValue: 0.97,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
   };
 
   const onCtaPressOut = () => {
@@ -294,7 +543,8 @@ export default function OnboardingModal({onComplete}: OnboardingModalProps) {
           <GlassCard style={{borderRadius: 20}}>
             <View style={styles.cardContent}>
               {/* Section header — stays visible across all slides */}
-              <Text style={[styles.sectionHeader, {color: colors.textTertiary}]}>
+              <Text
+                style={[styles.sectionHeader, {color: colors.textTertiary}]}>
                 HOW IT WORKS
               </Text>
 
@@ -315,12 +565,16 @@ export default function OnboardingModal({onComplete}: OnboardingModalProps) {
                 keyExtractor={item => item.id}
                 renderItem={({item, index}) => (
                   <View style={[styles.slide, {width: SLIDE_WIDTH}]}>
-                    <AnimatedSlideContent index={index} currentIndex={currentIndex}>
+                    <AnimatedSlideContent
+                      index={index}
+                      currentIndex={currentIndex}>
                       <SlideIcon index={index} />
-                      <Text style={[styles.headline, {color: colors.textPrimary}]}>
+                      <Text
+                        style={[styles.headline, {color: colors.textPrimary}]}>
                         {item.headline}
                       </Text>
-                      <Text style={[styles.body, {color: colors.textSecondary}]}>
+                      <Text
+                        style={[styles.body, {color: colors.textSecondary}]}>
                         {item.body}
                       </Text>
                     </AnimatedSlideContent>

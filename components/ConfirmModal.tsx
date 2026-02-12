@@ -15,13 +15,18 @@ import {useTheme, Typography} from './theme';
 import GlassCard from './GlassCard';
 import {usePressAnimation, EASE_OUT, EASE_IN} from '../utils/animations';
 import {triggerHaptic} from '../utils/haptics';
+import {getExplorerTxUrl} from '../utils/explorer';
 
 const DISPLAY_FONT = Platform.OS === 'ios' ? 'Georgia' : 'serif';
 const NOTE_MAX_LENGTH = 280;
 
 function friendlyError(msg: string): string {
   const lower = msg.toLowerCase();
-  if (lower.includes('user rejected') || lower.includes('declined') || lower.includes('cancelled')) {
+  if (
+    lower.includes('user rejected') ||
+    lower.includes('declined') ||
+    lower.includes('cancelled')
+  ) {
     return 'Transaction was cancelled.';
   }
   if (lower.includes('insufficient')) {
@@ -66,7 +71,11 @@ export default function ConfirmModal({
   const {colors} = useTheme();
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
-  const {scale: btnScale, onPressIn: btnPressIn, onPressOut: btnPressOut} = usePressAnimation();
+  const {
+    scale: btnScale,
+    onPressIn: btnPressIn,
+    onPressOut: btnPressOut,
+  } = usePressAnimation();
 
   // Note of encouragement
   const [note, setNote] = useState('');
@@ -84,10 +93,21 @@ export default function ConfirmModal({
       opacityAnim.setValue(0);
       setNote('');
       Animated.parallel([
-        Animated.spring(scaleAnim, {toValue: 1, useNativeDriver: true, friction: 8, tension: 65}),
-        Animated.timing(opacityAnim, {toValue: 1, duration: 200, easing: EASE_OUT, useNativeDriver: true}),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          friction: 8,
+          tension: 65,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 200,
+          easing: EASE_OUT,
+          useNativeDriver: true,
+        }),
       ]).start();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs
   }, [visible]);
 
   // Celebration animation sequence on success
@@ -107,25 +127,61 @@ export default function ConfirmModal({
       // Staggered entrance
       Animated.sequence([
         // Glow fades in
-        Animated.timing(glowOpacity, {toValue: 1, duration: 400, easing: EASE_OUT, useNativeDriver: true}),
+        Animated.timing(glowOpacity, {
+          toValue: 1,
+          duration: 400,
+          easing: EASE_OUT,
+          useNativeDriver: true,
+        }),
         // Amount scales up with spring overshoot
-        Animated.spring(amountScale, {toValue: 1, useNativeDriver: true, friction: 5, tension: 80}),
+        Animated.spring(amountScale, {
+          toValue: 1,
+          useNativeDriver: true,
+          friction: 5,
+          tension: 80,
+        }),
         // Direction fades in
-        Animated.timing(directionOpacity, {toValue: 1, duration: 250, easing: EASE_OUT, useNativeDriver: true}),
+        Animated.timing(directionOpacity, {
+          toValue: 1,
+          duration: 250,
+          easing: EASE_OUT,
+          useNativeDriver: true,
+        }),
         // Thank you message fades in
-        Animated.timing(messageOpacity, {toValue: 1, duration: 300, easing: EASE_OUT, useNativeDriver: true}),
+        Animated.timing(messageOpacity, {
+          toValue: 1,
+          duration: 300,
+          easing: EASE_OUT,
+          useNativeDriver: true,
+        }),
         // Buttons fade in
-        Animated.timing(buttonsOpacity, {toValue: 1, duration: 250, easing: EASE_OUT, useNativeDriver: true}),
+        Animated.timing(buttonsOpacity, {
+          toValue: 1,
+          duration: 250,
+          easing: EASE_OUT,
+          useNativeDriver: true,
+        }),
       ]).start();
     } else if (error) {
       triggerHaptic('notificationError');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs
   }, [success, error]);
 
   const handleClose = () => {
     Animated.parallel([
-      Animated.timing(scaleAnim, {toValue: 0.9, duration: 150, easing: EASE_IN, useNativeDriver: true}),
-      Animated.timing(opacityAnim, {toValue: 0, duration: 150, easing: EASE_IN, useNativeDriver: true}),
+      Animated.timing(scaleAnim, {
+        toValue: 0.9,
+        duration: 150,
+        easing: EASE_IN,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 0,
+        duration: 150,
+        easing: EASE_IN,
+        useNativeDriver: true,
+      }),
     ]).start(() => onClose());
   };
 
@@ -140,7 +196,11 @@ export default function ConfirmModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={handleClose}>
       <Animated.View style={[modalStyles.overlay, {opacity: opacityAnim}]}>
         <Animated.View style={{transform: [{scale: scaleAnim}]}}>
           <GlassCard style={{borderRadius: 20}}>
@@ -148,14 +208,27 @@ export default function ConfirmModal({
               {loading ? (
                 <View style={modalStyles.centered}>
                   <ActivityIndicator size="large" color={colors.primary} />
-                  <Text style={[modalStyles.loadingText, {color: colors.textSecondary}]}>
+                  <Text
+                    style={[
+                      modalStyles.loadingText,
+                      {color: colors.textSecondary},
+                    ]}>
                     Sending your gift...
                   </Text>
                   <TouchableOpacity
-                    style={[modalStyles.cancelLoadingButton, {borderColor: colors.border}]}
+                    style={[
+                      modalStyles.cancelLoadingButton,
+                      {borderColor: colors.border},
+                    ]}
                     onPress={handleClose}
                     activeOpacity={0.8}>
-                    <Text style={[modalStyles.cancelText, {color: colors.textSecondary}]}>Cancel</Text>
+                    <Text
+                      style={[
+                        modalStyles.cancelText,
+                        {color: colors.textSecondary},
+                      ]}>
+                      Cancel
+                    </Text>
                   </TouchableOpacity>
                 </View>
               ) : success ? (
@@ -198,17 +271,29 @@ export default function ConfirmModal({
                       modalStyles.celebrationMessage,
                       {color: colors.textPrimary, opacity: messageOpacity},
                     ]}>
-                    Thank you for your generosity. You will receive receipts and photos soon.
+                    Thank you for your generosity. You will receive receipts and
+                    photos soon.{'\n\n'}This transaction was on Solana devnet
+                    (testnet).
                   </Animated.Text>
 
                   {/* Buttons — fade in last */}
-                  <Animated.View style={[modalStyles.celebrationButtons, {opacity: buttonsOpacity}]}>
+                  <Animated.View
+                    style={[
+                      modalStyles.celebrationButtons,
+                      {opacity: buttonsOpacity},
+                    ]}>
                     {txSignature && (
                       <TouchableOpacity
                         activeOpacity={0.7}
                         style={modalStyles.txHashWrap}
-                        onPress={() => Linking.openURL(`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`)}>
-                        <Text style={[modalStyles.txHash, {color: colors.textTertiary}]}>
+                        onPress={() =>
+                          Linking.openURL(getExplorerTxUrl(txSignature))
+                        }>
+                        <Text
+                          style={[
+                            modalStyles.txHash,
+                            {color: colors.textTertiary},
+                          ]}>
                           View on Solana Explorer
                         </Text>
                       </TouchableOpacity>
@@ -217,12 +302,19 @@ export default function ConfirmModal({
                     {onViewGlimpses && (
                       <Animated.View style={{transform: [{scale: btnScale}]}}>
                         <TouchableOpacity
-                          style={[modalStyles.glimpsesButton, {backgroundColor: colors.primary}]}
+                          style={[
+                            modalStyles.glimpsesButton,
+                            {backgroundColor: colors.primary},
+                          ]}
                           onPress={handleViewGlimpses}
                           onPressIn={btnPressIn}
                           onPressOut={btnPressOut}
                           activeOpacity={0.8}>
-                          <Text style={[modalStyles.glimpsesButtonText, {color: colors.textOnPrimary}]}>
+                          <Text
+                            style={[
+                              modalStyles.glimpsesButtonText,
+                              {color: colors.textOnPrimary},
+                            ]}>
                             View Your Glimpses
                           </Text>
                         </TouchableOpacity>
@@ -233,52 +325,130 @@ export default function ConfirmModal({
                       style={modalStyles.doneLink}
                       onPress={handleClose}
                       activeOpacity={0.7}>
-                      <Text style={[modalStyles.doneLinkText, {color: colors.textTertiary}]}>Done</Text>
+                      <Text
+                        style={[
+                          modalStyles.doneLinkText,
+                          {color: colors.textTertiary},
+                        ]}>
+                        Done
+                      </Text>
                     </TouchableOpacity>
                   </Animated.View>
                 </View>
               ) : error ? (
                 <View style={modalStyles.centered}>
-                  <View style={[modalStyles.errorCircle, {borderColor: colors.error}]}>
-                    <Text style={[modalStyles.errorX, {color: colors.error}]}>!</Text>
+                  <View
+                    style={[
+                      modalStyles.errorCircle,
+                      {borderColor: colors.error},
+                    ]}>
+                    <Text style={[modalStyles.errorX, {color: colors.error}]}>
+                      !
+                    </Text>
                   </View>
-                  <Text style={[modalStyles.successTitle, {color: colors.textPrimary}]}>
+                  <Text
+                    style={[
+                      modalStyles.successTitle,
+                      {color: colors.textPrimary},
+                    ]}>
                     Something went wrong
                   </Text>
-                  <Text style={[modalStyles.successBody, {color: colors.textSecondary}]}>
+                  <Text
+                    style={[
+                      modalStyles.successBody,
+                      {color: colors.textSecondary},
+                    ]}>
                     {friendlyError(error)}
                   </Text>
                   <View style={modalStyles.buttonRow}>
                     <TouchableOpacity
-                      style={[modalStyles.cancelButton, {borderColor: colors.border}]}
+                      style={[
+                        modalStyles.cancelButton,
+                        {borderColor: colors.border},
+                      ]}
                       onPress={handleClose}
                       activeOpacity={0.8}>
-                      <Text style={[modalStyles.cancelText, {color: colors.textSecondary}]}>Close</Text>
+                      <Text
+                        style={[
+                          modalStyles.cancelText,
+                          {color: colors.textSecondary},
+                        ]}>
+                        Close
+                      </Text>
                     </TouchableOpacity>
-                    <Animated.View style={{flex: 1, transform: [{scale: btnScale}]}}>
+                    <Animated.View
+                      style={{flex: 1, transform: [{scale: btnScale}]}}>
                       <TouchableOpacity
-                        style={[modalStyles.confirmButton, {backgroundColor: colors.primary}]}
-                        onPress={() => { triggerHaptic('impactMedium'); onRetry(); }}
+                        style={[
+                          modalStyles.confirmButton,
+                          {backgroundColor: colors.primary},
+                        ]}
+                        onPress={() => {
+                          triggerHaptic('impactMedium');
+                          onRetry();
+                        }}
                         onPressIn={btnPressIn}
                         onPressOut={btnPressOut}
                         activeOpacity={0.8}>
-                        <Text style={[modalStyles.confirmButtonText, {color: colors.textOnPrimary}]}>Try Again</Text>
+                        <Text
+                          style={[
+                            modalStyles.confirmButtonText,
+                            {color: colors.textOnPrimary},
+                          ]}>
+                          Try Again
+                        </Text>
                       </TouchableOpacity>
                     </Animated.View>
                   </View>
                 </View>
               ) : (
                 <>
-                  <Text style={[modalStyles.confirmTitle, {color: colors.textPrimary}]}>
+                  <Text
+                    style={[
+                      modalStyles.confirmTitle,
+                      {color: colors.textPrimary},
+                    ]}>
                     Confirm Your Gift
                   </Text>
-                  <View style={[modalStyles.detailRow, {borderBottomColor: colors.border}]}>
-                    <Text style={[modalStyles.detailLabel, {color: colors.textTertiary}]}>Amount</Text>
-                    <Text style={[modalStyles.detailValue, {color: colors.textPrimary}]}>${amount}</Text>
+                  <View
+                    style={[
+                      modalStyles.detailRow,
+                      {borderBottomColor: colors.border},
+                    ]}>
+                    <Text
+                      style={[
+                        modalStyles.detailLabel,
+                        {color: colors.textTertiary},
+                      ]}>
+                      Amount
+                    </Text>
+                    <Text
+                      style={[
+                        modalStyles.detailValue,
+                        {color: colors.textPrimary},
+                      ]}>
+                      ${amount}
+                    </Text>
                   </View>
-                  <View style={[modalStyles.detailRow, {borderBottomColor: colors.border}]}>
-                    <Text style={[modalStyles.detailLabel, {color: colors.textTertiary}]}>Toward</Text>
-                    <Text style={[modalStyles.detailValue, {color: colors.textPrimary}]}>{direction}</Text>
+                  <View
+                    style={[
+                      modalStyles.detailRow,
+                      {borderBottomColor: colors.border},
+                    ]}>
+                    <Text
+                      style={[
+                        modalStyles.detailLabel,
+                        {color: colors.textTertiary},
+                      ]}>
+                      Toward
+                    </Text>
+                    <Text
+                      style={[
+                        modalStyles.detailValue,
+                        {color: colors.textPrimary},
+                      ]}>
+                      {direction}
+                    </Text>
                   </View>
 
                   {/* Note of encouragement */}
@@ -300,29 +470,56 @@ export default function ConfirmModal({
                       multiline
                       textAlignVertical="top"
                     />
-                    <Text style={[modalStyles.noteCounter, {color: colors.textTertiary}]}>
+                    <Text
+                      style={[
+                        modalStyles.noteCounter,
+                        {color: colors.textTertiary},
+                      ]}>
                       {note.length}/{NOTE_MAX_LENGTH}
                     </Text>
                   </View>
 
-                  <Text style={[modalStyles.disclaimer, {color: colors.textTertiary}]}>
-                    100% of your gift goes to the need. Any amount raised beyond the goal will be applied to the next cause or refunded.
+                  <Text
+                    style={[
+                      modalStyles.disclaimer,
+                      {color: colors.textTertiary},
+                    ]}>
+                    100% of your gift goes to the need. Any amount raised beyond
+                    the goal will be applied to the next cause or refunded.
+                    {'\n\n'}Devnet pilot — no real funds are used.
                   </Text>
                   <View style={modalStyles.buttonRow}>
                     <TouchableOpacity
-                      style={[modalStyles.cancelButton, {borderColor: colors.border}]}
+                      style={[
+                        modalStyles.cancelButton,
+                        {borderColor: colors.border},
+                      ]}
                       onPress={handleClose}
                       activeOpacity={0.8}>
-                      <Text style={[modalStyles.cancelText, {color: colors.textSecondary}]}>Cancel</Text>
+                      <Text
+                        style={[
+                          modalStyles.cancelText,
+                          {color: colors.textSecondary},
+                        ]}>
+                        Cancel
+                      </Text>
                     </TouchableOpacity>
-                    <Animated.View style={{flex: 1, transform: [{scale: btnScale}]}}>
+                    <Animated.View
+                      style={{flex: 1, transform: [{scale: btnScale}]}}>
                       <TouchableOpacity
-                        style={[modalStyles.confirmButton, {backgroundColor: colors.primary}]}
+                        style={[
+                          modalStyles.confirmButton,
+                          {backgroundColor: colors.primary},
+                        ]}
                         onPress={handleConfirm}
                         onPressIn={btnPressIn}
                         onPressOut={btnPressOut}
                         activeOpacity={0.8}>
-                        <Text style={[modalStyles.confirmButtonText, {color: colors.textOnPrimary}]}>
+                        <Text
+                          style={[
+                            modalStyles.confirmButtonText,
+                            {color: colors.textOnPrimary},
+                          ]}>
                           Send Gift
                         </Text>
                       </TouchableOpacity>
@@ -339,10 +536,19 @@ export default function ConfirmModal({
 }
 
 const modalStyles = StyleSheet.create({
-  overlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', paddingHorizontal: 32},
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
   cardContent: {padding: 28},
   centered: {alignItems: 'center', paddingVertical: 16},
-  loadingText: {marginTop: 24, fontSize: Typography.body.fontSize, fontWeight: '500'},
+  loadingText: {
+    marginTop: 24,
+    fontSize: Typography.body.fontSize,
+    fontWeight: '500',
+  },
 
   // Celebration
   glow: {
@@ -376,7 +582,10 @@ const modalStyles = StyleSheet.create({
     width: '100%',
   },
   txHashWrap: {marginBottom: 16},
-  txHash: {fontSize: Typography.bodySmall.fontSize, textDecorationLine: 'underline'},
+  txHash: {
+    fontSize: Typography.bodySmall.fontSize,
+    textDecorationLine: 'underline',
+  },
   glimpsesButton: {
     paddingVertical: 16,
     paddingHorizontal: 40,
@@ -388,14 +597,31 @@ const modalStyles = StyleSheet.create({
   doneLinkText: {fontSize: Typography.bodySmall.fontSize, fontWeight: '500'},
 
   // Error
-  errorCircle: {width: 80, height: 80, borderRadius: 40, borderWidth: 3, alignItems: 'center', justifyContent: 'center', marginBottom: 24},
+  errorCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
   errorX: {fontSize: 36, fontWeight: '600'},
   successTitle: {...Typography.subheading, marginBottom: 12},
   successBody: {fontSize: Typography.body.fontSize, marginBottom: 12},
 
   // Confirm state
-  confirmTitle: {...Typography.subheading, marginBottom: 24, textAlign: 'center'},
-  detailRow: {flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1},
+  confirmTitle: {
+    ...Typography.subheading,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
   detailLabel: {fontSize: Typography.bodySmall.fontSize},
   detailValue: {fontSize: Typography.bodySmall.fontSize, fontWeight: '600'},
 
@@ -415,11 +641,29 @@ const modalStyles = StyleSheet.create({
     marginTop: 4,
   },
 
-  disclaimer: {fontSize: Typography.bodySmall.fontSize, textAlign: 'center', marginTop: 16, marginBottom: 24, lineHeight: Typography.bodySmall.lineHeight},
+  disclaimer: {
+    fontSize: Typography.bodySmall.fontSize,
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 24,
+    lineHeight: Typography.bodySmall.lineHeight,
+  },
   buttonRow: {flexDirection: 'row', gap: 12},
-  cancelButton: {flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, alignItems: 'center'},
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
   cancelText: {fontSize: Typography.body.fontSize, fontWeight: '500'},
   confirmButton: {paddingVertical: 14, borderRadius: 12, alignItems: 'center'},
   confirmButtonText: {...Typography.buttonLarge},
-  cancelLoadingButton: {paddingVertical: 12, paddingHorizontal: 32, borderRadius: 12, borderWidth: 1, marginTop: 24},
+  cancelLoadingButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 24,
+  },
 });

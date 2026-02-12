@@ -5,14 +5,14 @@
 export const WHY_CONTENT = {
   hero: 'What if giving actually felt like something?',
   problem: [
-    "Every year, hundreds of billions of dollars flow into charitable causes. But somewhere between the donation and the need, the connection gets lost.",
-    "Donors get a thank-you letter. Recipients see cents on the dollar\u2014most of the pie is gone before it reaches them. And the people running nonprofits? They spend more time chasing funding than doing the work they set out to do.",
+    'Every year, hundreds of billions of dollars flow into charitable causes. But somewhere between the donation and the need, the connection gets lost.',
+    'Donors get a thank-you letter. Recipients see cents on the dollar\u2014most of the pie is gone before it reaches them. And the people running nonprofits? They spend more time chasing funding than doing the work they set out to do.',
   ],
   change:
     "The nonprofit industry hasn't fundamentally changed since 1969. That's over 55 years of the same model\u2014layers of overhead, endless grant applications, and donors left wondering if their gift made any difference at all.",
   vision: 'Giving should be better. So we built something that is.',
   mission:
-    "Glimpse exists because you should feel what your generosity actually does. No middlemen taking their cut. No black box between you and the person you helped. Just you, helping someone who needs it\u2014documented, verified, and meaningful to both of you.",
+    'Glimpse exists because you should feel what your generosity actually does. No middlemen taking their cut. No black box between you and the person you helped. Just you, helping someone who needs it\u2014documented, verified, and meaningful to both of you.',
   whyGlimpse: {
     title: 'Why "Glimpse"?',
     subtitle: 'The name carries three meanings:',
@@ -45,7 +45,7 @@ export const HOW_CONTENT = {
       number: '2',
       title: 'Give',
       description:
-        "Your full donation goes to work. No platform fees. No admin cuts. Just groceries, gas, and rent\u2014the stuff that actually matters.",
+        'Your full donation goes to work. No platform fees. No admin cuts. Just groceries, gas, and rent\u2014the stuff that actually matters.',
     },
     {
       number: '3',
@@ -65,6 +65,12 @@ export const HOW_CONTENT = {
 };
 
 export const FAQ_DATA = [
+  {
+    id: 'devnet',
+    question: 'Is this using real money?',
+    answer:
+      'Not yet. Glimpse is currently running on Solana devnet — a test network. No real funds are involved. When we launch on mainnet, your gifts will use real USDC.',
+  },
   {
     id: 'verified',
     question: 'How are needs verified?',
@@ -110,12 +116,7 @@ export const FAQ_DATA = [
     id: 'overfunding',
     question: 'What if more is raised than a need costs?',
     answer:
-      "Every dollar goes to work. If a need is fully funded and there\u2019s money left over, the excess is applied to the next verified need in the queue. If you\u2019d prefer a refund, just reach out\u2014we\u2019ll take care of it.",
-  },
-  {
-    id: 'tax',
-    question: 'Is my donation tax-deductible?',
-    answer: 'Yes.',
+      'Every dollar goes to work. If a need is fully funded and there\u2019s money left over, the excess is applied to the next verified need in the queue. If you\u2019d prefer a refund, just reach out\u2014we\u2019ll take care of it.',
   },
   {
     id: 'location',
@@ -168,7 +169,7 @@ export const NEEDS: Need[] = [
     amount: 250,
     title: 'New wardrobe for a foster kid',
     description:
-      "When a child enters foster care, everything they own fits in a trash bag\u2014if they have anything at all. New clothes that are theirs say something no words can: you matter, and someone thought of you.",
+      'When a child enters foster care, everything they own fits in a trash bag\u2014if they have anything at all. New clothes that are theirs say something no words can: you matter, and someone thought of you.',
     funded: 0,
     icon: 'shirt',
   },
@@ -177,7 +178,7 @@ export const NEEDS: Need[] = [
     amount: 400,
     title: 'New tires for a family in need',
     description:
-      "She white-knuckles the steering wheel every morning, praying the bald tires hold\u2014to get her kids to school, herself to work, and everyone home safe. New tires mean she can stop holding her breath.",
+      'She white-knuckles the steering wheel every morning, praying the bald tires hold\u2014to get her kids to school, herself to work, and everyone home safe. New tires mean she can stop holding her breath.',
     funded: 125,
     icon: 'car',
   },
@@ -192,7 +193,7 @@ export const NEEDS: Need[] = [
   },
 ];
 
-// ─── Mock Glimpse proofs ────────────────────────────────────────────────────
+// ─── Example Glimpse proofs (placeholder) ───────────────────────────────────
 
 export interface GlimpseProof {
   id: string;
@@ -262,5 +263,10 @@ export const ONBOARDING_SLIDES = [
     id: 'scale',
     headline: 'Every dollar counts',
     body: '$10 or $10,000\u2014your generosity is more effective here than anywhere else.',
+  },
+  {
+    id: 'devnet',
+    headline: 'Devnet pilot',
+    body: 'You\u2019re joining our early preview on Solana\u2019s test network. No real money is involved yet \u2014 but everything else is real.',
   },
 ];

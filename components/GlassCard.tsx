@@ -66,7 +66,7 @@ export default function GlassCard({
     shadowOffset: {width: 0, height: glassColor ? 0 : 8},
     shadowOpacity: glassColor ? 0 : shadowOpacity,
     shadowRadius: glassColor ? 0 : shadowRadius,
-    elevation: glassColor ? 0 : (variant === 'subtle' ? 4 : 8),
+    elevation: glassColor ? 0 : variant === 'subtle' ? 4 : 8,
     ...style,
   };
 

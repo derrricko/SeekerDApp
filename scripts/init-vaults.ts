@@ -33,13 +33,17 @@ import * as path from 'path';
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const RPC_URL = 'https://api.devnet.solana.com';
-const PROGRAM_ID = new PublicKey('7Ma28eiEEd4WKDCwbfejbPevcsuchePsvYvdw6Tme6NE');
+const PROGRAM_ID = new PublicKey(
+  '7Ma28eiEEd4WKDCwbfejbPevcsuchePsvYvdw6Tme6NE',
+);
 const USDC_MINT = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
 const USDC_DECIMALS = 6;
 
 // Anchor discriminator for initialize_need: sha256("global:initialize_need")[0..8]
 // From IDL: [16, 89, 102, 70, 140, 101, 220, 41]
-const INIT_NEED_DISCRIMINATOR = Buffer.from([16, 89, 102, 70, 140, 101, 220, 41]);
+const INIT_NEED_DISCRIMINATOR = Buffer.from([
+  16, 89, 102, 70, 140, 101, 220, 41,
+]);
 
 // Borsh schema for initialize_need args: (slug: String, target: u64, disburse_to: Pubkey)
 const initNeedArgsSchema = borsh.struct([
@@ -97,7 +101,9 @@ async function main() {
     // Check if vault already exists
     const vaultInfo = await connection.getAccountInfo(vaultPDA);
     if (vaultInfo) {
-      console.log(`  [skip] "${need.slug}" vault already exists: ${vaultPDA.toBase58()}`);
+      console.log(
+        `  [skip] "${need.slug}" vault already exists: ${vaultPDA.toBase58()}`,
+      );
       continue;
     }
 
@@ -135,7 +141,11 @@ async function main() {
         {pubkey: vaultATA, isSigner: false, isWritable: true},
         {pubkey: SystemProgram.programId, isSigner: false, isWritable: false},
         {pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false},
-        {pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false},
+        {
+          pubkey: ASSOCIATED_TOKEN_PROGRAM_ID,
+          isSigner: false,
+          isWritable: false,
+        },
         {pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false},
       ],
       data,
@@ -144,10 +154,16 @@ async function main() {
     const transaction = new Transaction().add(instruction);
 
     try {
-      const sig = await sendAndConfirmTransaction(connection, transaction, [authority]);
+      const sig = await sendAndConfirmTransaction(connection, transaction, [
+        authority,
+      ]);
       console.log(`  [done] "${need.slug}" → vault: ${vaultPDA.toBase58()}`);
       console.log(`         ATA: ${vaultATA.toBase58()}`);
-      console.log(`         Target: $${need.amount} (${targetBaseUnits.toString()} base units)`);
+      console.log(
+        `         Target: $${
+          need.amount
+        } (${targetBaseUnits.toString()} base units)`,
+      );
       console.log(`         Signature: ${sig}`);
     } catch (err: any) {
       console.error(`  [FAIL] "${need.slug}":`, err.message || err);

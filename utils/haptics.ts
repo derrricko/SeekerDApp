@@ -12,7 +12,13 @@ try {
   // Native module not linked — haptics will be silently skipped
 }
 
-type HapticType = 'impactLight' | 'impactMedium' | 'impactHeavy' | 'notificationSuccess' | 'notificationWarning' | 'notificationError';
+type HapticType =
+  | 'impactLight'
+  | 'impactMedium'
+  | 'impactHeavy'
+  | 'notificationSuccess'
+  | 'notificationWarning'
+  | 'notificationError';
 
 export function triggerHaptic(type: HapticType = 'impactLight') {
   try {

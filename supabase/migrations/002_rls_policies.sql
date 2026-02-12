@@ -85,6 +85,13 @@ CREATE POLICY "transactions_insert_service"
     (auth.jwt() ->> 'role') = 'service_role'
   );
 
+-- Authenticated users can record their own transactions
+CREATE POLICY "transactions_insert_authenticated"
+  ON transactions FOR INSERT
+  WITH CHECK (
+    auth.jwt() ->> 'wallet_address' = wallet_address
+  );
+
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Proofs
 -- ═══════════════════════════════════════════════════════════════════════════

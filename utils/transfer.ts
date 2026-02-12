@@ -5,7 +5,7 @@
  * signAndSendTransaction (from WalletProvider).
  *
  * When a `slug` is provided, routes through the Glimpse Escrow program.
- * Falls back to direct transfer if escrow fails or no slug given.
+ * Fails explicitly if escrow transaction cannot be built.
  */
 
 import {
@@ -20,11 +20,7 @@ import {
   createAssociatedTokenAccountInstruction,
   getAccount,
 } from '@solana/spl-token';
-import {
-  USDC_MINT,
-  USDC_DECIMALS,
-  RECIPIENT_WALLET,
-} from '../config/env';
+import {USDC_MINT, USDC_DECIMALS, RECIPIENT_WALLET} from '../config/env';
 import {buildDonateTransaction} from './escrow';
 import bs58 from 'bs58';
 
@@ -48,10 +44,7 @@ export async function buildUSDCTransferTransaction(
   recipientPublicKey: PublicKey,
   amount: number,
 ): Promise<Transaction> {
-  const senderATA = await getAssociatedTokenAddress(
-    USDC_MINT,
-    senderPublicKey,
-  );
+  const senderATA = await getAssociatedTokenAddress(USDC_MINT, senderPublicKey);
   const recipientATA = await getAssociatedTokenAddress(
     USDC_MINT,
     recipientPublicKey,
@@ -96,8 +89,7 @@ export async function buildUSDCTransferTransaction(
 /**
  * Execute a USDC transfer via wallet-standard signAndSendTransaction.
  *
- * When `slug` is provided, attempts the escrow program path first.
- * Falls back to direct transfer on escrow failure.
+ * When `slug` is provided, routes through the Glimpse Escrow program.
  *
  * Returns the transaction signature as a base58 string.
  */
@@ -112,22 +104,12 @@ export async function transferUSDC(
   let transaction: Transaction;
 
   if (slug) {
-    try {
-      transaction = await buildDonateTransaction(
-        connection,
-        senderPublicKey,
-        slug,
-        amount,
-      );
-    } catch (escrowErr) {
-      console.warn('Escrow build failed, falling back to direct transfer:', escrowErr);
-      transaction = await buildUSDCTransferTransaction(
-        connection,
-        senderPublicKey,
-        recipientPublicKey,
-        amount,
-      );
-    }
+    transaction = await buildDonateTransaction(
+      connection,
+      senderPublicKey,
+      slug,
+      amount,
+    );
   } else {
     transaction = await buildUSDCTransferTransaction(
       connection,

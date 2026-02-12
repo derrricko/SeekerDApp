@@ -1,7 +1,6 @@
 import React, {useCallback, useRef, useState} from 'react';
 import {
   Animated,
-  Easing,
   FlatList,
   StyleSheet,
   Text,
@@ -22,7 +21,9 @@ interface OnboardingJourneyProps {
   onComplete: () => void;
 }
 
-export default function OnboardingJourney({onComplete}: OnboardingJourneyProps) {
+export default function OnboardingJourney({
+  onComplete,
+}: OnboardingJourneyProps) {
   const {width: SCREEN_WIDTH} = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const {colors} = useTheme();
@@ -165,7 +166,8 @@ export default function OnboardingJourney({onComplete}: OnboardingJourneyProps) 
         <View style={[styles.headerSide, styles.headerRight]}>
           {showSkip && (
             <TouchableOpacity onPress={handleSkip}>
-              <Text style={[Typography.bodySmall, {color: colors.textTertiary}]}>
+              <Text
+                style={[Typography.bodySmall, {color: colors.textTertiary}]}>
                 Jump to app
               </Text>
             </TouchableOpacity>
@@ -219,7 +221,8 @@ export default function OnboardingJourney({onComplete}: OnboardingJourneyProps) 
             onPressIn={onCtaPressIn}
             onPressOut={onCtaPressOut}
             activeOpacity={0.8}>
-            <Text style={[Typography.buttonLarge, {color: colors.textOnPrimary}]}>
+            <Text
+              style={[Typography.buttonLarge, {color: colors.textOnPrimary}]}>
               {currentSlide.ctaLabel}
             </Text>
           </TouchableOpacity>

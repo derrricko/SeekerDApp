@@ -25,9 +25,7 @@ export const USDC_DECIMALS = 6;
 
 const USDC_MINTS = {
   devnet: new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'),
-  'mainnet-beta': new PublicKey(
-    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-  ),
+  'mainnet-beta': new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
 };
 
 export const USDC_MINT = USDC_MINTS[SOLANA_CLUSTER];
@@ -47,4 +45,5 @@ export const RECIPIENT_WALLET = new PublicKey(
 // ─── Supabase ───────────────────────────────────────────────────────────────
 
 export const SUPABASE_URL = 'https://knvagydrbbvuumabmxcg.supabase.co';
-export const SUPABASE_ANON_KEY = 'sb_publishable_INS4usT4WBv9Z5nZ2Y-i2g_RZC7WG9N';
+export const SUPABASE_ANON_KEY =
+  'sb_publishable_INS4usT4WBv9Z5nZ2Y-i2g_RZC7WG9N';

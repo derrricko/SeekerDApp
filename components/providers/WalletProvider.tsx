@@ -25,7 +25,10 @@ import {
 import {APP_IDENTITY, SOLANA_CLUSTER} from '../../config/env';
 
 import type {WalletAccount} from '@wallet-standard/base';
-import type {SolanaSignInInput, SolanaSignInOutput} from '@solana/wallet-standard-features';
+import type {
+  SolanaSignInInput,
+  SolanaSignInOutput,
+} from '@solana/wallet-standard-features';
 
 // ─── Chain identifier ───────────────────────────────────────────────────────
 
@@ -54,9 +57,7 @@ export interface WalletContextState {
    * Sign and send a serialized transaction.
    * Returns the raw signature bytes.
    */
-  signAndSendTransaction: (
-    transaction: Uint8Array,
-  ) => Promise<Uint8Array>;
+  signAndSendTransaction: (transaction: Uint8Array) => Promise<Uint8Array>;
 }
 
 const WalletContext = createContext<WalletContextState>({
@@ -111,11 +112,14 @@ export function WalletProvider({children}: {children: ReactNode}) {
       return;
     }
 
-    const unsubscribe = eventsFeature.on('change', ({accounts: newAccounts}) => {
-      if (newAccounts) {
-        setAccounts(newAccounts);
-      }
-    });
+    const unsubscribe = eventsFeature.on(
+      'change',
+      ({accounts: newAccounts}) => {
+        if (newAccounts) {
+          setAccounts(newAccounts);
+        }
+      },
+    );
 
     // Sync initial state
     setAccounts(wallet.accounts);
@@ -186,12 +190,14 @@ export function WalletProvider({children}: {children: ReactNode}) {
         throw new Error('Wallet adapter not available');
       }
 
-      const feature = wallet.features['solana:signAndSendTransaction'];
-      if (!feature) {
+      const features = wallet.features;
+      if (!('solana:signAndSendTransaction' in features)) {
         throw new Error('signAndSendTransaction not supported by wallet');
       }
 
-      const results = await feature.signAndSendTransaction({
+      const results = await features[
+        'solana:signAndSendTransaction'
+      ].signAndSendTransaction({
         account,
         transaction,
         chain: CHAIN,
@@ -212,7 +218,15 @@ export function WalletProvider({children}: {children: ReactNode}) {
       signIn,
       signAndSendTransaction,
     }),
-    [account, publicKey, connected, connect, disconnect, signIn, signAndSendTransaction],
+    [
+      account,
+      publicKey,
+      connected,
+      connect,
+      disconnect,
+      signIn,
+      signAndSendTransaction,
+    ],
   );
 
   return (
