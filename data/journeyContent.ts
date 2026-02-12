@@ -12,7 +12,10 @@
 
 export type JourneyAct = 1 | 2 | 3;
 
-export type HapticEvent = 'impactLight' | 'impactMedium' | 'notificationSuccess';
+export type HapticEvent =
+  | 'impactLight'
+  | 'impactMedium'
+  | 'notificationSuccess';
 
 export interface JourneySlideData {
   id: string;

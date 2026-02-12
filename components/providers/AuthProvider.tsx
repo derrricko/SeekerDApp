@@ -134,7 +134,14 @@ export function AuthProvider({children}: {children: ReactNode}) {
 
   return (
     <AuthContext.Provider
-      value={{profile, loading, isAuthenticated, error, signInWithSolana, signOut}}>
+      value={{
+        profile,
+        loading,
+        isAuthenticated,
+        error,
+        signInWithSolana,
+        signOut,
+      }}>
       {children}
     </AuthContext.Provider>
   );

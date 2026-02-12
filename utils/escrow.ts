@@ -13,10 +13,7 @@ import {
   Transaction,
   TransactionInstruction,
 } from '@solana/web3.js';
-import {
-  getAssociatedTokenAddress,
-  TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
+import {getAssociatedTokenAddress, TOKEN_PROGRAM_ID} from '@solana/spl-token';
 import * as borsh from '@coral-xyz/borsh';
 import BN from 'bn.js';
 import {ESCROW_PROGRAM_ID, USDC_MINT, USDC_DECIMALS} from '../config/env';
@@ -67,10 +64,7 @@ export async function buildDonateTransaction(
   // Encode instruction data: 8-byte discriminator + borsh-encoded args
   const argsBuffer = Buffer.alloc(8);
   const baseUnits = Math.round(amount * 10 ** USDC_DECIMALS);
-  donateArgsSchema.encode(
-    {amount: new BN(baseUnits)},
-    argsBuffer,
-  );
+  donateArgsSchema.encode({amount: new BN(baseUnits)}, argsBuffer);
   const data = Buffer.concat([DONATE_DISCRIMINATOR, argsBuffer]);
 
   const instruction = new TransactionInstruction({

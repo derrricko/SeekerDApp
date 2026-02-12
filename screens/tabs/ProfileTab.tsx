@@ -23,35 +23,90 @@ function ThemeToggleIcon({mode}: {mode: 'light' | 'dark' | 'system'}) {
   if (mode === 'light') {
     return (
       <View style={[iconStyles.sunOuter, {borderColor: colors.textPrimary}]}>
-        <View style={[iconStyles.sunInner, {backgroundColor: colors.textPrimary}]} />
+        <View
+          style={[iconStyles.sunInner, {backgroundColor: colors.textPrimary}]}
+        />
       </View>
     );
   }
   if (mode === 'dark') {
-    return <View style={[iconStyles.moon, {borderColor: colors.textPrimary}]} />;
+    return (
+      <View style={[iconStyles.moon, {borderColor: colors.textPrimary}]} />
+    );
   }
   return (
     <View style={iconStyles.systemIcon}>
-      <View style={[iconStyles.systemHalf, {backgroundColor: colors.textPrimary}]} />
-      <View style={[iconStyles.systemHalfOutline, {borderColor: colors.textPrimary}]} />
+      <View
+        style={[iconStyles.systemHalf, {backgroundColor: colors.textPrimary}]}
+      />
+      <View
+        style={[
+          iconStyles.systemHalfOutline,
+          {borderColor: colors.textPrimary},
+        ]}
+      />
     </View>
   );
 }
 
 const iconStyles = StyleSheet.create({
-  sunOuter: {width: 20, height: 20, borderRadius: 10, borderWidth: 2, alignItems: 'center', justifyContent: 'center'},
+  sunOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   sunInner: {width: 8, height: 8, borderRadius: 4},
-  moon: {width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderTopRightRadius: 0},
-  systemIcon: {width: 20, height: 20, flexDirection: 'row', overflow: 'hidden', borderRadius: 4},
+  moon: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderTopRightRadius: 0,
+  },
+  systemIcon: {
+    width: 20,
+    height: 20,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    borderRadius: 4,
+  },
   systemHalf: {width: 10, height: 20},
   systemHalfOutline: {width: 8, height: 18, borderWidth: 2, marginLeft: -2},
 });
 
 function XIcon({color}: {color: string}) {
   return (
-    <View style={{width: 16, height: 16, marginRight: 6, justifyContent: 'center', alignItems: 'center'}}>
-      <View style={{position: 'absolute', width: 16, height: 2, borderRadius: 1, backgroundColor: color, transform: [{rotate: '45deg'}]}} />
-      <View style={{position: 'absolute', width: 16, height: 2, borderRadius: 1, backgroundColor: color, transform: [{rotate: '-45deg'}]}} />
+    <View
+      style={{
+        width: 16,
+        height: 16,
+        marginRight: 6,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}>
+      <View
+        style={{
+          position: 'absolute',
+          width: 16,
+          height: 2,
+          borderRadius: 1,
+          backgroundColor: color,
+          transform: [{rotate: '45deg'}],
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          width: 16,
+          height: 2,
+          borderRadius: 1,
+          backgroundColor: color,
+          transform: [{rotate: '-45deg'}],
+        }}
+      />
     </View>
   );
 }
@@ -77,7 +132,10 @@ function FAQItem({item, isExpanded, onToggle}: FAQItemProps) {
     }).start();
   }, [isExpanded]);
 
-  const rotate = rotateAnim.interpolate({inputRange: [0, 1], outputRange: ['0deg', '45deg']});
+  const rotate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '45deg'],
+  });
 
   const handleToggle = () => {
     LayoutAnimation.configureNext(smoothLayout);
@@ -87,14 +145,23 @@ function FAQItem({item, isExpanded, onToggle}: FAQItemProps) {
 
   return (
     <View style={[profileStyles.faqItem, {borderBottomColor: colors.border}]}>
-      <TouchableOpacity style={profileStyles.faqHeader} onPress={handleToggle} activeOpacity={0.7}>
-        <Text style={[profileStyles.faqQuestion, {color: colors.textPrimary}]}>{item.question}</Text>
+      <TouchableOpacity
+        style={profileStyles.faqHeader}
+        onPress={handleToggle}
+        activeOpacity={0.7}>
+        <Text style={[profileStyles.faqQuestion, {color: colors.textPrimary}]}>
+          {item.question}
+        </Text>
         <Animated.View style={{transform: [{rotate}]}}>
-          <Text style={[profileStyles.faqIcon, {color: colors.primary}]}>+</Text>
+          <Text style={[profileStyles.faqIcon, {color: colors.primary}]}>
+            +
+          </Text>
         </Animated.View>
       </TouchableOpacity>
       {isExpanded && (
-        <Text style={[profileStyles.faqAnswer, {color: colors.textSecondary}]}>{item.answer}</Text>
+        <Text style={[profileStyles.faqAnswer, {color: colors.textSecondary}]}>
+          {item.answer}
+        </Text>
       )}
     </View>
   );
@@ -105,7 +172,12 @@ function FAQItem({item, isExpanded, onToggle}: FAQItemProps) {
 export default function ProfileTab() {
   const {colors, mode, toggleMode} = useTheme();
   const {publicKey, connected, connect, disconnect} = useWallet();
-  const {isAuthenticated, loading: authLoading, signInWithSolana, error: authError} = useAuth();
+  const {
+    isAuthenticated,
+    loading: authLoading,
+    signInWithSolana,
+    error: authError,
+  } = useAuth();
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
   const handleConnect = async () => {
@@ -136,17 +208,39 @@ export default function ProfileTab() {
       {/* Wallet Section */}
       <GlassCard style={profileStyles.cardSpacing}>
         <View style={profileStyles.cardContent}>
-          <Text style={[profileStyles.cardTitle, {color: colors.textPrimary}]}>Wallet</Text>
+          <Text style={[profileStyles.cardTitle, {color: colors.textPrimary}]}>
+            Wallet
+          </Text>
           {connected ? (
             <>
               <View style={profileStyles.walletRow}>
-                <View style={[profileStyles.statusDot, {backgroundColor: colors.success}]} />
-                <Text style={[profileStyles.walletStatus, {color: colors.textSecondary}]}>Connected</Text>
+                <View
+                  style={[
+                    profileStyles.statusDot,
+                    {backgroundColor: colors.success},
+                  ]}
+                />
+                <Text
+                  style={[
+                    profileStyles.walletStatus,
+                    {color: colors.textSecondary},
+                  ]}>
+                  Connected
+                </Text>
               </View>
-              <Text style={[profileStyles.walletAddress, {color: colors.textTertiary}]}>{shortAddress}</Text>
+              <Text
+                style={[
+                  profileStyles.walletAddress,
+                  {color: colors.textTertiary},
+                ]}>
+                {shortAddress}
+              </Text>
               {!isAuthenticated && (
                 <TouchableOpacity
-                  style={[profileStyles.connectButton, {backgroundColor: colors.accent, marginTop: 12}]}
+                  style={[
+                    profileStyles.connectButton,
+                    {backgroundColor: colors.accent, marginTop: 12},
+                  ]}
                   onPress={() => {
                     triggerHaptic('impactMedium');
                     signInWithSolana();
@@ -159,26 +253,61 @@ export default function ProfileTab() {
                 </TouchableOpacity>
               )}
               {authError && (
-                <Text style={[profileStyles.authError, {color: colors.error || '#D35F5F'}]}>{authError}</Text>
+                <Text
+                  style={[
+                    profileStyles.authError,
+                    {color: colors.error || '#D35F5F'},
+                  ]}>
+                  {authError}
+                </Text>
               )}
               <TouchableOpacity
-                style={[profileStyles.disconnectButton, {borderColor: colors.border}]}
+                style={[
+                  profileStyles.disconnectButton,
+                  {borderColor: colors.border},
+                ]}
                 onPress={handleDisconnect}
                 activeOpacity={0.8}>
-                <Text style={[profileStyles.disconnectText, {color: colors.textSecondary}]}>Disconnect</Text>
+                <Text
+                  style={[
+                    profileStyles.disconnectText,
+                    {color: colors.textSecondary},
+                  ]}>
+                  Disconnect
+                </Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
               <View style={profileStyles.walletRow}>
-                <View style={[profileStyles.statusDot, {backgroundColor: colors.textTertiary}]} />
-                <Text style={[profileStyles.walletStatus, {color: colors.textSecondary}]}>Not connected</Text>
+                <View
+                  style={[
+                    profileStyles.statusDot,
+                    {backgroundColor: colors.textTertiary},
+                  ]}
+                />
+                <Text
+                  style={[
+                    profileStyles.walletStatus,
+                    {color: colors.textSecondary},
+                  ]}>
+                  Not connected
+                </Text>
               </View>
               <TouchableOpacity
-                style={[profileStyles.connectButton, {backgroundColor: colors.primary}]}
+                style={[
+                  profileStyles.connectButton,
+                  {backgroundColor: colors.primary},
+                ]}
                 onPress={handleConnect}
                 activeOpacity={0.8}>
-                <Text style={[profileStyles.connectText, {color: colors.textOnPrimary}]}>Connect Wallet</Text>
+                <Text
+                  style={[
+                    profileStyles.connectText,
+                    {color: colors.textOnPrimary},
+                  ]}>
+                  Connect Wallet
+                </Text>
               </TouchableOpacity>
             </>
           )}
@@ -188,7 +317,9 @@ export default function ProfileTab() {
       {/* Theme Section */}
       <GlassCard style={profileStyles.cardSpacing}>
         <View style={profileStyles.cardContent}>
-          <Text style={[profileStyles.cardTitle, {color: colors.textPrimary}]}>Appearance</Text>
+          <Text style={[profileStyles.cardTitle, {color: colors.textPrimary}]}>
+            Appearance
+          </Text>
           <TouchableOpacity
             style={profileStyles.themeRow}
             onPress={() => {
@@ -197,10 +328,14 @@ export default function ProfileTab() {
             }}
             activeOpacity={0.7}>
             <ThemeToggleIcon mode={mode} />
-            <Text style={[profileStyles.themeLabel, {color: colors.textSecondary}]}>
+            <Text
+              style={[profileStyles.themeLabel, {color: colors.textSecondary}]}>
               {mode === 'light' ? 'Light' : mode === 'dark' ? 'Dark' : 'System'}
             </Text>
-            <Text style={[profileStyles.themeCycle, {color: colors.textTertiary}]}>Tap to change</Text>
+            <Text
+              style={[profileStyles.themeCycle, {color: colors.textTertiary}]}>
+              Tap to change
+            </Text>
           </TouchableOpacity>
         </View>
       </GlassCard>
@@ -208,13 +343,17 @@ export default function ProfileTab() {
       {/* FAQ Section */}
       <GlassCard style={profileStyles.cardSpacing}>
         <View style={profileStyles.cardContent}>
-          <Text style={[profileStyles.cardTitle, {color: colors.textPrimary}]}>FAQ</Text>
+          <Text style={[profileStyles.cardTitle, {color: colors.textPrimary}]}>
+            FAQ
+          </Text>
           {FAQ_DATA.map(item => (
             <FAQItem
               key={item.id}
               item={item}
               isExpanded={expandedFaq === item.id}
-              onToggle={() => setExpandedFaq(expandedFaq === item.id ? null : item.id)}
+              onToggle={() =>
+                setExpandedFaq(expandedFaq === item.id ? null : item.id)
+              }
             />
           ))}
         </View>
@@ -223,19 +362,25 @@ export default function ProfileTab() {
       {/* Links */}
       <GlassCard style={profileStyles.cardSpacing}>
         <View style={profileStyles.cardContent}>
-          <Text style={[profileStyles.cardTitle, {color: colors.textPrimary}]}>Links</Text>
+          <Text style={[profileStyles.cardTitle, {color: colors.textPrimary}]}>
+            Links
+          </Text>
           <TouchableOpacity
             style={profileStyles.linkRow}
             onPress={() => Linking.openURL('https://x.com/DerrickWKing')}
             activeOpacity={0.7}>
             <XIcon color={colors.primary} />
-            <Text style={[profileStyles.linkText, {color: colors.primary}]}>@DerrickWKing</Text>
+            <Text style={[profileStyles.linkText, {color: colors.primary}]}>
+              @DerrickWKing
+            </Text>
           </TouchableOpacity>
         </View>
       </GlassCard>
 
       {/* App version */}
-      <Text style={[profileStyles.version, {color: colors.textTertiary}]}>Glimpse v0.0.1</Text>
+      <Text style={[profileStyles.version, {color: colors.textTertiary}]}>
+        Glimpse v0.0.1
+      </Text>
     </View>
   );
 }
@@ -251,21 +396,58 @@ const profileStyles = StyleSheet.create({
   walletRow: {flexDirection: 'row', alignItems: 'center', marginBottom: 8},
   statusDot: {width: 8, height: 8, borderRadius: 4, marginRight: 8},
   walletStatus: {...Typography.label},
-  walletAddress: {fontSize: Typography.caption.fontSize, fontFamily: 'monospace', marginBottom: 4, letterSpacing: Typography.caption.letterSpacing},
-  connectButton: {paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 12},
+  walletAddress: {
+    fontSize: Typography.caption.fontSize,
+    fontFamily: 'monospace',
+    marginBottom: 4,
+    letterSpacing: Typography.caption.letterSpacing,
+  },
+  connectButton: {
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 12,
+  },
   connectText: {...Typography.buttonLarge},
-  disconnectButton: {paddingVertical: 12, borderRadius: 12, borderWidth: 1, alignItems: 'center', marginTop: 12},
+  disconnectButton: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    marginTop: 12,
+  },
   disconnectText: {fontSize: Typography.bodySmall.fontSize, fontWeight: '500'},
-  authError: {fontSize: Typography.caption.fontSize, marginTop: 8, textAlign: 'center' as const},
+  authError: {
+    fontSize: Typography.caption.fontSize,
+    marginTop: 8,
+    textAlign: 'center' as const,
+  },
   themeRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: 14},
   themeLabel: {...Typography.label, marginLeft: 12, flex: 1},
   themeCycle: {...Typography.caption},
   faqItem: {borderBottomWidth: 1, paddingVertical: 14},
-  faqHeader: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'},
+  faqHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   faqQuestion: {flex: 1, ...Typography.label, paddingRight: 12},
-  faqIcon: {fontSize: Typography.subheading.fontSize, fontWeight: Typography.subheading.fontWeight},
-  faqAnswer: {fontSize: Typography.bodySmall.fontSize, lineHeight: 22, paddingTop: 10, paddingRight: 36},
+  faqIcon: {
+    fontSize: Typography.subheading.fontSize,
+    fontWeight: Typography.subheading.fontWeight,
+  },
+  faqAnswer: {
+    fontSize: Typography.bodySmall.fontSize,
+    lineHeight: 22,
+    paddingTop: 10,
+    paddingRight: 36,
+  },
   linkRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: 8},
   linkText: {fontSize: Typography.bodySmall.fontSize, fontWeight: '600'},
-  version: {...Typography.caption, textAlign: 'center', marginTop: 28, marginBottom: 32},
+  version: {
+    ...Typography.caption,
+    textAlign: 'center',
+    marginTop: 28,
+    marginBottom: 32,
+  },
 });

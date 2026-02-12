@@ -20,9 +20,18 @@ const springConfig = {useNativeDriver: true, speed: 50, bounciness: 4};
 
 const smoothLayout = {
   duration: 250,
-  update: {type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity},
-  create: {type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity},
-  delete: {type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity},
+  update: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+  create: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+  delete: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
 };
 
 const DISPLAY_FONT = Platform.OS === 'ios' ? 'Georgia' : 'serif';
@@ -37,10 +46,18 @@ function lightTint(hex: string, alpha: number = 0.08): string {
 
 // Amount size scales with magnitude — visual weight matches the ask
 function getAmountSize(amount: number): number {
-  if (amount >= 1000) return 40;
-  if (amount >= 400) return 36;
-  if (amount >= 250) return 33;
-  if (amount >= 100) return 30;
+  if (amount >= 1000) {
+    return 40;
+  }
+  if (amount >= 400) {
+    return 36;
+  }
+  if (amount >= 250) {
+    return 33;
+  }
+  if (amount >= 100) {
+    return 30;
+  }
   return 28;
 }
 
@@ -69,8 +86,20 @@ export default function NeedCard({need, delay, index, onGive}: NeedCardProps) {
 
   useEffect(() => {
     const anim = Animated.parallel([
-      Animated.timing(opacity, {toValue: 1, duration: ENTRANCE_DURATION, delay, easing: EASE_OUT, useNativeDriver: true}),
-      Animated.timing(translateY, {toValue: 0, duration: ENTRANCE_DURATION, delay, easing: EASE_OUT, useNativeDriver: true}),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: ENTRANCE_DURATION,
+        delay,
+        easing: EASE_OUT,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: ENTRANCE_DURATION,
+        delay,
+        easing: EASE_OUT,
+        useNativeDriver: true,
+      }),
     ]);
     anim.start();
     return () => anim.stop();
@@ -98,7 +127,11 @@ export default function NeedCard({need, delay, index, onGive}: NeedCardProps) {
   };
 
   return (
-    <Animated.View style={[{marginBottom: bottomMargin}, {opacity, transform: [{translateY}, {scale}]}]}>
+    <Animated.View
+      style={[
+        {marginBottom: bottomMargin},
+        {opacity, transform: [{translateY}, {scale}]},
+      ]}>
       <TouchableOpacity
         activeOpacity={1}
         onPress={toggleExpand}
@@ -136,20 +169,37 @@ export default function NeedCard({need, delay, index, onGive}: NeedCardProps) {
             {/* Expanded: description + Give button */}
             {isExpanded && (
               <View style={cardStyles.expandedInner}>
-                <View style={[cardStyles.divider, {backgroundColor: colors.border}]} />
-                <Text style={[cardStyles.description, {color: colors.textSecondary}]}>
+                <View
+                  style={[cardStyles.divider, {backgroundColor: colors.border}]}
+                />
+                <Text
+                  style={[
+                    cardStyles.description,
+                    {color: colors.textSecondary},
+                  ]}>
                   {need.description}
                 </Text>
                 {need.partner && (
-                  <Text style={[cardStyles.partner, {color: colors.textTertiary}]}>
+                  <Text
+                    style={[cardStyles.partner, {color: colors.textTertiary}]}>
                     {need.partner}
                   </Text>
                 )}
                 <TouchableOpacity
-                  style={[cardStyles.giveButton, {backgroundColor: colors.primary, shadowColor: colors.shadow}]}
+                  style={[
+                    cardStyles.giveButton,
+                    {
+                      backgroundColor: colors.primary,
+                      shadowColor: colors.shadow,
+                    },
+                  ]}
                   onPress={handleGive}
                   activeOpacity={0.8}>
-                  <Text style={[cardStyles.giveButtonText, {color: colors.textOnPrimary}]}>
+                  <Text
+                    style={[
+                      cardStyles.giveButtonText,
+                      {color: colors.textOnPrimary},
+                    ]}>
                     Give This Gift
                   </Text>
                 </TouchableOpacity>

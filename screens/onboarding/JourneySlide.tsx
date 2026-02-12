@@ -1,5 +1,11 @@
 import React, {useEffect, useRef} from 'react';
-import {Animated, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
+import {
+  Animated,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import {useTheme, Typography} from '../../components/theme';
 import {EASE_OUT} from '../../utils/animations';
 import {triggerHaptic} from '../../utils/haptics';
@@ -109,8 +115,7 @@ export default function JourneySlide({
   ]);
 
   // Text color varies by act
-  const bodyColor =
-    slide.act === 1 ? colors.textSecondary : colors.textPrimary;
+  const bodyColor = slide.act === 1 ? colors.textSecondary : colors.textPrimary;
   const subtitleColor =
     slide.act === 1 ? colors.textTertiary : colors.textSecondary;
 

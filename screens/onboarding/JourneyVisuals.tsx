@@ -9,7 +9,10 @@ interface JourneyVisualProps {
   isVisible: boolean;
 }
 
-export default function JourneyVisual({visualId, isVisible}: JourneyVisualProps) {
+export default function JourneyVisual({
+  visualId,
+  isVisible,
+}: JourneyVisualProps) {
   switch (visualId) {
     case 'neighbor':
       return <NeighborVisual isVisible={isVisible} />;
@@ -84,10 +87,7 @@ function NeighborVisual({isVisible}: {isVisible: boolean}) {
     <View style={neighborStyles.container}>
       {/* Ambient background glow */}
       <View
-        style={[
-          neighborStyles.glow,
-          {backgroundColor: colors.primaryLight},
-        ]}
+        style={[neighborStyles.glow, {backgroundColor: colors.primaryLight}]}
       />
       {/* Rings */}
       {ringConfigs.map((config, i) => (
@@ -100,13 +100,18 @@ function NeighborVisual({isVisible}: {isVisible: boolean}) {
               height: config.size,
               borderRadius: config.size / 2,
               borderColor: colors.primary,
-              opacity: Animated.multiply(rings[i], new Animated.Value(config.opacity)),
-              transform: [{
-                scale: rings[i].interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.6, 1],
-                }),
-              }],
+              opacity: Animated.multiply(
+                rings[i],
+                new Animated.Value(config.opacity),
+              ),
+              transform: [
+                {
+                  scale: rings[i].interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.6, 1],
+                  }),
+                },
+              ],
             },
           ]}
         />
@@ -198,7 +203,10 @@ function MomVisual({isVisible}: {isVisible: boolean}) {
       <Animated.View
         style={[
           momStyles.warmGlow,
-          {backgroundColor: colors.primary, opacity: Animated.multiply(lightOpacity, new Animated.Value(0.06))},
+          {
+            backgroundColor: colors.primary,
+            opacity: Animated.multiply(lightOpacity, new Animated.Value(0.06)),
+          },
         ]}
       />
       {/* Light source */}
@@ -222,10 +230,26 @@ function MomVisual({isVisible}: {isVisible: boolean}) {
         ]}
       />
       {/* Small detail: lunch boxes on counter */}
-      <Animated.View style={{opacity: lightOpacity, flexDirection: 'row', gap: 8}}>
-        <View style={[momStyles.lunchBox, {backgroundColor: colors.primary, opacity: 0.15}]} />
-        <View style={[momStyles.lunchBox, {backgroundColor: colors.accent, opacity: 0.12}]} />
-        <View style={[momStyles.lunchBox, {backgroundColor: colors.primary, opacity: 0.10}]} />
+      <Animated.View
+        style={{opacity: lightOpacity, flexDirection: 'row', gap: 8}}>
+        <View
+          style={[
+            momStyles.lunchBox,
+            {backgroundColor: colors.primary, opacity: 0.15},
+          ]}
+        />
+        <View
+          style={[
+            momStyles.lunchBox,
+            {backgroundColor: colors.accent, opacity: 0.12},
+          ]}
+        />
+        <View
+          style={[
+            momStyles.lunchBox,
+            {backgroundColor: colors.primary, opacity: 0.1},
+          ]}
+        />
       </Animated.View>
     </View>
   );
@@ -294,10 +318,7 @@ function NoticeVisual({isVisible}: {isVisible: boolean}) {
     <View style={noticeStyles.container}>
       {/* Urgent glow */}
       <View
-        style={[
-          noticeStyles.urgentGlow,
-          {backgroundColor: colors.primary},
-        ]}
+        style={[noticeStyles.urgentGlow, {backgroundColor: colors.primary}]}
       />
       <Animated.View
         style={{
@@ -519,13 +540,17 @@ function DirectVisual({isVisible}: {isVisible: boolean}) {
   return (
     <View style={directStyles.container}>
       {/* Ambient glow */}
-      <View style={[directStyles.glow, {backgroundColor: colors.primaryLight}]} />
+      <View
+        style={[directStyles.glow, {backgroundColor: colors.primaryLight}]}
+      />
 
       <View style={directStyles.flowRow}>
         {/* Phone icon */}
         <Animated.View style={{opacity: flowOpacity}}>
           <View style={[directStyles.phone, {borderColor: colors.primary}]}>
-            <View style={[directStyles.phoneDot, {backgroundColor: colors.primary}]} />
+            <View
+              style={[directStyles.phoneDot, {backgroundColor: colors.primary}]}
+            />
           </View>
         </Animated.View>
 
@@ -540,15 +565,24 @@ function DirectVisual({isVisible}: {isVisible: boolean}) {
         </View>
 
         {/* Person with halo */}
-        <Animated.View style={[directStyles.personWrap, {opacity: personOpacity}]}>
-          <View style={[directStyles.halo, {backgroundColor: colors.primaryLight}]} />
-          <View style={[directStyles.person, {backgroundColor: colors.accent}]} />
+        <Animated.View
+          style={[directStyles.personWrap, {opacity: personOpacity}]}>
+          <View
+            style={[directStyles.halo, {backgroundColor: colors.primaryLight}]}
+          />
+          <View
+            style={[directStyles.person, {backgroundColor: colors.accent}]}
+          />
         </Animated.View>
       </View>
 
       {/* Label */}
       <Animated.View style={{opacity: personOpacity, marginTop: 32}}>
-        <Text style={[Typography.caption, {color: colors.textTertiary, textAlign: 'center'}]}>
+        <Text
+          style={[
+            Typography.caption,
+            {color: colors.textTertiary, textAlign: 'center'},
+          ]}>
           100% of your gift arrives
         </Text>
       </Animated.View>
@@ -661,7 +695,9 @@ function ProofVisual({isVisible}: {isVisible: boolean}) {
               proofStyles.card,
               {
                 zIndex: isFront ? 3 : 1,
-                backgroundColor: isFront ? colors.card : colors.backgroundSecondary,
+                backgroundColor: isFront
+                  ? colors.card
+                  : colors.backgroundSecondary,
                 borderColor: colors.glassBorder,
                 shadowColor: colors.shadow,
                 transform: [{rotate}, {translateX}],
@@ -671,16 +707,25 @@ function ProofVisual({isVisible}: {isVisible: boolean}) {
             <View
               style={[
                 proofStyles.photoArea,
-                {backgroundColor: isFront ? colors.primaryLight : colors.border},
+                {
+                  backgroundColor: isFront
+                    ? colors.primaryLight
+                    : colors.border,
+                },
               ]}
             />
             {isFront && (
               <View style={proofStyles.cardContent}>
-                <Text style={[Typography.bodySmall, {color: colors.textPrimary}]}>
+                <Text
+                  style={[Typography.bodySmall, {color: colors.textPrimary}]}>
                   Gift delivered
                 </Text>
                 <View style={proofStyles.verifiedRow}>
-                  <View style={[proofStyles.badge, {backgroundColor: colors.accent}]}>
+                  <View
+                    style={[
+                      proofStyles.badge,
+                      {backgroundColor: colors.accent},
+                    ]}>
                     <Text style={proofStyles.check}>✓</Text>
                   </View>
                   <Text style={[Typography.caption, {color: colors.accent}]}>
@@ -769,9 +814,21 @@ function ImpactVisual({isVisible}: {isVisible: boolean}) {
   }, [isVisible]);
 
   const needs = [
-    {title: 'Groceries for a single mom', amount: '$100', color: colors.primary},
-    {title: 'New tires so she can get to work', amount: '$400', color: colors.accent},
-    {title: 'A month of rent before the notice', amount: '$1,000', color: colors.secondary},
+    {
+      title: 'Groceries for a single mom',
+      amount: '$100',
+      color: colors.primary,
+    },
+    {
+      title: 'New tires so she can get to work',
+      amount: '$400',
+      color: colors.accent,
+    },
+    {
+      title: 'A month of rent before the notice',
+      amount: '$1,000',
+      color: colors.secondary,
+    },
   ];
 
   return (
@@ -791,7 +848,10 @@ function ImpactVisual({isVisible}: {isVisible: boolean}) {
             <GlassCard variant={i === 0 ? 'primary' : 'secondary'}>
               <View style={impactStyles.needRow}>
                 <View
-                  style={[impactStyles.accentBar, {backgroundColor: need.color}]}
+                  style={[
+                    impactStyles.accentBar,
+                    {backgroundColor: need.color},
+                  ]}
                 />
                 <View style={impactStyles.needText}>
                   <Text
@@ -800,8 +860,16 @@ function ImpactVisual({isVisible}: {isVisible: boolean}) {
                     {need.title}
                   </Text>
                 </View>
-                <View style={[impactStyles.pill, {backgroundColor: colors.primary}]}>
-                  <Text style={[Typography.caption, {color: colors.textOnPrimary, fontWeight: '600'}]}>
+                <View
+                  style={[
+                    impactStyles.pill,
+                    {backgroundColor: colors.primary},
+                  ]}>
+                  <Text
+                    style={[
+                      Typography.caption,
+                      {color: colors.textOnPrimary, fontWeight: '600'},
+                    ]}>
                     {need.amount}
                   </Text>
                 </View>
@@ -846,22 +914,30 @@ function StoryVisual() {
     <GlassCard variant="primary">
       {/* Photo area */}
       <View
-        style={[
-          storyStyles.photoArea,
-          {backgroundColor: colors.primaryLight},
-        ]}>
-        <View style={[storyStyles.cameraIcon, {borderColor: colors.textTertiary}]}>
-          <View style={[storyStyles.lens, {borderColor: colors.textTertiary}]} />
+        style={[storyStyles.photoArea, {backgroundColor: colors.primaryLight}]}>
+        <View
+          style={[storyStyles.cameraIcon, {borderColor: colors.textTertiary}]}>
+          <View
+            style={[storyStyles.lens, {borderColor: colors.textTertiary}]}
+          />
         </View>
       </View>
 
       <View style={storyStyles.content}>
-        <Text style={[Typography.body, {color: colors.textPrimary, fontWeight: '500'}]}>
+        <Text
+          style={[
+            Typography.body,
+            {color: colors.textPrimary, fontWeight: '500'},
+          ]}>
           Gift delivered
         </Text>
-        <Text style={[Typography.bodySmall, {color: colors.textSecondary, marginTop: 4}]}>
-          Your $100 bought groceries for Maria and her three kids.
-          She left a note: "thank you for seeing us."
+        <Text
+          style={[
+            Typography.bodySmall,
+            {color: colors.textSecondary, marginTop: 4},
+          ]}>
+          Your $100 bought groceries for Maria and her three kids. She left a
+          note: "thank you for seeing us."
         </Text>
         <View style={storyStyles.verifiedRow}>
           <View style={[storyStyles.badge, {backgroundColor: colors.accent}]}>
@@ -871,7 +947,8 @@ function StoryVisual() {
             Verified on Solana
           </Text>
         </View>
-        <Text style={[Typography.bodySmall, {color: colors.primary, marginTop: 8}]}>
+        <Text
+          style={[Typography.bodySmall, {color: colors.primary, marginTop: 8}]}>
           View full story →
         </Text>
       </View>
@@ -976,8 +1053,10 @@ function InvitationVisual({isVisible}: {isVisible: boolean}) {
         </Text>
 
         <View style={invitationStyles.metaRow}>
-          <View style={[invitationStyles.pill, {backgroundColor: colors.primary}]}>
-            <Text style={[Typography.buttonSmall, {color: colors.textOnPrimary}]}>
+          <View
+            style={[invitationStyles.pill, {backgroundColor: colors.primary}]}>
+            <Text
+              style={[Typography.buttonSmall, {color: colors.textOnPrimary}]}>
               $25
             </Text>
           </View>

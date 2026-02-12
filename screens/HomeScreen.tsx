@@ -26,13 +26,25 @@ import GlimpseCard from '../components/GlimpseCard';
 import GiveChoiceModal from '../components/GiveChoiceModal';
 import OnboardingModal from '../components/OnboardingModal';
 import ConfirmModal from '../components/ConfirmModal';
-import {GiveNavIcon, GlimpsesNavIcon, ProfileNavIcon} from '../components/NavIcons';
+import {
+  GiveNavIcon,
+  GlimpsesNavIcon,
+  ProfileNavIcon,
+} from '../components/NavIcons';
 import ProfileTab from './tabs/ProfileTab';
-import {ENTRANCE_STAGGER, EASE_OUT, EASE_IN, useEntrance} from '../utils/animations';
+import {
+  ENTRANCE_STAGGER,
+  EASE_OUT,
+  EASE_IN,
+  useEntrance,
+} from '../utils/animations';
 import {triggerHaptic} from '../utils/haptics';
 
 // Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -62,7 +74,9 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
   };
 
   const handleAmountSelected = (amount: number) => {
-    if (!selectedNeed) return;
+    if (!selectedNeed) {
+      return;
+    }
     setGiveChoiceVisible(false);
     handleDonate(amount, selectedNeed.title);
   };
@@ -80,10 +94,20 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
       return;
     }
     triggerHaptic('impactLight');
-    Animated.timing(tabOpacity, {toValue: 0, duration: 120, easing: EASE_IN, useNativeDriver: true}).start(() => {
+    Animated.timing(tabOpacity, {
+      toValue: 0,
+      duration: 120,
+      easing: EASE_IN,
+      useNativeDriver: true,
+    }).start(() => {
       setActiveTab(tab);
       scrollRef.current?.scrollTo({y: 0, animated: false});
-      Animated.timing(tabOpacity, {toValue: 1, duration: 200, easing: EASE_OUT, useNativeDriver: true}).start();
+      Animated.timing(tabOpacity, {
+        toValue: 1,
+        duration: 200,
+        easing: EASE_OUT,
+        useNativeDriver: true,
+      }).start();
     });
   };
 
@@ -111,7 +135,9 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
   const handleConfirmSend = async (note?: string) => {
     setTxLoading(true);
     setTxError(null);
-    if (note) setDonationNote(note);
+    if (note) {
+      setDonationNote(note);
+    }
 
     try {
       let pubKey = publicKey;
@@ -170,12 +196,25 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
       <View
         style={[
           styles.header,
-          {paddingTop: insets.top + 12, backgroundColor: colors.background, borderBottomColor: colors.glassBorder},
+          {
+            paddingTop: insets.top + 12,
+            backgroundColor: colors.background,
+            borderBottomColor: colors.glassBorder,
+          },
         ]}>
-        <Text style={[styles.headerBrand, {color: colors.textPrimary, opacity: hideHeaderBrand ? 0 : 1}]}>Glimpse</Text>
+        <Text
+          style={[
+            styles.headerBrand,
+            {color: colors.textPrimary, opacity: hideHeaderBrand ? 0 : 1},
+          ]}>
+          Glimpse
+        </Text>
         <TouchableOpacity
           style={styles.helpButton}
-          onPress={() => { triggerHaptic('impactLight'); setShowOnboarding(true); }}
+          onPress={() => {
+            triggerHaptic('impactLight');
+            setShowOnboarding(true);
+          }}
           activeOpacity={0.7}
           hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
           <Text style={[styles.helpText, {color: colors.textTertiary}]}>?</Text>
@@ -187,13 +226,24 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
         <ScrollView
           ref={scrollRef}
           style={styles.scrollView}
-          contentContainerStyle={[styles.scrollContent, {paddingBottom: 100 + insets.bottom}]}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {paddingBottom: 100 + insets.bottom},
+          ]}
           showsVerticalScrollIndicator={false}>
           {activeTab === 'give' && (
             <>
               {/* Tagline */}
-              <Animated.View style={[styles.heroArea, {opacity: heroEntrance.opacity, transform: [{translateY: heroEntrance.translateY}]}]}>
-                <Text style={[styles.heroTagline, {color: colors.textTertiary}]}>
+              <Animated.View
+                style={[
+                  styles.heroArea,
+                  {
+                    opacity: heroEntrance.opacity,
+                    transform: [{translateY: heroEntrance.translateY}],
+                  },
+                ]}>
+                <Text
+                  style={[styles.heroTagline, {color: colors.textTertiary}]}>
                   documenting kindness, creating connections
                 </Text>
               </Animated.View>
@@ -210,8 +260,16 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
               ))}
 
               {/* Something bigger — inline text */}
-              <Animated.View style={[giveStyles.biggerWrap, {opacity: ctaEntrance.opacity, transform: [{translateY: ctaEntrance.translateY}]}]}>
-                <Text style={[giveStyles.biggerText, {color: colors.textTertiary}]}>
+              <Animated.View
+                style={[
+                  giveStyles.biggerWrap,
+                  {
+                    opacity: ctaEntrance.opacity,
+                    transform: [{translateY: ctaEntrance.translateY}],
+                  },
+                ]}>
+                <Text
+                  style={[giveStyles.biggerText, {color: colors.textTertiary}]}>
                   Something bigger?{' '}
                 </Text>
                 <TouchableOpacity
@@ -220,7 +278,10 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
                     Linking.openURL('https://x.com/DerrickWKing');
                     triggerHaptic('impactLight');
                   }}>
-                  <Text style={[giveStyles.biggerLink, {color: colors.primary}]}>Let's talk {'\u2192'}</Text>
+                  <Text
+                    style={[giveStyles.biggerLink, {color: colors.primary}]}>
+                    Let's talk {'\u2192'}
+                  </Text>
                 </TouchableOpacity>
               </Animated.View>
             </>
@@ -228,7 +289,8 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
 
           {activeTab === 'glimpses' && (
             <View style={styles.glimpsesContainer}>
-              <Text style={[styles.glimpsesIntro, {color: colors.textTertiary}]}>
+              <Text
+                style={[styles.glimpsesIntro, {color: colors.textTertiary}]}>
                 Real stories. Real impact. Verified on-chain.
               </Text>
               {MOCK_GLIMPSES.map((glimpse, index) => (
@@ -249,7 +311,11 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
       <View
         style={[
           styles.bottomNav,
-          {paddingBottom: insets.bottom + 8, borderTopColor: colors.glassBorder, overflow: 'hidden'},
+          {
+            paddingBottom: insets.bottom + 8,
+            borderTopColor: colors.glassBorder,
+            overflow: 'hidden',
+          },
         ]}>
         <BlurView
           style={StyleSheet.absoluteFill}
@@ -262,16 +328,30 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
           {id: 'glimpses', Icon: GlimpsesNavIcon, label: 'Glimpses'},
           {id: 'profile', Icon: ProfileNavIcon, label: 'Profile'},
         ].map(({id, Icon, label}) => (
-          <TouchableOpacity key={id} style={styles.navItem} onPress={() => switchTab(id)} activeOpacity={0.7}>
-            <Icon active={activeTab === id} color={activeTab === id ? colors.primary : colors.textPrimary} />
+          <TouchableOpacity
+            key={id}
+            style={styles.navItem}
+            onPress={() => switchTab(id)}
+            activeOpacity={0.7}>
+            <Icon
+              active={activeTab === id}
+              color={activeTab === id ? colors.primary : colors.textPrimary}
+            />
             <Text
               style={[
                 styles.navLabel,
-                {color: activeTab === id ? colors.primary : colors.textTertiary},
+                {
+                  color:
+                    activeTab === id ? colors.primary : colors.textTertiary,
+                },
               ]}>
               {label}
             </Text>
-            {activeTab === id && <View style={[styles.navActiveDot, {backgroundColor: colors.primary}]} />}
+            {activeTab === id && (
+              <View
+                style={[styles.navActiveDot, {backgroundColor: colors.primary}]}
+              />
+            )}
           </TouchableOpacity>
         ))}
       </View>
@@ -374,14 +454,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   navItem: {alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8},
-  navLabel: {fontSize: Typography.caption.fontSize, fontWeight: '500', marginTop: 4, letterSpacing: Typography.caption.letterSpacing},
+  navLabel: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: '500',
+    marginTop: 4,
+    letterSpacing: Typography.caption.letterSpacing,
+  },
   navActiveDot: {width: 20, height: 4, borderRadius: 2, marginTop: 4},
 });
 
 // ─── Give Tab Styles ──────────────────────────────────────────────────────────
 
 const giveStyles = StyleSheet.create({
-  biggerWrap: {flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 24, marginBottom: 32},
+  biggerWrap: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 32,
+  },
   biggerText: {fontSize: Typography.body.fontSize, fontWeight: '300'},
   biggerLink: {fontSize: Typography.body.fontSize, fontWeight: '600'},
 });

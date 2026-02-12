@@ -20,11 +20,7 @@ import {
   createAssociatedTokenAccountInstruction,
   getAccount,
 } from '@solana/spl-token';
-import {
-  USDC_MINT,
-  USDC_DECIMALS,
-  RECIPIENT_WALLET,
-} from '../config/env';
+import {USDC_MINT, USDC_DECIMALS, RECIPIENT_WALLET} from '../config/env';
 import {buildDonateTransaction} from './escrow';
 import bs58 from 'bs58';
 
@@ -48,10 +44,7 @@ export async function buildUSDCTransferTransaction(
   recipientPublicKey: PublicKey,
   amount: number,
 ): Promise<Transaction> {
-  const senderATA = await getAssociatedTokenAddress(
-    USDC_MINT,
-    senderPublicKey,
-  );
+  const senderATA = await getAssociatedTokenAddress(USDC_MINT, senderPublicKey);
   const recipientATA = await getAssociatedTokenAddress(
     USDC_MINT,
     recipientPublicKey,
@@ -120,7 +113,10 @@ export async function transferUSDC(
         amount,
       );
     } catch (escrowErr) {
-      console.warn('Escrow build failed, falling back to direct transfer:', escrowErr);
+      console.warn(
+        'Escrow build failed, falling back to direct transfer:',
+        escrowErr,
+      );
       transaction = await buildUSDCTransferTransaction(
         connection,
         senderPublicKey,

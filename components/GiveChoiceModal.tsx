@@ -66,8 +66,18 @@ export default function GiveChoiceModal({
       scaleAnim.setValue(0.9);
       opacityAnim.setValue(0);
       Animated.parallel([
-        Animated.spring(scaleAnim, {toValue: 1, useNativeDriver: true, friction: 8, tension: 65}),
-        Animated.timing(opacityAnim, {toValue: 1, duration: 200, easing: EASE_OUT, useNativeDriver: true}),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          friction: 8,
+          tension: 65,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 200,
+          easing: EASE_OUT,
+          useNativeDriver: true,
+        }),
       ]).start();
 
       // Animate progress bar after modal entrance
@@ -85,19 +95,33 @@ export default function GiveChoiceModal({
 
   const handleClose = () => {
     Animated.parallel([
-      Animated.timing(scaleAnim, {toValue: 0.9, duration: 150, easing: EASE_IN, useNativeDriver: true}),
-      Animated.timing(opacityAnim, {toValue: 0, duration: 150, easing: EASE_IN, useNativeDriver: true}),
+      Animated.timing(scaleAnim, {
+        toValue: 0.9,
+        duration: 150,
+        easing: EASE_IN,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 0,
+        duration: 150,
+        easing: EASE_IN,
+        useNativeDriver: true,
+      }),
     ]).start(() => onClose());
   };
 
   const handleFundFull = () => {
-    if (!need) return;
+    if (!need) {
+      return;
+    }
     triggerHaptic('impactMedium');
     onSelectAmount(need.amount);
   };
 
   const handleChipIn = () => {
-    if (!isChipInValid) return;
+    if (!isChipInValid) {
+      return;
+    }
     triggerHaptic('impactMedium');
     onSelectAmount(chipInAmount);
   };
@@ -117,16 +141,28 @@ export default function GiveChoiceModal({
   const handleCustomChange = (text: string) => {
     const cleaned = text.replace(/[^0-9]/g, '');
     const num = parseInt(cleaned, 10);
-    if (!isNaN(num) && num > 10000) return;
+    if (!isNaN(num) && num > 10000) {
+      return;
+    }
     setCustomAmount(cleaned);
   };
 
-  if (!need) return null;
+  if (!need) {
+    return null;
+  }
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={handleClose}>
       <Animated.View style={[modalStyles.overlay, {opacity: opacityAnim}]}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleClose} />
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={handleClose}
+        />
         <Animated.View style={{transform: [{scale: scaleAnim}]}}>
           <GlassCard style={{borderRadius: 20}}>
             <View style={modalStyles.cardContent}>
@@ -138,7 +174,11 @@ export default function GiveChoiceModal({
               {/* Progress bar — only show if there's funding */}
               {hasFunding && (
                 <View style={modalStyles.progressSection}>
-                  <View style={[modalStyles.progressTrack, {backgroundColor: colors.glassBorder}]}>
+                  <View
+                    style={[
+                      modalStyles.progressTrack,
+                      {backgroundColor: colors.glassBorder},
+                    ]}>
                     <Animated.View
                       style={[
                         modalStyles.progressFill,
@@ -152,7 +192,11 @@ export default function GiveChoiceModal({
                       ]}
                     />
                   </View>
-                  <Text style={[modalStyles.progressLabel, {color: colors.textTertiary}]}>
+                  <Text
+                    style={[
+                      modalStyles.progressLabel,
+                      {color: colors.textTertiary},
+                    ]}>
                     ${need.funded} of ${need.amount} raised
                   </Text>
                 </View>
@@ -160,19 +204,43 @@ export default function GiveChoiceModal({
 
               {/* Fund the entire need — hero button */}
               <TouchableOpacity
-                style={[modalStyles.fundFullButton, {backgroundColor: colors.primary, shadowColor: colors.shadow}]}
+                style={[
+                  modalStyles.fundFullButton,
+                  {backgroundColor: colors.primary, shadowColor: colors.shadow},
+                ]}
                 onPress={handleFundFull}
                 activeOpacity={0.8}>
-                <Text style={[modalStyles.fundFullText, {color: colors.textOnPrimary}]}>
-                  Fund the entire need {'\u2014'} ${need.amount.toLocaleString()}
+                <Text
+                  style={[
+                    modalStyles.fundFullText,
+                    {color: colors.textOnPrimary},
+                  ]}>
+                  Fund the entire need {'\u2014'} $
+                  {need.amount.toLocaleString()}
                 </Text>
               </TouchableOpacity>
 
               {/* "or chip in" divider */}
               <View style={modalStyles.dividerRow}>
-                <View style={[modalStyles.dividerLine, {backgroundColor: colors.border}]} />
-                <Text style={[modalStyles.dividerText, {color: colors.textTertiary}]}>or chip in</Text>
-                <View style={[modalStyles.dividerLine, {backgroundColor: colors.border}]} />
+                <View
+                  style={[
+                    modalStyles.dividerLine,
+                    {backgroundColor: colors.border},
+                  ]}
+                />
+                <Text
+                  style={[
+                    modalStyles.dividerText,
+                    {color: colors.textTertiary},
+                  ]}>
+                  or chip in
+                </Text>
+                <View
+                  style={[
+                    modalStyles.dividerLine,
+                    {backgroundColor: colors.border},
+                  ]}
+                />
               </View>
 
               {/* Chip-in presets */}
@@ -194,10 +262,20 @@ export default function GiveChoiceModal({
 
               {/* Custom amount input */}
               {chipMode === 'custom' && (
-                <View style={[modalStyles.customRow, {borderColor: colors.border}]}>
-                  <Text style={[modalStyles.customDollar, {color: colors.textTertiary}]}>$</Text>
+                <View
+                  style={[modalStyles.customRow, {borderColor: colors.border}]}>
+                  <Text
+                    style={[
+                      modalStyles.customDollar,
+                      {color: colors.textTertiary},
+                    ]}>
+                    $
+                  </Text>
                   <TextInput
-                    style={[modalStyles.customInput, {color: colors.textPrimary}]}
+                    style={[
+                      modalStyles.customInput,
+                      {color: colors.textPrimary},
+                    ]}
                     value={customAmount}
                     onChangeText={handleCustomChange}
                     keyboardType="numeric"
@@ -209,23 +287,33 @@ export default function GiveChoiceModal({
               )}
 
               {/* Funding note */}
-              <Text style={[modalStyles.fundingNote, {color: colors.textTertiary}]}>
-                Chip-ins combine to fully fund the need. Any excess goes to the next cause.
+              <Text
+                style={[modalStyles.fundingNote, {color: colors.textTertiary}]}>
+                Chip-ins combine to fully fund the need. Any excess goes to the
+                next cause.
               </Text>
 
               {/* Chip In button — appears as text until amount selected */}
               {isChipInValid ? (
                 <TouchableOpacity
-                  style={[modalStyles.chipInButton, {borderColor: colors.primary}]}
+                  style={[
+                    modalStyles.chipInButton,
+                    {borderColor: colors.primary},
+                  ]}
                   onPress={handleChipIn}
                   activeOpacity={0.8}>
-                  <Text style={[modalStyles.chipInText, {color: colors.primary}]}>
+                  <Text
+                    style={[modalStyles.chipInText, {color: colors.primary}]}>
                     Chip In ${chipInAmount}
                   </Text>
                 </TouchableOpacity>
               ) : (
                 <View style={modalStyles.chipInPlaceholder}>
-                  <Text style={[modalStyles.chipInHint, {color: colors.textTertiary}]}>
+                  <Text
+                    style={[
+                      modalStyles.chipInHint,
+                      {color: colors.textTertiary},
+                    ]}>
                     Select an amount above
                   </Text>
                 </View>

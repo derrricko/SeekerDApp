@@ -11,9 +11,18 @@ export const springConfig = {useNativeDriver: true, speed: 50, bounciness: 4};
 
 export const smoothLayout = {
   duration: 250,
-  update: {type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity},
-  create: {type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity},
-  delete: {type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity},
+  update: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+  create: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+  delete: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
 };
 
 export function usePressAnimation() {
@@ -34,8 +43,20 @@ export function useEntrance(delay: number = 0) {
 
   useEffect(() => {
     const anim = Animated.parallel([
-      Animated.timing(opacity, {toValue: 1, duration: ENTRANCE_DURATION, delay, easing: EASE_OUT, useNativeDriver: true}),
-      Animated.timing(translateY, {toValue: 0, duration: ENTRANCE_DURATION, delay, easing: EASE_OUT, useNativeDriver: true}),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: ENTRANCE_DURATION,
+        delay,
+        easing: EASE_OUT,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: ENTRANCE_DURATION,
+        delay,
+        easing: EASE_OUT,
+        useNativeDriver: true,
+      }),
     ]);
     anim.start();
     return () => anim.stop();

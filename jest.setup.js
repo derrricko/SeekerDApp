@@ -7,8 +7,8 @@ console.error = (...args) => {
   if (
     typeof args[0] === 'string' &&
     (args[0].includes('after the Jest environment has been torn down') ||
-     args[0].includes('after it has been torn down') ||
-     args[0].includes('not wrapped in act'))
+      args[0].includes('after it has been torn down') ||
+      args[0].includes('not wrapped in act'))
   ) {
     return;
   }
@@ -23,7 +23,7 @@ jest.mock('react-native-haptic-feedback', () => ({
 jest.mock('@react-native-community/blur', () => {
   const React = require('react');
   return {
-    BlurView: (props) => React.createElement('View', props, props.children),
+    BlurView: props => React.createElement('View', props, props.children),
   };
 });
 
@@ -49,7 +49,7 @@ jest.mock('react-native-safe-area-context', () => {
 
 // Mock Solana web3.js to avoid ESM/mjs issues
 jest.mock('@solana/web3.js', () => {
-  const mockPubkey = (key) => ({
+  const mockPubkey = key => ({
     toBase58: () => String(key),
     toString: () => String(key),
     toBuffer: () => Buffer.alloc(32),
@@ -78,8 +78,12 @@ jest.mock('@solana/spl-token', () => ({
     toString: () => 'mockATA',
   })),
   createTransferInstruction: jest.fn(),
-  TOKEN_PROGRAM_ID: {toBase58: () => 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'},
-  ASSOCIATED_TOKEN_PROGRAM_ID: {toBase58: () => 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'},
+  TOKEN_PROGRAM_ID: {
+    toBase58: () => 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+  },
+  ASSOCIATED_TOKEN_PROGRAM_ID: {
+    toBase58: () => 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+  },
 }));
 
 jest.mock('@solana-mobile/mobile-wallet-adapter-protocol-web3js', () => ({

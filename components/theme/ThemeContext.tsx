@@ -1,4 +1,10 @@
-import React, {createContext, useContext, useState, useEffect, ReactNode} from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 import {useColorScheme, Appearance} from 'react-native';
 import {LightColors, DarkColors, ThemeColors} from './ThemeColors';
 
@@ -28,9 +34,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
   // Determine if we should use dark mode
   const isDark =
-    mode === 'system'
-      ? systemColorScheme === 'dark'
-      : mode === 'dark';
+    mode === 'system' ? systemColorScheme === 'dark' : mode === 'dark';
 
   const colors = isDark ? DarkColors : LightColors;
 
@@ -48,7 +52,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   }, [mode]);
 
   const toggleMode = () => {
-    setMode((current) => {
+    setMode(current => {
       switch (current) {
         case 'light':
           return 'dark';

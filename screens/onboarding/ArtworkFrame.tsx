@@ -36,9 +36,7 @@ export default function ArtworkFrame({isVisible}: ArtworkFrameProps) {
   return (
     <View style={styles.wrapper}>
       {/* Warm glow behind frame */}
-      <View
-        style={[styles.glow, {backgroundColor: colors.primaryLight}]}
-      />
+      <View style={[styles.glow, {backgroundColor: colors.primaryLight}]} />
       <Animated.View
         style={[
           styles.frameOuter,
@@ -61,21 +59,18 @@ export default function ArtworkFrame({isVisible}: ArtworkFrameProps) {
             style={styles.image}
             resizeMode="cover"
           />
-          <View
-            style={[styles.wash, {backgroundColor: colors.background}]}
-          />
-          <View
-            style={[styles.tint, {backgroundColor: colors.primaryLight}]}
-          />
-          <View
-            style={[styles.vignette, {borderColor: colors.border}]}
-          />
+          <View style={[styles.wash, {backgroundColor: colors.background}]} />
+          <View style={[styles.tint, {backgroundColor: colors.primaryLight}]} />
+          <View style={[styles.vignette, {borderColor: colors.border}]} />
         </View>
       </Animated.View>
       <Text
         style={[
           styles.caption,
-          {color: colors.textTertiary, fontFamily: Typography.display.fontFamily},
+          {
+            color: colors.textTertiary,
+            fontFamily: Typography.display.fontFamily,
+          },
         ]}>
         documenting kindness
       </Text>

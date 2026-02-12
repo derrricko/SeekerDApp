@@ -11,7 +11,11 @@ interface PresetChipProps {
   onPress: () => void;
 }
 
-export default function PresetChip({label, selected, onPress}: PresetChipProps) {
+export default function PresetChip({
+  label,
+  selected,
+  onPress,
+}: PresetChipProps) {
   const {colors} = useTheme();
   const chipScale = useRef(new Animated.Value(1)).current;
 

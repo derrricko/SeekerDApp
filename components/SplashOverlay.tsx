@@ -93,11 +93,9 @@ export default function SplashOverlay({onAnimationDone}: SplashOverlayProps) {
       useNativeDriver: true,
     });
 
-    Animated.parallel([brandEntrance, autoTransition, revealHome]).start(
-      () => {
-        onAnimationDone();
-      },
-    );
+    Animated.parallel([brandEntrance, autoTransition, revealHome]).start(() => {
+      onAnimationDone();
+    });
 
     return () => {
       brandOpacity.stopAnimation();
@@ -166,9 +164,7 @@ export default function SplashOverlay({onAnimationDone}: SplashOverlayProps) {
           <View
             style={[styles.artTint, {backgroundColor: colors.primaryLight}]}
           />
-          <View
-            style={[styles.artVignette, {borderColor: colors.border}]}
-          />
+          <View style={[styles.artVignette, {borderColor: colors.border}]} />
         </View>
       </Animated.View>
 
@@ -179,15 +175,10 @@ export default function SplashOverlay({onAnimationDone}: SplashOverlayProps) {
           {
             top: brandStartY - 14, // center the 28px text at hands Y
             opacity: brandOpacity,
-            transform: [
-              {translateY: brandTranslateY},
-              {scale: combinedScale},
-            ],
+            transform: [{translateY: brandTranslateY}, {scale: combinedScale}],
           },
         ]}>
-        <Text style={[styles.brand, {color: colors.textPrimary}]}>
-          Glimpse
-        </Text>
+        <Text style={[styles.brand, {color: colors.textPrimary}]}>Glimpse</Text>
       </Animated.View>
     </View>
   );

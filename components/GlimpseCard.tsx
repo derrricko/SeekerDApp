@@ -21,22 +21,50 @@ export default function GlimpseCard({glimpse, delay}: GlimpseCardProps) {
 
   useEffect(() => {
     const anim = Animated.parallel([
-      Animated.timing(opacity, {toValue: 1, duration: ENTRANCE_DURATION, delay, easing: EASE_OUT, useNativeDriver: true}),
-      Animated.timing(translateY, {toValue: 0, duration: ENTRANCE_DURATION, delay, easing: EASE_OUT, useNativeDriver: true}),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: ENTRANCE_DURATION,
+        delay,
+        easing: EASE_OUT,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: ENTRANCE_DURATION,
+        delay,
+        easing: EASE_OUT,
+        useNativeDriver: true,
+      }),
     ]);
     anim.start();
     return () => anim.stop();
   }, []);
 
   return (
-    <Animated.View style={[glimpseStyles.wrapper, {opacity, transform: [{translateY}]}]}>
+    <Animated.View
+      style={[glimpseStyles.wrapper, {opacity, transform: [{translateY}]}]}>
       <GlassCard variant="secondary">
         {/* Image placeholder */}
-        <View style={[glimpseStyles.imagePlaceholder, {backgroundColor: colors.primaryLight, borderColor: colors.glassBorder}]}>
-          <Text style={[glimpseStyles.imagePlaceholderIcon, {color: colors.primary}]}>
+        <View
+          style={[
+            glimpseStyles.imagePlaceholder,
+            {
+              backgroundColor: colors.primaryLight,
+              borderColor: colors.glassBorder,
+            },
+          ]}>
+          <Text
+            style={[
+              glimpseStyles.imagePlaceholderIcon,
+              {color: colors.primary},
+            ]}>
             {'\uD83D\uDDBC'}
           </Text>
-          <Text style={[glimpseStyles.imagePlaceholderText, {color: colors.textTertiary}]}>
+          <Text
+            style={[
+              glimpseStyles.imagePlaceholderText,
+              {color: colors.textTertiary},
+            ]}>
             Photo proof
           </Text>
         </View>
@@ -59,7 +87,11 @@ export default function GlimpseCard({glimpse, delay}: GlimpseCardProps) {
           <Text style={[glimpseStyles.date, {color: colors.textTertiary}]}>
             {glimpse.date}
           </Text>
-          <View style={[glimpseStyles.verifiedBadge, {backgroundColor: colors.primaryLight}]}>
+          <View
+            style={[
+              glimpseStyles.verifiedBadge,
+              {backgroundColor: colors.primaryLight},
+            ]}>
             <Text style={[glimpseStyles.verifiedText, {color: colors.accent}]}>
               Verified on Solana
             </Text>
