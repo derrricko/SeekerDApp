@@ -73,6 +73,9 @@ coverage/
 target/
 test-ledger/
 
+# Supabase
+.supabase/
+
 # Other generated
 link-assets-manifest.json
 android/link-assets-manifest.json

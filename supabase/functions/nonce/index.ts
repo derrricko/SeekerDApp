@@ -47,6 +47,26 @@ serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // ── Rate limiting: cap nonce creation at 200/min ──────────────────────
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
+    const { count, error: countError } = await supabase
+      .from("nonces")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", oneMinuteAgo);
+
+    if (countError) {
+      console.error("Rate limit check failed:", countError);
+      // Fail open — don't block legitimate requests on count errors
+    } else if (count !== null && count >= 200) {
+      return new Response(
+        JSON.stringify({ error: "Too many requests — try again shortly" }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     // Generate a 32-byte cryptographic nonce
     const randomBytes = new Uint8Array(32);
     crypto.getRandomValues(randomBytes);
@@ -58,10 +78,14 @@ serve(async (req: Request) => {
     ).toISOString();
 
     // Purge expired nonces to keep the table clean
-    await supabase
+    const { error: purgeError } = await supabase
       .from("nonces")
       .delete()
       .lt("expires_at", new Date().toISOString());
+
+    if (purgeError) {
+      console.warn("Failed to purge expired nonces:", purgeError);
+    }
 
     // Store the nonce
     const { error: insertError } = await supabase

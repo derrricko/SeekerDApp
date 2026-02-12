@@ -10,6 +10,10 @@ import {SUPABASE_URL, SUPABASE_ANON_KEY} from '../config/env';
  * Fetch a fresh nonce from the nonce Edge Function.
  */
 export async function fetchNonce(): Promise<string> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error('Supabase not configured');
+  }
+
   const res = await fetch(`${SUPABASE_URL}/functions/v1/nonce`, {
     method: 'POST',
     headers: {
@@ -34,6 +38,10 @@ export async function verifySIWS(
   signature: string,
   publicKey: string,
 ): Promise<{token: string; profile: any}> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error('Supabase not configured');
+  }
+
   const res = await fetch(`${SUPABASE_URL}/functions/v1/siws-verify`, {
     method: 'POST',
     headers: {

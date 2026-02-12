@@ -152,7 +152,7 @@ export const NEEDS: Need[] = [
     description:
       "For someone living on the street, a hot shower and clean clothes aren't just hygiene\u2014they're dignity. The feeling of being human again. Walking into a room without the weight of shame.",
     partner: 'BeHeard Movement \u00B7 Tulsa, OK',
-    funded: 18,
+    funded: 0,
     icon: 'shower',
   },
   {
@@ -161,7 +161,7 @@ export const NEEDS: Need[] = [
     title: 'Groceries for a single mom',
     description:
       "She skips meals so her kids don't have to. Your gift fills a fridge, quiets the worry at 2am, and lets a mom sit at the table with her family instead of staring at an empty one.",
-    funded: 45,
+    funded: 0,
     icon: 'basket-shopping',
   },
   {
@@ -179,7 +179,7 @@ export const NEEDS: Need[] = [
     title: 'New tires for a family in need',
     description:
       'She white-knuckles the steering wheel every morning, praying the bald tires hold\u2014to get her kids to school, herself to work, and everyone home safe. New tires mean she can stop holding her breath.',
-    funded: 125,
+    funded: 0,
     icon: 'car',
   },
   {

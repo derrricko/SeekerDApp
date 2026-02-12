@@ -183,7 +183,6 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
       recordTransaction(
         pubKey.toBase58(),
         signature,
-        confirmAmount,
         selectedNeed?.id,
         note,
       ).catch(() => {});

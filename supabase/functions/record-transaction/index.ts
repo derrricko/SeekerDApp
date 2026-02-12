@@ -85,7 +85,7 @@ async function fetchSolanaTransaction(
       method: "getTransaction",
       params: [
         txSignature,
-        { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 },
+        { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "confirmed" },
       ],
     }),
   });
@@ -210,8 +210,23 @@ serve(async (req: Request) => {
       return errorResponse("Missing or invalid tx_signature", 400);
     }
 
+    // Validate tx_signature format (base58, 86-88 chars)
+    if (!/^[1-9A-HJ-NP-Za-km-z]{86,88}$/.test(tx_signature)) {
+      return errorResponse("Invalid tx_signature format", 400);
+    }
+
     if (!wallet_address || typeof wallet_address !== "string") {
       return errorResponse("Missing or invalid wallet_address", 400);
+    }
+
+    // Validate wallet_address format (base58, 32-44 chars)
+    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet_address)) {
+      return errorResponse("Invalid wallet_address format", 400);
+    }
+
+    // Validate note length if provided
+    if (note && typeof note === "string" && note.length > 500) {
+      return errorResponse("Note must be 500 characters or fewer", 400);
     }
 
     // ── Authenticate the caller ──────────────────────────────────────────
@@ -349,6 +364,19 @@ serve(async (req: Request) => {
 
       console.error("Insert error:", insertError);
       throw new Error("Failed to insert transaction");
+    }
+
+    // ── Increment needs.funded counter ────────────────────────────────────
+    if (need_slug && typeof need_slug === "string") {
+      const { error: fundedError } = await supabase.rpc("increment_funded", {
+        slug_param: need_slug,
+        amount_param: amount,
+      });
+
+      if (fundedError) {
+        console.error("Failed to increment funded counter:", fundedError);
+        // Don't fail the request — the transaction is already recorded
+      }
     }
 
     // ── Return success ───────────────────────────────────────────────────

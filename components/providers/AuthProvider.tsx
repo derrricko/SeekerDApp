@@ -21,6 +21,7 @@ import React, {
 } from 'react';
 import {useWallet} from './WalletProvider';
 import {fetchNonce, verifySIWS, setSupabaseSession} from '../../services/auth';
+import {getSupabase} from '../../services/supabase';
 import {fetchProfile} from '../../services/profiles';
 import type {Profile} from '../../services/profiles';
 import {SUPABASE_URL} from '../../config/env';
@@ -35,10 +36,12 @@ interface AuthContextState {
   isAuthenticated: boolean;
   /** Last auth error message, if any */
   error: string | null;
+  /** Current auth token, or null if not authenticated */
+  authToken: string | null;
   /** Trigger SIWS auth flow */
   signInWithSolana: () => Promise<void>;
   /** Clear session */
-  signOut: () => void;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextState>({
@@ -46,6 +49,7 @@ const AuthContext = createContext<AuthContextState>({
   loading: false,
   isAuthenticated: false,
   error: null,
+  authToken: null,
   signInWithSolana: async () => {},
   signOut: () => {},
 });
@@ -55,10 +59,11 @@ export function AuthProvider({children}: {children: ReactNode}) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
-  const isAuthenticated = profile !== null;
+  const isAuthenticated = profile !== null && authToken !== null;
 
-  // When wallet connects, try to load existing profile
+  // When wallet connects, try to load existing profile (display only — does not authenticate)
   useEffect(() => {
     if (connected && publicKey && SUPABASE_URL) {
       fetchProfile(publicKey.toBase58())
@@ -66,6 +71,7 @@ export function AuthProvider({children}: {children: ReactNode}) {
         .catch(() => {});
     } else if (!connected) {
       setProfile(null);
+      setAuthToken(null);
     }
   }, [connected, publicKey]);
 
@@ -107,6 +113,7 @@ export function AuthProvider({children}: {children: ReactNode}) {
 
       // 5. Set session on Supabase client
       await setSupabaseSession(token);
+      setAuthToken(token);
 
       // 6. Update profile state
       setProfile(serverProfile);
@@ -128,8 +135,13 @@ export function AuthProvider({children}: {children: ReactNode}) {
     }
   }, [walletSignIn, disconnect]);
 
-  const signOut = useCallback(() => {
+  const signOut = useCallback(async () => {
     setProfile(null);
+    setAuthToken(null);
+    const supabase = getSupabase();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
   }, []);
 
   return (
@@ -141,6 +153,7 @@ export function AuthProvider({children}: {children: ReactNode}) {
         error,
         signInWithSolana,
         signOut,
+        authToken,
       }}>
       {children}
     </AuthContext.Provider>

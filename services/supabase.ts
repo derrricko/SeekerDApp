@@ -23,7 +23,7 @@ export function getSupabase(): SupabaseClient | null {
       auth: {
         storage: AsyncStorage as any,
         autoRefreshToken: false,
-        persistSession: true,
+        persistSession: false,
         detectSessionInUrl: false,
       },
     });

@@ -313,8 +313,8 @@ Seeds: `["need", slug_bytes]` under the escrow program
 
 ### Supabase
 - **Project URL**: `https://knvagydrbbvuumabmxcg.supabase.co`
-- Database migrations exist in `supabase/migrations/` (001-004) — NOT YET PUSHED
-- Edge functions exist in `supabase/functions/` (nonce, siws-verify) — NOT YET DEPLOYED
+- Database migrations in `supabase/migrations/` (001-007)
+- Edge functions in `supabase/functions/` (nonce, siws-verify, record-transaction)
 
 ## Escrow Instruction Building (IMPORTANT)
 

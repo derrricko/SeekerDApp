@@ -29,7 +29,6 @@ export interface TransactionRecord {
 export async function recordTransaction(
   walletAddress: string,
   txSignature: string,
-  amount: number,
   needSlug?: string,
   note?: string,
 ): Promise<void> {
@@ -37,34 +36,62 @@ export async function recordTransaction(
     return;
   }
 
-  try {
-    // Get the auth token from the Supabase session (set during SIWS auth)
-    const supabase = getSupabase();
-    const session = supabase
-      ? (await supabase.auth.getSession()).data.session
-      : null;
-    const token = session?.access_token;
+  // Get the auth token from the Supabase session
+  const supabase = getSupabase();
+  const session = supabase
+    ? (await supabase.auth.getSession()).data.session
+    : null;
+  const token = session?.access_token;
 
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/record-transaction`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: SUPABASE_ANON_KEY,
-        ...(token ? {Authorization: `Bearer ${token}`} : {}),
-      },
-      body: JSON.stringify({
-        tx_signature: txSignature,
-        wallet_address: walletAddress,
-        need_slug: needSlug,
-        note,
-      }),
-    });
+  if (!token) {
+    console.warn('No auth session — skipping transaction recording');
+    return;
+  }
 
-    if (!res.ok) {
-      console.warn('Failed to record transaction:', await res.text());
+  const maxRetries = 3;
+  const delays = [1000, 2000, 4000]; // exponential backoff
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/record-transaction`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tx_signature: txSignature,
+          wallet_address: walletAddress,
+          need_slug: needSlug,
+          note,
+        }),
+      });
+
+      // 409 = already recorded — treat as success
+      if (res.ok || res.status === 409) {
+        return;
+      }
+
+      // 4xx errors (except 404/409) are not retryable
+      if (res.status >= 400 && res.status < 500 && res.status !== 404) {
+        console.warn('Failed to record transaction:', await res.text());
+        return;
+      }
+
+      // 404 or 5xx — retry
+      if (attempt < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, delays[attempt]));
+      } else {
+        console.warn('Failed to record transaction after retries:', await res.text());
+      }
+    } catch {
+      // Network error — retry
+      if (attempt < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, delays[attempt]));
+      }
+      // Fire-and-forget — transaction is already on-chain
     }
-  } catch {
-    // Fire-and-forget — transaction is already on-chain
   }
 }
 

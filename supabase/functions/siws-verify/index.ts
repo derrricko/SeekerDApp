@@ -21,6 +21,7 @@ import {
   create,
   getNumericDate,
 } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
+import { encode as encodeBase58 } from "https://deno.land/std@0.208.0/encoding/base58.ts";
 
 const JWT_EXPIRY_HOURS = 24;
 
@@ -170,38 +171,18 @@ serve(async (req: Request) => {
       );
     }
 
-    // Fetch the nonce row and check it exists + hasn't expired
-    const { data: nonceRow, error: nonceError } = await supabase
-      .from("nonces")
-      .select("*")
-      .eq("nonce", nonce)
-      .single();
+    // Atomically consume the nonce (single-use) — prevents TOCTOU race conditions
+    const { data: consumed } = await supabase.rpc("consume_nonce", { p_nonce: nonce });
 
-    if (nonceError || !nonceRow) {
+    if (!consumed) {
       return new Response(
-        JSON.stringify({ error: "Invalid or unknown nonce" }),
+        JSON.stringify({ error: "Invalid, expired, or already-used nonce" }),
         {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
     }
-
-    if (new Date(nonceRow.expires_at) < new Date()) {
-      // Clean up expired nonce
-      await supabase.from("nonces").delete().eq("id", nonceRow.id);
-
-      return new Response(
-        JSON.stringify({ error: "Nonce has expired" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    // Consume the nonce (single-use) — delete it so it can't be replayed
-    await supabase.from("nonces").delete().eq("id", nonceRow.id);
 
     // ── Derive wallet address from the public key ────────────────────────
     // The publicKey from the client is the base64-encoded Solana public key.
@@ -224,6 +205,30 @@ serve(async (req: Request) => {
         }),
         {
           status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // ── Validate SIWS domain ──────────────────────────────────────────────
+    // Prevent cross-app replay by checking the domain in the SIWS message
+    if (!messageText.includes("glimpse.give")) {
+      return new Response(
+        JSON.stringify({ error: "SIWS domain mismatch — message must reference glimpse.give" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // ── Verify public key matches wallet address ──────────────────────────
+    const derivedAddress = encodeBase58(publicKeyBytes);
+    if (derivedAddress !== walletAddress) {
+      return new Response(
+        JSON.stringify({ error: "Public key does not match wallet address" }),
+        {
+          status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );

@@ -46,4 +46,4 @@ export const RECIPIENT_WALLET = new PublicKey(
 
 export const SUPABASE_URL = 'https://knvagydrbbvuumabmxcg.supabase.co';
 export const SUPABASE_ANON_KEY =
-  'sb_publishable_INS4usT4WBv9Z5nZ2Y-i2g_RZC7WG9N';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtudmFneWRyYmJ2dXVtYWJteGNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjU2NTMsImV4cCI6MjA4NjQwMTY1M30._YRE0u_16AGeHGsgmSHHIa9J5O6ZZQHo3gFNBFiMycc';
