@@ -7,7 +7,7 @@
  */
 
 import {getSupabase} from './supabase';
-import {SUPABASE_URL} from '../config/env';
+import {SUPABASE_URL, SUPABASE_ANON_KEY} from '../config/env';
 
 export interface TransactionRecord {
   id: string;
@@ -38,13 +38,23 @@ export async function recordTransaction(
   }
 
   try {
+    // Get the auth token from the Supabase session (set during SIWS auth)
+    const supabase = getSupabase();
+    const session = supabase
+      ? (await supabase.auth.getSession()).data.session
+      : null;
+    const token = session?.access_token;
+
     const res = await fetch(`${SUPABASE_URL}/functions/v1/record-transaction`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        ...(token ? {Authorization: `Bearer ${token}`} : {}),
+      },
       body: JSON.stringify({
         tx_signature: txSignature,
         wallet_address: walletAddress,
-        amount,
         need_slug: needSlug,
         note,
       }),

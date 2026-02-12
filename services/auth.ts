@@ -4,7 +4,7 @@
  */
 
 import {getSupabase} from './supabase';
-import {SUPABASE_URL} from '../config/env';
+import {SUPABASE_URL, SUPABASE_ANON_KEY} from '../config/env';
 
 /**
  * Fetch a fresh nonce from the nonce Edge Function.
@@ -12,7 +12,10 @@ import {SUPABASE_URL} from '../config/env';
 export async function fetchNonce(): Promise<string> {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/nonce`, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_ANON_KEY,
+    },
   });
 
   if (!res.ok) {
@@ -33,7 +36,10 @@ export async function verifySIWS(
 ): Promise<{token: string; profile: any}> {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/siws-verify`, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_ANON_KEY,
+    },
     body: JSON.stringify({message, signature, publicKey}),
   });
 

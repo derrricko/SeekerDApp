@@ -22,7 +22,7 @@ export function getSupabase(): SupabaseClient | null {
     _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
         storage: AsyncStorage as any,
-        autoRefreshToken: true,
+        autoRefreshToken: false,
         persistSession: true,
         detectSessionInUrl: false,
       },
