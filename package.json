@@ -55,6 +55,11 @@
     "typescript": "~5.3.0"
   },
   "jest": {
-    "preset": "react-native"
+    "preset": "react-native",
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@react-native|react-native|@solana|@solana-mobile|@coral-xyz|@react-native-community|@react-native-async-storage|react-native-get-random-values|react-native-haptic-feedback|react-native-safe-area-context|react-native-url-polyfill|@supabase)/)"
+    ],
+    "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "mjs", "json", "node"],
+    "setupFiles": ["./jest.setup.js"]
   }
 }
