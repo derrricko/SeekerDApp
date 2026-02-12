@@ -15,6 +15,7 @@ import {useTheme, Typography} from './theme';
 import GlassCard from './GlassCard';
 import {usePressAnimation, EASE_OUT, EASE_IN} from '../utils/animations';
 import {triggerHaptic} from '../utils/haptics';
+import {getExplorerTxUrl} from '../utils/explorer';
 
 const DISPLAY_FONT = Platform.OS === 'ios' ? 'Georgia' : 'serif';
 const NOTE_MAX_LENGTH = 280;
@@ -271,7 +272,8 @@ export default function ConfirmModal({
                       {color: colors.textPrimary, opacity: messageOpacity},
                     ]}>
                     Thank you for your generosity. You will receive receipts and
-                    photos soon.
+                    photos soon.{'\n\n'}This transaction was on Solana devnet
+                    (testnet).
                   </Animated.Text>
 
                   {/* Buttons — fade in last */}
@@ -285,9 +287,7 @@ export default function ConfirmModal({
                         activeOpacity={0.7}
                         style={modalStyles.txHashWrap}
                         onPress={() =>
-                          Linking.openURL(
-                            `https://explorer.solana.com/tx/${txSignature}?cluster=devnet`,
-                          )
+                          Linking.openURL(getExplorerTxUrl(txSignature))
                         }>
                         <Text
                           style={[
@@ -486,6 +486,7 @@ export default function ConfirmModal({
                     ]}>
                     100% of your gift goes to the need. Any amount raised beyond
                     the goal will be applied to the next cause or refunded.
+                    {'\n\n'}Devnet pilot — no real funds are used.
                   </Text>
                   <View style={modalStyles.buttonRow}>
                     <TouchableOpacity

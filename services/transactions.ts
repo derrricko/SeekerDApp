@@ -1,5 +1,9 @@
 /**
  * Transaction recording and history service.
+ *
+ * Recording goes through the `record-transaction` edge function, which
+ * verifies the transaction on-chain before inserting. This prevents
+ * fabricated tx signatures from being stored.
  */
 
 import {getSupabase} from './supabase';
@@ -16,7 +20,11 @@ export interface TransactionRecord {
 }
 
 /**
- * Record a completed donation transaction.
+ * Record a completed donation transaction via server-side verification.
+ *
+ * Calls the `record-transaction` edge function which fetches the
+ * transaction from Solana RPC, verifies the signer and USDC involvement,
+ * then inserts into the `transactions` table with the service-role client.
  */
 export async function recordTransaction(
   walletAddress: string,
@@ -29,31 +37,24 @@ export async function recordTransaction(
     return;
   }
 
-  const supabase = getSupabase();
-  if (!supabase) {
-    return;
-  }
-
   try {
-    let needId: string | null = null;
-    if (needSlug) {
-      const {data} = await supabase
-        .from('needs')
-        .select('id')
-        .eq('slug', needSlug)
-        .single();
-      needId = data?.id ?? null;
-    }
-
-    await supabase.from('transactions').insert({
-      wallet_address: walletAddress,
-      need_id: needId,
-      tx_signature: txSignature,
-      amount,
-      note: note || null,
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/record-transaction`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        tx_signature: txSignature,
+        wallet_address: walletAddress,
+        amount,
+        need_slug: needSlug,
+        note,
+      }),
     });
+
+    if (!res.ok) {
+      console.warn('Failed to record transaction:', await res.text());
+    }
   } catch {
-    // Silently fail — transaction is already on-chain
+    // Fire-and-forget — transaction is already on-chain
   }
 }
 

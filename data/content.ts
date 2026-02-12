@@ -66,6 +66,12 @@ export const HOW_CONTENT = {
 
 export const FAQ_DATA = [
   {
+    id: 'devnet',
+    question: 'Is this using real money?',
+    answer:
+      'Not yet. Glimpse is currently running on Solana devnet — a test network. No real funds are involved. When we launch on mainnet, your gifts will use real USDC.',
+  },
+  {
     id: 'verified',
     question: 'How are needs verified?',
     answer:
@@ -257,5 +263,10 @@ export const ONBOARDING_SLIDES = [
     id: 'scale',
     headline: 'Every dollar counts',
     body: '$10 or $10,000\u2014your generosity is more effective here than anywhere else.',
+  },
+  {
+    id: 'devnet',
+    headline: 'Devnet pilot',
+    body: 'You\u2019re joining our early preview on Solana\u2019s test network. No real money is involved yet \u2014 but everything else is real.',
   },
 ];

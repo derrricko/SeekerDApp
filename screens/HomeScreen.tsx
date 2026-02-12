@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  ActivityIndicator,
   Linking,
   Platform,
   UIManager,
@@ -17,12 +18,15 @@ import {useWallet} from '../components/providers/WalletProvider';
 import {useConnection} from '../components/providers/ConnectionProvider';
 import {useNeeds} from '../hooks/useNeeds';
 import type {Need} from '../data/content';
-import {MOCK_GLIMPSES} from '../data/content';
 import {transferUSDC, RECIPIENT_WALLET} from '../utils/transfer';
 import {handleMWAError, handleTransactionError} from '../utils/errors';
-import {recordTransaction} from '../services/transactions';
+import {
+  fetchMyTransactions,
+  recordTransaction,
+  TransactionRecord,
+} from '../services/transactions';
+import GlassCard from '../components/GlassCard';
 import NeedCard from '../components/NeedCard';
-import GlimpseCard from '../components/GlimpseCard';
 import GiveChoiceModal from '../components/GiveChoiceModal';
 import OnboardingModal from '../components/OnboardingModal';
 import ConfirmModal from '../components/ConfirmModal';
@@ -62,7 +66,20 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
   const {needs} = useNeeds();
   const [activeTab, setActiveTab] = useState('give');
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [glimpses, setGlimpses] = useState<TransactionRecord[]>([]);
+  const [glimpsesLoading, setGlimpsesLoading] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  // Fetch transaction history when Glimpses tab is active
+  useEffect(() => {
+    if (activeTab === 'glimpses' && publicKey) {
+      setGlimpsesLoading(true);
+      fetchMyTransactions(publicKey.toBase58())
+        .then(setGlimpses)
+        .catch(() => setGlimpses([]))
+        .finally(() => setGlimpsesLoading(false));
+    }
+  }, [activeTab, publicKey]);
 
   // Needs-based Give state
   const [giveChoiceVisible, setGiveChoiceVisible] = useState(false);
@@ -291,15 +308,80 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
             <View style={styles.glimpsesContainer}>
               <Text
                 style={[styles.glimpsesIntro, {color: colors.textTertiary}]}>
-                See the impact of every gift. Coming soon.
+                See the impact of every gift.
               </Text>
-              {MOCK_GLIMPSES.map((glimpse, index) => (
-                <GlimpseCard
-                  key={glimpse.id}
-                  glimpse={glimpse}
-                  delay={ENTRANCE_STAGGER * (index + 1)}
+              {glimpsesLoading ? (
+                <ActivityIndicator
+                  size="large"
+                  color={colors.primary}
+                  style={{marginTop: 32}}
                 />
-              ))}
+              ) : glimpses.length > 0 ? (
+                glimpses.map(tx => (
+                  <GlassCard
+                    key={tx.id}
+                    variant="secondary"
+                    style={{marginBottom: 12}}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        marginBottom: 8,
+                      }}>
+                      <Text
+                        style={[
+                          Typography.bodySmall,
+                          {color: colors.primary, fontWeight: '600'},
+                        ]}>
+                        ${tx.amount}
+                      </Text>
+                      <Text
+                        style={[
+                          Typography.caption,
+                          {color: colors.textTertiary},
+                        ]}>
+                        {new Date(tx.created_at).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    {tx.note && (
+                      <Text
+                        style={[
+                          Typography.body,
+                          {color: colors.textPrimary, marginBottom: 8},
+                        ]}>
+                        {tx.note}
+                      </Text>
+                    )}
+                    <Text
+                      style={[Typography.caption, {color: colors.textTertiary}]}
+                      numberOfLines={1}>
+                      tx: {tx.tx_signature}
+                    </Text>
+                  </GlassCard>
+                ))
+              ) : (
+                <View style={{alignItems: 'center', paddingVertical: 48}}>
+                  <Text
+                    style={[
+                      Typography.subheading,
+                      {color: colors.textTertiary, marginBottom: 12},
+                    ]}>
+                    No glimpses yet
+                  </Text>
+                  <Text
+                    style={[
+                      Typography.body,
+                      {
+                        color: colors.textTertiary,
+                        textAlign: 'center',
+                        paddingHorizontal: 24,
+                      },
+                    ]}>
+                    After you give, your donation history and impact proofs will
+                    appear here.
+                  </Text>
+                </View>
+              )}
             </View>
           )}
 
