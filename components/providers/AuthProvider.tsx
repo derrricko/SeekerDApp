@@ -96,7 +96,7 @@ export function AuthProvider({children}: {children: ReactNode}) {
         'base64',
       );
       const signature = Buffer.from(result.signature).toString('base64');
-      const pubkey = result.account.address;
+      const pubkey = Buffer.from(result.account.publicKey).toString('base64');
 
       // 4. Verify with server and get JWT
       const {token, profile: serverProfile} = await verifySIWS(

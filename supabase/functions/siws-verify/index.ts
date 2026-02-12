@@ -94,7 +94,8 @@ serve(async (req: Request) => {
     }
 
     // ── Verify ed25519 signature ─────────────────────────────────────────
-    const messageBytes = new TextEncoder().encode(message);
+    const messageBytes = decodeBase64(message);
+    const messageText = new TextDecoder().decode(messageBytes);
     let signatureBytes: Uint8Array;
     let publicKeyBytes: Uint8Array;
 
@@ -158,7 +159,7 @@ serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // ── Validate nonce ───────────────────────────────────────────────────
-    const nonce = extractNonce(message);
+    const nonce = extractNonce(messageText);
     if (!nonce) {
       return new Response(
         JSON.stringify({ error: "No nonce found in message" }),
@@ -206,11 +207,11 @@ serve(async (req: Request) => {
     // The publicKey from the client is the base64-encoded Solana public key.
     // The wallet address is typically the base58-encoded form. We expect the
     // client to embed the wallet address in the SIWS message, so we extract it.
-    const walletMatch = message.match(
+    const walletMatch = messageText.match(
       /^([1-9A-HJ-NP-Za-km-z]{32,44})\s+wants to sign in/m,
     );
     // Fallback: try the standard SIWS domain line format
-    const domainMatch = message.match(
+    const domainMatch = messageText.match(
       /wants to sign in with.*\n\nAddress:\s*([1-9A-HJ-NP-Za-km-z]{32,44})/m,
     );
 

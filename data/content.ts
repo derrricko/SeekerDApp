@@ -113,11 +113,6 @@ export const FAQ_DATA = [
       'Every dollar goes to work. If a need is fully funded and there\u2019s money left over, the excess is applied to the next verified need in the queue. If you\u2019d prefer a refund, just reach out\u2014we\u2019ll take care of it.',
   },
   {
-    id: 'tax',
-    question: 'Is my donation tax-deductible?',
-    answer: 'Yes.',
-  },
-  {
     id: 'location',
     question: 'Where does Glimpse operate?',
     answer:
@@ -192,7 +187,7 @@ export const NEEDS: Need[] = [
   },
 ];
 
-// ─── Mock Glimpse proofs ────────────────────────────────────────────────────
+// ─── Example Glimpse proofs (placeholder) ───────────────────────────────────
 
 export interface GlimpseProof {
   id: string;

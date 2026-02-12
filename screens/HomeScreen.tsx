@@ -291,7 +291,7 @@ export default function HomeScreen({hideHeaderBrand}: HomeScreenProps) {
             <View style={styles.glimpsesContainer}>
               <Text
                 style={[styles.glimpsesIntro, {color: colors.textTertiary}]}>
-                Real stories. Real impact. Verified on-chain.
+                See the impact of every gift. Coming soon.
               </Text>
               {MOCK_GLIMPSES.map((glimpse, index) => (
                 <GlimpseCard

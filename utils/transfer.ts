@@ -5,7 +5,7 @@
  * signAndSendTransaction (from WalletProvider).
  *
  * When a `slug` is provided, routes through the Glimpse Escrow program.
- * Falls back to direct transfer if escrow fails or no slug given.
+ * Fails explicitly if escrow transaction cannot be built.
  */
 
 import {
@@ -89,8 +89,7 @@ export async function buildUSDCTransferTransaction(
 /**
  * Execute a USDC transfer via wallet-standard signAndSendTransaction.
  *
- * When `slug` is provided, attempts the escrow program path first.
- * Falls back to direct transfer on escrow failure.
+ * When `slug` is provided, routes through the Glimpse Escrow program.
  *
  * Returns the transaction signature as a base58 string.
  */
@@ -105,25 +104,12 @@ export async function transferUSDC(
   let transaction: Transaction;
 
   if (slug) {
-    try {
-      transaction = await buildDonateTransaction(
-        connection,
-        senderPublicKey,
-        slug,
-        amount,
-      );
-    } catch (escrowErr) {
-      console.warn(
-        'Escrow build failed, falling back to direct transfer:',
-        escrowErr,
-      );
-      transaction = await buildUSDCTransferTransaction(
-        connection,
-        senderPublicKey,
-        recipientPublicKey,
-        amount,
-      );
-    }
+    transaction = await buildDonateTransaction(
+      connection,
+      senderPublicKey,
+      slug,
+      amount,
+    );
   } else {
     transaction = await buildUSDCTransferTransaction(
       connection,
