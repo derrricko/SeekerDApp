@@ -1,72 +1,119 @@
-clear# Solana Mobile dApp Scaffold
+# Glimpse
 
-A ready-to-go template Solana React Native dApp with dependencies installed and basic React UI components.
-It provides an interface to connect to locally installed wallet apps (that are MWA-compatible), view your account balance on devnet, and request an airdrop of SOL.
+A Solana Mobile giving dApp built for the Seeker device. Users donate USDC to real-world needs through an escrow program, with full on-chain transparency.
 
-This React Native dApp is only fully functional on Android.
+## Architecture
 
-## Featured Libarires
-- [Mobile Wallet Adapter](https://github.com/solana-mobile/mobile-wallet-adapter/tree/main/js/packages/mobile-wallet-adapter-protocol) for connecting to wallets and signing transactions/messages
-- [web3.js](https://solana-labs.github.io/solana-web3.js/) for constructing transactions and an RPC `connection` client.
+- **Frontend**: React Native 0.76 + TypeScript (Android-only, targeting Solana Seeker)
+- **Wallet**: Mobile Wallet Adapter (MWA) 2.0
+- **On-chain**: Anchor 0.30.1 escrow program on Solana devnet
+- **Backend**: Supabase (PostgreSQL + Edge Functions for auth and transaction recording)
+- **Token**: USDC (SPL) on devnet
 
-<table>
-  <tr>
-    <td align="center">
-      <img src="https://github.com/solana-mobile/solana-mobile-dapp-scaffold/assets/18451967/3d83d3dc-ab65-4a2c-881d-8a229f34e392" alt="Scaffold dApp Screenshot 1" width=300 />
-    </td>
-    <td align="center">
-      <img src="https://github.com/solana-mobile/solana-mobile-dapp-scaffold/assets/18451967/2fd69bd4-834d-45e1-8c7a-f80b5b576c96" alt="Scaffold dApp Screenshot 3" width=300 />
-    </td>
-    <td align="center">
-      <img src="https://github.com/solana-mobile/solana-mobile-dapp-scaffold/assets/18451967/cdd93c12-d9ff-4739-81af-92da5b90303a" alt="Scaffold dApp Screenshot 2" width=300 />
-    </td>
-  </tr>
-</table>
+See [CLAUDE.md](./CLAUDE.md) for the full architecture reference, design system, security model, and build troubleshooting.
 
-## Prerequisites
+## Quick Start
 
-If you haven't setup a React Native development environment for Android, you'll need to do that first. Follow the [Prerequisite Setup Guide](https://docs.solanamobile.com/getting-started/development-setup).
+### Prerequisites
 
-Follow the guide to make sure you:
-- setup your Android and React Native development environment.
-- have an Android device or emulator.
-- install an MWA compliant wallet app on your device/emulator.
-   
-## Usage
-1. Initialize project template
+- Node.js 18+
+- Android Studio with an AVD (Pixel 6, API 35) or a Solana Seeker device
+- An MWA-compatible wallet app installed on the device/emulator
+- Rust + Solana CLI (only needed for escrow program development)
+
+### Setup
+
+```bash
+npm install
+npx react-native start
 ```
-npx react-native init MySolanaDapp --template @solana-mobile/solana-mobile-dapp-scaffold --npm
+
+### Run on Android
+
+```bash
+npx react-native run-android
 ```
-2. Install dependencies
-- `yarn install` or `npm install`
-3. Launch the app on your Android device/emulator
-- `npx react-native run-android`
 
-## Troubleshooting
-  
-- `TypeError: cli.init is not a function` 
-  - This during template initialization means you have an old version of React Native CLI.
-This template only works with the new CLI. You can uninstall and reinstall it as directed [here](https://stackoverflow.com/questions/72768245/typeerror-cli-init-is-not-a-function-for-react-native).
+### Bundle Check
 
-<br>
+```bash
+npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output /tmp/test.bundle
+```
 
-- `error Failed to load configuration of your project.`
-  - Same as above, but for `yarn`. [Uninstall and reinstall](https://github.com/react-native-community/cli#updating-the-cli) the CLI through yarn.
+## Project Structure
 
-<br>
+```
+screens/                  App screens (Welcome, Onboarding, Home)
+components/               GlassCard, theme system, providers
+utils/                    USDC transfer, escrow instruction builder, error handling
+config/                   Environment config (program IDs, mints, Supabase creds)
+data/                     Shared content constants (FAQ, tiers, slides)
+programs/glimpse-escrow/  Anchor escrow program (Rust)
+supabase/migrations/      Database schema (001-005)
+supabase/functions/       Edge functions (nonce, siws-verify, record-transaction)
+scripts/                  One-time setup scripts (vault initialization)
+docs/                     Archived reference files
+```
 
-- `Looks like your iOS environment is not properly set`:
-  -  You can ignore this during template initialization and build the Android app as normal. This template is only compatible with Android.
+## Environment
 
-<br>
+The app uses hardcoded devnet configuration in `config/env.ts`:
 
-- `Usage Error: It seems you are trying to add a package using a https:... url; we now require package names to be explicitly specified.`
-  - This error happens on certain versions of `yarn`, and occurs if you try to initialize the template through the Github repo URL, rather than the npm package. To avoid this, use the `@solana-mobile/solana-mobile-dapp-scaffold` package as specified, or downgrade your `yarn` version to classic (1.22.x).
+| Variable | Location | Purpose |
+|----------|----------|---------|
+| `SOLANA_CLUSTER` | `config/env.ts` | `devnet` |
+| `USDC_MINT` | `config/env.ts` | Devnet USDC mint address |
+| `ESCROW_PROGRAM_ID` | `config/env.ts` | Deployed escrow program |
+| `SUPABASE_URL` | `config/env.ts` | Supabase project URL |
+| `SUPABASE_ANON_KEY` | `config/env.ts` | Supabase publishable key |
 
-<br>
+Edge functions read `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `SOLANA_RPC_URL` from Deno environment variables.
 
-- `error Couldn't find the ".../@solana-mobile/solana-mobile-dapp-scaffold/template.config.js file inside "@solana-mobile/solana-mobile-dapp-scaffold" template.`
-  - This is a [known error](https://github.com/react-native-community/cli/issues/1924) that occurs with certain versions of `yarn` (>= 3.5.0). It is fixed by running the cli command with the `--npm` flag or downgrading your version of `yarn`.
+## Testing
 
+### App Tests
 
+```bash
+npm test -- --watchAll=false
+```
 
+### Escrow Program Tests (LiteSVM)
+
+Requires `protoc` (`brew install protobuf`) and a built `.so`:
+
+```bash
+cargo-build-sbf --manifest-path programs/glimpse-escrow/Cargo.toml --sbf-out-dir target/deploy
+cargo test --manifest-path programs/glimpse-escrow/Cargo.toml --test escrow_test
+```
+
+9 integration tests covering `initialize_need`, `donate`, and `disburse` instructions.
+
+### Lint
+
+```bash
+npm run lint
+```
+
+## Devnet Deployment
+
+### Escrow Program
+
+- **Program ID**: `7Ma28eiEEd4WKDCwbfejbPevcsuchePsvYvdw6Tme6NE`
+- **Admin Wallet**: `HQ5C58Tu11cy8Q8Lfjpj8sRTW25wY7VnwgoW61cfMsY5`
+
+### Vault PDAs
+
+| Slug | Target |
+|------|--------|
+| shower | $25 |
+| groceries | $100 |
+| wardrobe | $250 |
+| tires | $400 |
+| rent | $1,000 |
+
+### Known Limitations
+
+- Devnet only (not deployed to mainnet)
+- Supabase migrations exist locally but are not yet pushed
+- Edge functions exist locally but are not yet deployed
+- New Architecture is disabled (`newArchEnabled=false`) for MWA compatibility
