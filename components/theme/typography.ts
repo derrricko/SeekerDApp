@@ -75,4 +75,16 @@ export const Typography = {
     fontWeight: '500' as TextStyle['fontWeight'],
     letterSpacing: 0.3,
   },
+  // Amount — financial numbers, hero dollar figures
+  amount: {
+    fontSize: 36,
+    fontWeight: '200' as TextStyle['fontWeight'],
+    letterSpacing: -0.5,
+    fontFamily: DISPLAY_FONT,
+  },
+  // Emphasis — inline callouts, highlighted text
+  emphasis: {
+    fontSize: 17,
+    fontWeight: '500' as TextStyle['fontWeight'],
+  },
 };

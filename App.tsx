@@ -2,19 +2,15 @@ import {ConnectionProvider} from './components/providers/ConnectionProvider';
 import {WalletProvider} from './components/providers/WalletProvider';
 import {AuthProvider} from './components/providers/AuthProvider';
 import {clusterApiUrl} from '@solana/web3.js';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useState} from 'react';
 import {StyleSheet, StatusBar, View} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {ThemeProvider, useTheme} from './components/theme';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {SOLANA_CLUSTER} from './config/env';
 import ErrorBoundary from './components/ErrorBoundary';
 
-import HomeScreen from './screens/HomeScreen';
+import AppNavigator from './navigation/AppNavigator';
 import SplashOverlay from './components/SplashOverlay';
-import OnboardingJourney from './screens/OnboardingJourney';
-
-const JOURNEY_SEEN_KEY = '@glimpse_onboarding_journey_seen';
 
 // Hoisted to module level to avoid re-render allocation
 const CONNECTION_CONFIG = {commitment: 'processed' as const};
@@ -22,27 +18,9 @@ const CONNECTION_CONFIG = {commitment: 'processed' as const};
 function AppContent() {
   const {isDark, colors} = useTheme();
   const [splashDone, setSplashDone] = useState(false);
-  const [showJourney, setShowJourney] = useState(false);
-  const isFirstLaunchRef = useRef(false);
-
-  useEffect(() => {
-    AsyncStorage.getItem(JOURNEY_SEEN_KEY).then(value => {
-      if (value === null) {
-        isFirstLaunchRef.current = true;
-      }
-    });
-  }, []);
 
   const handleSplashDone = () => {
     setSplashDone(true);
-    if (isFirstLaunchRef.current) {
-      setTimeout(() => setShowJourney(true), 100);
-    }
-  };
-
-  const handleJourneyComplete = () => {
-    AsyncStorage.setItem(JOURNEY_SEEN_KEY, 'true');
-    setShowJourney(false);
   };
 
   return (
@@ -53,11 +31,8 @@ function AppContent() {
         translucent
       />
       <View style={[styles.container, {backgroundColor: colors.background}]}>
-        <HomeScreen hideHeaderBrand={!splashDone} />
+        <AppNavigator />
         {!splashDone && <SplashOverlay onAnimationDone={handleSplashDone} />}
-        {showJourney && (
-          <OnboardingJourney onComplete={handleJourneyComplete} />
-        )}
       </View>
     </>
   );
