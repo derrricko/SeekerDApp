@@ -1,119 +1,118 @@
-/**
- * Error handling utilities for MWA + transaction flows.
- *
- * Follows Solana Mobile error-handling patterns:
- * - Always handle ERROR_AUTHORIZATION_FAILED by clearing cached tokens
- * - Wrap transaction flows in safeTransaction for consistent UX
- */
+// v2 error handling — MWA + SOL transaction errors
+// NO Anchor error codes, NO USDC references
 
-// Known MWA error codes
+// ---------- Result type ----------
+
+export type AppError = {
+  code: string;
+  message: string;
+  recoverable: boolean;
+};
+
+export type Result<T> =
+  | {success: true; data: T}
+  | {success: false; error: AppError};
+
+export function ok<T>(data: T): Result<T> {
+  return {success: true, data};
+}
+
+export function fail<T>(
+  code: string,
+  message: string,
+  recoverable = true,
+): Result<T> {
+  return {success: false, error: {code, message, recoverable}};
+}
+
+// ---------- MWA errors ----------
+
 const MWA_USER_DECLINED = 'ERROR_USER_DECLINED';
 const MWA_AUTH_FAILED = 'ERROR_AUTHORIZATION_FAILED';
 const MWA_NOT_FOUND = 'ERROR_WALLET_NOT_FOUND';
 
-export interface TransactionResult {
-  success: boolean;
-  signature?: string;
-  error?: string;
-}
+export function handleMWAError(error: unknown): AppError {
+  const message =
+    error instanceof Error ? error.message : String(error);
 
-/**
- * Classify an MWA error into a user-friendly message.
- * Returns `{clearAuth}` flag when cached auth should be invalidated.
- */
-export function handleMWAError(err: any): {
-  message: string;
-  clearAuth: boolean;
-} {
-  const msg = err?.message ?? String(err);
-
-  if (msg.includes(MWA_USER_DECLINED)) {
-    return {message: 'Transaction was declined.', clearAuth: false};
-  }
-
-  if (msg.includes(MWA_AUTH_FAILED)) {
+  if (message.includes(MWA_USER_DECLINED)) {
     return {
-      message: 'Wallet authorization expired. Please reconnect.',
-      clearAuth: true,
+      code: 'USER_DECLINED',
+      message: 'Transaction cancelled. You can try again when ready.',
+      recoverable: true,
     };
   }
 
-  if (msg.includes(MWA_NOT_FOUND)) {
+  if (message.includes(MWA_AUTH_FAILED)) {
     return {
-      message: 'No wallet app found. Please install a Solana wallet.',
-      clearAuth: false,
+      code: 'AUTH_FAILED',
+      message: 'Wallet authorization expired. Please reconnect your wallet.',
+      recoverable: true,
     };
   }
 
-  return {message: msg, clearAuth: false};
+  if (message.includes(MWA_NOT_FOUND)) {
+    return {
+      code: 'WALLET_NOT_FOUND',
+      message: 'No Solana wallet found. Install a wallet app to continue.',
+      recoverable: false,
+    };
+  }
+
+  return {
+    code: 'MWA_UNKNOWN',
+    message: `Wallet error: ${message}`,
+    recoverable: true,
+  };
 }
 
-// Anchor program error codes (from programs/glimpse-escrow/src/error.rs)
-const ANCHOR_ERROR_MAP: Record<number, string> = {
-  6000: 'An internal error occurred. Please try again.', // Overflow
-  6001: 'This need has already been fulfilled and disbursed.', // AlreadyDisbursed
-  6002: 'Donation amount must be greater than zero.', // ZeroAmount
-  6003: 'Unauthorized action.', // Unauthorized
-  6004: 'Invalid token mint.', // InvalidMint
-  6005: 'Invalid slug (must be 1-32 characters).', // InvalidSlug
-};
+// ---------- Transaction errors ----------
 
-/**
- * Classify a transaction/RPC error into a user-friendly message.
- */
-export function handleTransactionError(err: any): string {
-  const msg = err?.message ?? String(err);
+export function handleTransactionError(error: unknown): AppError {
+  const message =
+    error instanceof Error ? error.message : String(error);
 
-  // Check for Anchor program custom error codes (format: "custom program error: 0x1770")
-  const hexMatch = msg.match(/custom program error:\s*0x([0-9a-fA-F]+)/);
-  if (hexMatch) {
-    const code = parseInt(hexMatch[1], 16);
-    if (ANCHOR_ERROR_MAP[code]) {
-      return ANCHOR_ERROR_MAP[code];
-    }
+  if (message.includes('insufficient lamports') || message.includes('Insufficient')) {
+    return {
+      code: 'INSUFFICIENT_SOL',
+      message: 'Not enough SOL in your wallet for this donation.',
+      recoverable: true,
+    };
   }
 
-  // Also check decimal error code format (some RPC responses use decimal)
-  const decMatch = msg.match(/Custom\((\d+)\)/);
-  if (decMatch) {
-    const code = parseInt(decMatch[1], 10);
-    if (ANCHOR_ERROR_MAP[code]) {
-      return ANCHOR_ERROR_MAP[code];
-    }
+  if (message.includes('Blockhash not found') || message.includes('block height exceeded')) {
+    return {
+      code: 'TX_EXPIRED',
+      message: 'Transaction expired. Please try again.',
+      recoverable: true,
+    };
   }
 
-  if (msg.includes('insufficient funds') || msg.includes('Insufficient')) {
-    return 'Insufficient USDC balance for this donation.';
+  if (message.includes('Transaction simulation failed')) {
+    return {
+      code: 'SIMULATION_FAILED',
+      message: 'Transaction could not be processed. Please try again.',
+      recoverable: true,
+    };
   }
 
-  if (msg.includes('blockhash not found') || msg.includes('expired')) {
-    return 'Transaction expired. Please try again.';
-  }
-
-  if (msg.includes('AccountNotFound')) {
-    return 'USDC token account not found. Do you have USDC in your wallet?';
-  }
-
-  return msg || 'Transaction failed. Please try again.';
+  return {
+    code: 'TX_UNKNOWN',
+    message: `Transaction failed: ${message}`,
+    recoverable: true,
+  };
 }
 
-/**
- * Wrap an async transaction flow with standardized error handling.
- * Returns a clean result object instead of throwing.
- */
-export async function safeTransaction(
-  fn: () => Promise<string>,
-): Promise<TransactionResult> {
+// ---------- Safe wrapper ----------
+
+export async function safeAsync<T>(
+  fn: () => Promise<T>,
+  errorHandler: (error: unknown) => AppError = handleTransactionError,
+): Promise<Result<T>> {
   try {
-    const signature = await fn();
-    return {success: true, signature};
-  } catch (err: any) {
-    const mwaResult = handleMWAError(err);
-    if (mwaResult.message !== (err?.message ?? String(err))) {
-      // It was a recognized MWA error
-      return {success: false, error: mwaResult.message};
-    }
-    // Fall through to transaction error handling
-    return {success: false, error: handleTransactionError(err)};
+    const data = await fn();
+    return ok(data);
+  } catch (error) {
+    return {success: false, error: errorHandler(error)};
   }
 }

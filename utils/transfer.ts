@@ -1,142 +1,93 @@
-/**
- * USDC SPL Token Transfer Utility
- *
- * Builds a USDC transfer transaction and sends it via wallet-standard
- * signAndSendTransaction (from WalletProvider).
- *
- * When a `slug` is provided, routes through the Glimpse Escrow program.
- * Fails explicitly if escrow transaction cannot be built.
- */
+// v2 SOL transfer + Memo instruction builder
+//
+// FLOW:
+//   1. Build SystemProgram.transfer (SOL)
+//   2. Build Memo instruction (JSON metadata)
+//   3. Combine into single atomic transaction
+//   4. Sign + send via MWA
+//
+//   ┌──────────────┐   ┌──────────────┐
+//   │ SOL Transfer  │ + │ Memo (JSON)  │  →  Single TX  →  MWA Sign  →  Confirm
+//   └──────────────┘   └──────────────┘
 
 import {
   Connection,
   PublicKey,
+  SystemProgram,
   Transaction,
   TransactionInstruction,
+  LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
-import {
-  getAssociatedTokenAddress,
-  createTransferInstruction,
-  createAssociatedTokenAccountInstruction,
-  getAccount,
-} from '@solana/spl-token';
-import {USDC_MINT, USDC_DECIMALS, RECIPIENT_WALLET} from '../config/env';
-import {buildDonateTransaction} from './escrow';
-import bs58 from 'bs58';
+import {MEMO_PROGRAM_ID} from '../config/env';
 
-// Re-export for consumers
-export {USDC_MINT, USDC_DECIMALS, RECIPIENT_WALLET};
-
-/**
- * Convert a dollar amount to USDC base units (6 decimals)
- */
-export function usdcToBaseUnits(amount: number): number {
-  return Math.round(amount * 10 ** USDC_DECIMALS);
+export interface DonationMemo {
+  /** Donor wallet (short: first 8 chars) */
+  d: string;
+  /** Recipient wallet (short: first 8 chars) */
+  r: string;
+  /** Amount in SOL */
+  a: number;
+  /** Unix timestamp (seconds) */
+  t: number;
+  /** App identifier */
+  app: string;
 }
 
 /**
- * Build a USDC transfer transaction.
- * Creates the recipient's associated token account if it doesn't exist.
+ * Build a SOL donation transaction with an on-chain receipt memo.
+ *
+ * Returns an unsigned Transaction. The caller is responsible for
+ * signing via MWA and sending to the network.
  */
-export async function buildUSDCTransferTransaction(
+export async function buildDonationTransaction(
   connection: Connection,
-  senderPublicKey: PublicKey,
-  recipientPublicKey: PublicKey,
-  amount: number,
-): Promise<Transaction> {
-  const senderATA = await getAssociatedTokenAddress(USDC_MINT, senderPublicKey);
-  const recipientATA = await getAssociatedTokenAddress(
-    USDC_MINT,
-    recipientPublicKey,
-  );
+  donor: PublicKey,
+  recipientAddress: string,
+  amountSOL: number,
+): Promise<{transaction: Transaction; memo: DonationMemo; lastValidBlockHeight: number}> {
+  const recipient = new PublicKey(recipientAddress);
+  const lamports = Math.round(amountSOL * LAMPORTS_PER_SOL);
 
-  const instructions: TransactionInstruction[] = [];
-
-  // Check if recipient ATA exists; if not, create it
-  try {
-    await getAccount(connection, recipientATA);
-  } catch {
-    instructions.push(
-      createAssociatedTokenAccountInstruction(
-        senderPublicKey, // payer
-        recipientATA,
-        recipientPublicKey,
-        USDC_MINT,
-      ),
-    );
+  if (lamports <= 0) {
+    throw new Error('Donation amount must be greater than 0');
   }
 
-  // Add transfer instruction
-  instructions.push(
-    createTransferInstruction(
-      senderATA,
-      recipientATA,
-      senderPublicKey,
-      usdcToBaseUnits(amount),
-    ),
-  );
+  // 1. SOL transfer instruction
+  const transferIx = SystemProgram.transfer({
+    fromPubkey: donor,
+    toPubkey: recipient,
+    lamports,
+  });
 
+  // 2. Memo instruction (on-chain receipt)
+  const memo: DonationMemo = {
+    d: donor.toBase58().slice(0, 8),
+    r: recipient.toBase58().slice(0, 8),
+    a: amountSOL,
+    t: Math.floor(Date.now() / 1000),
+    app: 'glimpse',
+  };
+
+  const memoData = JSON.stringify(memo);
+
+  // Validate memo fits in Solana memo program limit (~566 bytes)
+  if (Buffer.from(memoData).length > 566) {
+    throw new Error('Memo data exceeds maximum size');
+  }
+
+  const memoIx = new TransactionInstruction({
+    keys: [{pubkey: donor, isSigner: true, isWritable: false}],
+    programId: new PublicKey(MEMO_PROGRAM_ID),
+    data: Buffer.from(memoData),
+  });
+
+  // 3. Combine into single atomic transaction
   const transaction = new Transaction();
-  transaction.add(...instructions);
+  transaction.add(transferIx, memoIx);
 
-  const {blockhash} = await connection.getLatestBlockhash();
+  const {blockhash, lastValidBlockHeight} = await connection.getLatestBlockhash();
   transaction.recentBlockhash = blockhash;
-  transaction.feePayer = senderPublicKey;
+  transaction.feePayer = donor;
 
-  return transaction;
-}
-
-/**
- * Execute a USDC transfer via wallet-standard signAndSendTransaction.
- *
- * When `slug` is provided, routes through the Glimpse Escrow program.
- *
- * Returns the transaction signature as a base58 string.
- */
-export async function transferUSDC(
-  connection: Connection,
-  senderPublicKey: PublicKey,
-  recipientPublicKey: PublicKey,
-  amount: number,
-  signAndSendTransaction: (transaction: Uint8Array) => Promise<Uint8Array>,
-  slug?: string,
-): Promise<string> {
-  let transaction: Transaction;
-
-  if (slug) {
-    transaction = await buildDonateTransaction(
-      connection,
-      senderPublicKey,
-      slug,
-      amount,
-    );
-  } else {
-    transaction = await buildUSDCTransferTransaction(
-      connection,
-      senderPublicKey,
-      recipientPublicKey,
-      amount,
-    );
-  }
-
-  // Serialize the transaction for wallet-standard
-  const serialized = transaction.serialize({
-    requireAllSignatures: false,
-    verifySignatures: false,
-  });
-
-  const signatureBytes = await signAndSendTransaction(serialized);
-
-  // Convert signature bytes to base58 string
-  const signature = bs58.encode(Buffer.from(signatureBytes));
-
-  // Confirm the transaction
-  const latestBlockhash = await connection.getLatestBlockhash();
-  await connection.confirmTransaction({
-    signature,
-    blockhash: latestBlockhash.blockhash,
-    lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-  });
-
-  return signature;
+  return {transaction, memo, lastValidBlockHeight};
 }

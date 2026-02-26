@@ -1,29 +1,23 @@
-import {Connection, type ConnectionConfig} from '@solana/web3.js';
-import React, {
-  type FC,
-  type ReactNode,
-  useMemo,
-  createContext,
-  useContext,
-} from 'react';
+import React, {createContext, useContext, useMemo} from 'react';
+import {Connection, clusterApiUrl} from '@solana/web3.js';
 import {SOLANA_CLUSTER} from '../../config/env';
 
-export const RPC_ENDPOINT = SOLANA_CLUSTER;
-
-export interface ConnectionProviderProps {
-  children: ReactNode;
-  endpoint: string;
-  config?: ConnectionConfig;
+interface ConnectionContextType {
+  connection: Connection;
 }
 
-export const ConnectionProvider: FC<ConnectionProviderProps> = ({
-  children,
-  endpoint,
-  config = {commitment: 'confirmed'},
-}) => {
+const ConnectionContext = createContext<ConnectionContextType>({
+  connection: new Connection(clusterApiUrl('devnet')),
+});
+
+export function useConnection(): Connection {
+  return useContext(ConnectionContext).connection;
+}
+
+export function ConnectionProvider({children}: {children: React.ReactNode}) {
   const connection = useMemo(
-    () => new Connection(endpoint, config),
-    [endpoint, config],
+    () => new Connection(clusterApiUrl(SOLANA_CLUSTER), 'confirmed'),
+    [],
   );
 
   return (
@@ -31,16 +25,4 @@ export const ConnectionProvider: FC<ConnectionProviderProps> = ({
       {children}
     </ConnectionContext.Provider>
   );
-};
-
-export interface ConnectionContextState {
-  connection: Connection;
-}
-
-export const ConnectionContext = createContext<ConnectionContextState>(
-  {} as ConnectionContextState,
-);
-
-export function useConnection(): ConnectionContextState {
-  return useContext(ConnectionContext);
 }

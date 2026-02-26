@@ -1,239 +1,142 @@
-/**
- * WalletProvider — wallet-standard wrapper for Solana Mobile.
- *
- * Wraps LocalSolanaMobileWalletAdapterWallet in a React context with
- * session persistence via createDefaultAuthorizationCache().
- */
+// v2 WalletProvider — MWA wallet connection only
+// NO SIWS signIn, NO auth tokens
+//
+// INTERFACE:
+//   useWallet() → { connected, publicKey, connect, disconnect, signAndSendTransaction }
 
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
-  useCallback,
-  ReactNode,
 } from 'react';
-import {PublicKey} from '@solana/web3.js';
-import {
-  LocalSolanaMobileWalletAdapterWallet,
-  createDefaultAuthorizationCache,
-  createDefaultChainSelector,
-  createDefaultWalletNotFoundHandler,
-} from '@solana-mobile/wallet-standard-mobile';
+import {PublicKey, Transaction} from '@solana/web3.js';
+import {transact} from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import {APP_IDENTITY, SOLANA_CLUSTER} from '../../config/env';
+import {Buffer} from 'buffer';
 
-import type {WalletAccount} from '@wallet-standard/base';
-import type {
-  SolanaSignInInput,
-  SolanaSignInOutput,
-} from '@solana/wallet-standard-features';
-
-// ─── Chain identifier ───────────────────────────────────────────────────────
-
-const CHAIN =
-  SOLANA_CLUSTER === 'mainnet-beta' ? 'solana:mainnet' : 'solana:devnet';
-
-// ─── Context types ──────────────────────────────────────────────────────────
-
-export interface WalletContextState {
-  /** The current wallet account, or null if not connected */
-  account: WalletAccount | null;
-  /** Convenience: PublicKey derived from account address */
-  publicKey: PublicKey | null;
-  /** Whether the wallet is connected */
+interface WalletContextType {
   connected: boolean;
-  /** Connect (authorize) the wallet */
+  publicKey: PublicKey | null;
+  connecting: boolean;
   connect: () => Promise<void>;
-  /** Disconnect (deauthorize) the wallet */
-  disconnect: () => Promise<void>;
-  /**
-   * Sign In With Solana — returns signed message + signature for SIWS auth.
-   * Connects if not already connected.
-   */
-  signIn: (input?: SolanaSignInInput) => Promise<SolanaSignInOutput | null>;
-  /**
-   * Sign and send a serialized transaction.
-   * Returns the raw signature bytes.
-   */
-  signAndSendTransaction: (transaction: Uint8Array) => Promise<Uint8Array>;
+  disconnect: () => void;
+  signAndSendTransaction: (
+    transaction: Transaction,
+  ) => Promise<string>;
 }
 
-const WalletContext = createContext<WalletContextState>({
-  account: null,
-  publicKey: null,
+const WalletContext = createContext<WalletContextType>({
   connected: false,
-  connect: async () => {
-    throw new Error('WalletProvider not initialized');
-  },
-  disconnect: async () => {
-    throw new Error('WalletProvider not initialized');
-  },
-  signIn: async () => {
-    throw new Error('WalletProvider not initialized');
-  },
-  signAndSendTransaction: async () => {
-    throw new Error('WalletProvider not initialized');
-  },
+  publicKey: null,
+  connecting: false,
+  connect: async () => {},
+  disconnect: () => {},
+  signAndSendTransaction: async () => '',
 });
 
-// ─── Provider ───────────────────────────────────────────────────────────────
+export function useWallet() {
+  return useContext(WalletContext);
+}
 
-export function WalletProvider({children}: {children: ReactNode}) {
-  const [accounts, setAccounts] = useState<readonly WalletAccount[]>([]);
+export function WalletProvider({children}: {children: React.ReactNode}) {
+  const [publicKey, setPublicKey] = useState<PublicKey | null>(null);
+  const [connecting, setConnecting] = useState(false);
 
-  // Create the wallet-standard wallet instance once
-  const walletRef = useRef<LocalSolanaMobileWalletAdapterWallet | null>(null);
-  if (walletRef.current === null) {
-    try {
-      walletRef.current = new LocalSolanaMobileWalletAdapterWallet({
-        appIdentity: APP_IDENTITY,
-        authorizationCache: createDefaultAuthorizationCache(),
-        chains: [CHAIN],
-        chainSelector: createDefaultChainSelector(),
-        onWalletNotFound: createDefaultWalletNotFoundHandler(),
-      });
-    } catch {
-      // Wallet adapter may fail on non-Android or misconfigured devices
-      console.warn('Failed to initialize wallet adapter');
-    }
-  }
-  const wallet = walletRef.current;
-
-  // Listen for account changes via wallet-standard events
-  useEffect(() => {
-    if (!wallet) {
-      return;
-    }
-
-    const eventsFeature = wallet.features['standard:events'];
-    if (!eventsFeature) {
-      return;
-    }
-
-    const unsubscribe = eventsFeature.on(
-      'change',
-      ({accounts: newAccounts}) => {
-        if (newAccounts) {
-          setAccounts(newAccounts);
-        }
-      },
-    );
-
-    // Sync initial state
-    setAccounts(wallet.accounts);
-
-    return unsubscribe;
-  }, [wallet]);
-
-  const account = accounts.length > 0 ? accounts[0] : null;
-
-  const publicKey = useMemo(() => {
-    if (!account) {
-      return null;
-    }
-    try {
-      return new PublicKey(account.address);
-    } catch {
-      return null;
-    }
-  }, [account]);
-
-  const connected = wallet?.connected ?? false;
+  const connected = publicKey !== null;
 
   const connect = useCallback(async () => {
-    if (!wallet) {
-      throw new Error('Wallet adapter not available');
+    setConnecting(true);
+    try {
+      await transact(async wallet => {
+        const auth = await wallet.authorize({
+          chain: `solana:${SOLANA_CLUSTER}`,
+          identity: APP_IDENTITY,
+        });
+        const pubkey = new PublicKey(auth.accounts[0].address);
+        setPublicKey(pubkey);
+      });
+    } finally {
+      setConnecting(false);
     }
-    const connectFeature = wallet.features['standard:connect'];
-    const result = await connectFeature.connect();
-    setAccounts(result.accounts);
-  }, [wallet]);
+  }, []);
 
-  const disconnect = useCallback(async () => {
-    if (!wallet) {
-      return;
-    }
-    const disconnectFeature = wallet.features['standard:disconnect'];
-    await disconnectFeature.disconnect();
-    setAccounts([]);
-  }, [wallet]);
-
-  const signIn = useCallback(
-    async (input?: SolanaSignInInput): Promise<SolanaSignInOutput | null> => {
-      if (!wallet) {
-        return null;
-      }
-      const signInFeature = wallet.features['solana:signIn'];
-      if (!signInFeature) {
-        return null;
-      }
-
-      const results = await signInFeature.signIn(input ?? {});
-      if (results.length > 0) {
-        // signIn also connects the wallet
-        setAccounts(wallet.accounts);
-        return results[0];
-      }
-      return null;
-    },
-    [wallet],
-  );
+  const disconnect = useCallback(() => {
+    setPublicKey(null);
+  }, []);
 
   const signAndSendTransaction = useCallback(
-    async (transaction: Uint8Array): Promise<Uint8Array> => {
-      if (!account) {
+    async (transaction: Transaction): Promise<string> => {
+      if (!publicKey) {
         throw new Error('Wallet not connected');
       }
-      if (!wallet) {
-        throw new Error('Wallet adapter not available');
-      }
 
-      const features = wallet.features;
-      if (!('solana:signAndSendTransaction' in features)) {
-        throw new Error('signAndSendTransaction not supported by wallet');
-      }
+      let signature = '';
+      await transact(async wallet => {
+        // Re-authorize in each transact session
+        await wallet.authorize({
+          chain: `solana:${SOLANA_CLUSTER}`,
+          identity: APP_IDENTITY,
+        });
 
-      const results = await features[
-        'solana:signAndSendTransaction'
-      ].signAndSendTransaction({
-        account,
-        transaction,
-        chain: CHAIN,
+        const signatures = await wallet.signAndSendTransactions({
+          transactions: [
+            transaction.serialize({
+              requireAllSignatures: false,
+              verifySignatures: false,
+            }),
+          ],
+        });
+
+        // signAndSendTransactions returns Uint8Array[] of 64-byte signatures.
+        // Some MWA implementations may return base64 strings instead.
+        const sig = signatures[0];
+        if (typeof sig === 'string') {
+          // Already a string (base64 or base58 depending on wallet)
+          signature = sig;
+        } else {
+          // Uint8Array → base58 using proper encoding with leading-zero handling
+          const BS58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+          const bytes = new Uint8Array(sig);
+
+          // Count leading zeros (each maps to '1' in base58)
+          let leadingZeros = 0;
+          for (let i = 0; i < bytes.length && bytes[i] === 0; i++) {
+            leadingZeros++;
+          }
+
+          // Convert to BigInt for base58 division
+          let num = BigInt('0x' + Buffer.from(bytes).toString('hex'));
+          let encoded = '';
+          while (num > 0n) {
+            encoded = BS58_ALPHABET[Number(num % 58n)] + encoded;
+            num = num / 58n;
+          }
+
+          signature = '1'.repeat(leadingZeros) + encoded;
+        }
       });
 
-      return results[0].signature;
+      return signature;
     },
-    [wallet, account],
+    [publicKey],
   );
 
-  const value = useMemo<WalletContextState>(
+  const value = useMemo(
     () => ({
-      account,
-      publicKey,
       connected,
+      publicKey,
+      connecting,
       connect,
       disconnect,
-      signIn,
       signAndSendTransaction,
     }),
-    [
-      account,
-      publicKey,
-      connected,
-      connect,
-      disconnect,
-      signIn,
-      signAndSendTransaction,
-    ],
+    [connected, publicKey, connecting, connect, disconnect, signAndSendTransaction],
   );
 
   return (
     <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
   );
-}
-
-export function useWallet(): WalletContextState {
-  return useContext(WalletContext);
 }
