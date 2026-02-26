@@ -8,34 +8,46 @@
 //
 // This replaces the v1 SIWS 3-step flow (nonce → sign → verify).
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { create } from 'https://deno.land/x/djwt@v3.0.1/mod.ts';
-import { decode as decodeBase64 } from 'https://deno.land/std@0.177.0/encoding/base64.ts';
+import {serve} from 'https://deno.land/std@0.177.0/http/server.ts';
+import {create} from 'https://deno.land/x/djwt@v3.0.1/mod.ts';
+import {decode as decodeBase64} from 'https://deno.land/std@0.177.0/encoding/base64.ts';
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.48.1';
 import nacl from 'https://esm.sh/tweetnacl@1.0.3';
 
-const JWT_SECRET = Deno.env.get('JWT_SECRET') || Deno.env.get('SUPABASE_JWT_SECRET')!;
+const JWT_SECRET =
+  Deno.env.get('JWT_SECRET') || Deno.env.get('SUPABASE_JWT_SECRET')!;
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
 const TOKEN_TTL_S = 60 * 60 * 24; // 24 hours
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req: Request) => {
   // CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', {headers: corsHeaders});
   }
 
   try {
-    const { wallet, signature, message } = await req.json();
+    if (!JWT_SECRET || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      return new Response(
+        JSON.stringify({error: 'Server auth config is missing'}),
+        {status: 500, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
+      );
+    }
+
+    const {wallet, signature, message} = await req.json();
 
     // --- Validate inputs ---
     if (!wallet || !signature || !message) {
       return new Response(
-        JSON.stringify({ error: 'Missing wallet, signature, or message' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        JSON.stringify({error: 'Missing wallet, signature, or message'}),
+        {status: 400, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
       );
     }
 
@@ -44,8 +56,10 @@ serve(async (req: Request) => {
     const match = message.match(/^glimpse-auth:(\d+)$/);
     if (!match) {
       return new Response(
-        JSON.stringify({ error: 'Invalid message format. Expected: glimpse-auth:{timestamp}' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        JSON.stringify({
+          error: 'Invalid message format. Expected: glimpse-auth:{timestamp}',
+        }),
+        {status: 400, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
       );
     }
 
@@ -53,8 +67,8 @@ serve(async (req: Request) => {
     const age = Date.now() - timestamp;
     if (age > MAX_AGE_MS || age < -MAX_AGE_MS) {
       return new Response(
-        JSON.stringify({ error: 'Message expired. Please try again.' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        JSON.stringify({error: 'Message expired. Please try again.'}),
+        {status: 401, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
       );
     }
 
@@ -63,26 +77,34 @@ serve(async (req: Request) => {
     const signatureBytes = decodeBase64(signature);
     const publicKeyBytes = decodeBase58(wallet, 32);
 
-    const valid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
+    const valid = nacl.sign.detached.verify(
+      messageBytes,
+      signatureBytes,
+      publicKeyBytes,
+    );
     if (!valid) {
       return new Response(
-        JSON.stringify({ error: 'Invalid signature' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        JSON.stringify({error: 'Invalid signature'}),
+        {status: 401, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
       );
     }
+
+    // --- Replay guard ---
+    // Reject re-use of the exact same signed challenge.
+    await markChallengeAsUsed(wallet, message);
 
     // --- Issue JWT ---
     const now = Math.floor(Date.now() / 1000);
     const key = await crypto.subtle.importKey(
       'raw',
       new TextEncoder().encode(JWT_SECRET),
-      { name: 'HMAC', hash: 'SHA-256' },
+      {name: 'HMAC', hash: 'SHA-256'},
       false,
       ['sign'],
     );
 
     const token = await create(
-      { alg: 'HS256', typ: 'JWT' },
+      {alg: 'HS256', typ: 'JWT'},
       {
         sub: wallet,
         wallet,
@@ -96,17 +118,50 @@ serve(async (req: Request) => {
     );
 
     return new Response(
-      JSON.stringify({ token, wallet, expires_at: now + TOKEN_TTL_S }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      JSON.stringify({token, wallet, expires_at: now + TOKEN_TTL_S}),
+      {status: 200, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
     );
   } catch (err) {
     console.error('wallet-auth error:', err);
+
+    if (err instanceof Error && err.message.includes('already used')) {
+      return new Response(JSON.stringify({error: err.message}), {
+        status: 409,
+        headers: {...corsHeaders, 'Content-Type': 'application/json'},
+      });
+    }
+
     return new Response(
-      JSON.stringify({ error: 'Internal error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      JSON.stringify({error: 'Internal error'}),
+      {status: 500, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
     );
   }
 });
+
+async function markChallengeAsUsed(wallet: string, message: string): Promise<void> {
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {persistSession: false, autoRefreshToken: false},
+  });
+
+  // Best-effort cleanup of stale challenge rows.
+  await supabase
+    .from('auth_challenges')
+    .delete()
+    .lt('created_at', new Date(Date.now() - MAX_AGE_MS * 2).toISOString());
+
+  const {error} = await supabase.from('auth_challenges').insert({
+    wallet,
+    message,
+  });
+
+  if (error) {
+    // Postgres unique violation
+    if (error.code === '23505') {
+      throw new Error('Auth challenge already used. Please reconnect wallet.');
+    }
+    throw new Error(`Could not store auth challenge: ${error.message}`);
+  }
+}
 
 // --- Base58 decode (Solana wallet addresses) ---
 // When expectedLen is provided (e.g. 32 for public keys), the output is
@@ -120,15 +175,20 @@ function decodeBase58(str: string, expectedLen?: number): Uint8Array {
   let num = 0n;
   for (const char of str) {
     const idx = ALPHABET.indexOf(char);
-    if (idx === -1) throw new Error(`Invalid base58 character: ${char}`);
+    if (idx === -1) {
+      throw new Error(`Invalid base58 character: ${char}`);
+    }
     num = num * BASE + BigInt(idx);
   }
 
   // Count leading '1's (zero bytes in base58)
   let leadingZeros = 0;
   for (const char of str) {
-    if (char === '1') leadingZeros++;
-    else break;
+    if (char === '1') {
+      leadingZeros++;
+    } else {
+      break;
+    }
   }
 
   // Convert BigInt to bytes
@@ -143,7 +203,9 @@ function decodeBase58(str: string, expectedLen?: number): Uint8Array {
   const outLen = expectedLen ?? rawLen;
 
   if (expectedLen && rawLen > expectedLen) {
-    throw new Error(`Base58 decoded length ${rawLen} exceeds expected ${expectedLen}`);
+    throw new Error(
+      `Base58 decoded length ${rawLen} exceeds expected ${expectedLen}`,
+    );
   }
 
   // Place bytes right-aligned in the output buffer so leading zeros are preserved

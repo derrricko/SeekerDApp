@@ -21,14 +21,16 @@ export const RECIPIENTS: Recipient[] = [
     id: 'evan-beheard',
     name: 'BeHeard Movement',
     wallet: '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T',
-    description: 'Youth mentorship program in Tulsa. Every dollar goes to the kids.',
+    description:
+      'Youth mentorship program in Tulsa. Every dollar goes to the kids.',
     category: 'Youth',
   },
   {
     id: 'jasmine-brakes',
     name: 'Jasmine',
     wallet: '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T',
-    description: 'Needs brake repair — currently unsafe to drive her children to school.',
+    description:
+      'Needs brake repair — currently unsafe to drive her children to school.',
     category: 'Transportation',
   },
   {

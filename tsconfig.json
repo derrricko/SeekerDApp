@@ -5,6 +5,7 @@
   },
   "exclude": [
     "archive",
+    "docs",
     "supabase",
     "programs"
   ]

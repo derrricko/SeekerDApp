@@ -2,6 +2,7 @@
 
 import {useEffect, useRef, useState} from 'react';
 import {getSupabase} from './supabase';
+import {decodeBase64} from '../utils/base64';
 
 // ---------- Types ----------
 
@@ -38,7 +39,9 @@ export async function fetchConversations(
     .or(`donor_wallet.eq.${walletAddress},admin_wallet.eq.${walletAddress}`)
     .order('created_at', {ascending: false});
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
   return (data || []).map(c => ({
     ...c,
     amount_sol: c.donations?.amount_sol,
@@ -58,7 +61,9 @@ export async function fetchMessages(
     .eq('conversation_id', conversationId)
     .order('created_at', {ascending: true});
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
   return data || [];
 }
 
@@ -84,7 +89,9 @@ export async function sendMessage(
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
   return data;
 }
 
@@ -99,12 +106,14 @@ export async function uploadChatMedia(
   const supabase = getSupabase();
   const filePath = `${conversationId}/${Date.now()}-${fileName}`;
 
-  const bytes = decode(fileBase64);
+  const bytes = decodeBase64(fileBase64);
   const {data, error} = await supabase.storage
     .from('chat-media')
     .upload(filePath, bytes.buffer as ArrayBuffer, {contentType});
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
 
   const {data: urlData} = supabase.storage
     .from('chat-media')
@@ -113,31 +122,26 @@ export async function uploadChatMedia(
   return urlData.publicUrl;
 }
 
-// base64 → Uint8Array
-function decode(base64: string): Uint8Array {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
 // ---------- useChatMessages hook ----------
 
 /** Insert a message into a sorted array, deduplicating by id */
 function insertSorted(prev: Message[], msg: Message): Message[] {
   // Deduplicate: if message already exists, skip
-  if (prev.some(m => m.id === msg.id)) return prev;
+  if (prev.some(m => m.id === msg.id)) {
+    return prev;
+  }
 
   // Binary-search insert position by created_at for correct ordering
   const ts = msg.created_at;
   let lo = 0;
   let hi = prev.length;
   while (lo < hi) {
-    const mid = (lo + hi) >>> 1;
-    if (prev[mid].created_at <= ts) lo = mid + 1;
-    else hi = mid;
+    const mid = Math.floor((lo + hi) / 2);
+    if (prev[mid].created_at <= ts) {
+      lo = mid + 1;
+    } else {
+      hi = mid;
+    }
   }
   const next = [...prev];
   next.splice(lo, 0, msg);
@@ -153,7 +157,9 @@ export function useChatMessages(conversationId: string | null) {
   // Single effect: subscribe first, then fetch, to avoid missing messages
   // in the gap between fetch-complete and subscribe-active.
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId) {
+      return;
+    }
 
     let cancelled = false;
     setLoading(true);

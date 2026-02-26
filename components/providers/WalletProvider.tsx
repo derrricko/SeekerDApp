@@ -1,5 +1,4 @@
-// v2 WalletProvider — MWA wallet connection only
-// NO SIWS signIn, NO auth tokens
+// v2 WalletProvider — MWA wallet connection + wallet-signed Supabase auth
 //
 // INTERFACE:
 //   useWallet() → { connected, publicKey, connect, disconnect, signAndSendTransaction }
@@ -8,14 +7,24 @@ import React, {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {PublicKey, Transaction} from '@solana/web3.js';
 import {transact} from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import {APP_IDENTITY, SOLANA_CLUSTER} from '../../config/env';
-import {Buffer} from 'buffer';
+import {
+  createWalletAuthMessage,
+  authenticateWalletSignature,
+} from '../../services/auth';
+import {retryPendingConversations} from '../../services/donations';
+import {
+  hydrateSupabaseAccessToken,
+  setSupabaseAccessToken,
+} from '../../services/supabase';
+import {decodeBase64, encodeBase64} from '../../utils/base64';
+import {utf8Encode} from '../../utils/utf8';
 
 interface WalletContextType {
   connected: boolean;
@@ -23,9 +32,7 @@ interface WalletContextType {
   connecting: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
-  signAndSendTransaction: (
-    transaction: Transaction,
-  ) => Promise<string>;
+  signAndSendTransaction: (transaction: Transaction) => Promise<string>;
 }
 
 const WalletContext = createContext<WalletContextType>({
@@ -47,6 +54,11 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
 
   const connected = publicKey !== null;
 
+  // Restore auth token (if present) so Supabase client headers are hydrated early.
+  React.useEffect(() => {
+    hydrateSupabaseAccessToken().catch(() => {});
+  }, []);
+
   const connect = useCallback(async () => {
     setConnecting(true);
     try {
@@ -55,9 +67,47 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
           chain: `solana:${SOLANA_CLUSTER}`,
           identity: APP_IDENTITY,
         });
-        const pubkey = new PublicKey(auth.accounts[0].address);
+
+        if (!auth.accounts?.length || !auth.accounts[0]?.address) {
+          throw new Error('Wallet authorize returned no accounts');
+        }
+
+        const base64Address = auth.accounts[0].address;
+        const pubkey = parseAuthorizedAccountAddress(base64Address);
+        const walletAddress = pubkey.toBase58();
+
+        // Wallet signs a short-lived auth challenge. Server verifies signature and
+        // returns a JWT used for Supabase RLS access scoped to this wallet.
+        const message = createWalletAuthMessage();
+        const payload = utf8Encode(message);
+        const signedPayloads = await wallet.signMessages({
+          addresses: [base64Address],
+          payloads: [payload],
+        });
+
+        if (!signedPayloads[0]) {
+          throw new Error('Wallet did not return a signed auth payload');
+        }
+
+        const signature = encodeBase64(signedPayloads[0]);
+        const authResult = await authenticateWalletSignature({
+          wallet: walletAddress,
+          signature,
+          message,
+        });
+
+        await setSupabaseAccessToken(authResult.token);
         setPublicKey(pubkey);
+        await AsyncStorage.setItem('@glimpse_wallet_address', walletAddress);
+
+        // Best-effort replay for orphaned DB writes where on-chain tx succeeded.
+        retryPendingConversations().catch(() => {});
       });
+    } catch (error) {
+      setPublicKey(null);
+      await AsyncStorage.removeItem('@glimpse_wallet_address');
+      await setSupabaseAccessToken(null);
+      throw error;
     } finally {
       setConnecting(false);
     }
@@ -65,6 +115,8 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
 
   const disconnect = useCallback(() => {
     setPublicKey(null);
+    AsyncStorage.removeItem('@glimpse_wallet_address').catch(() => {});
+    setSupabaseAccessToken(null).catch(() => {});
   }, []);
 
   const signAndSendTransaction = useCallback(
@@ -82,7 +134,12 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
         });
 
         // Verify the re-authorized wallet matches the connected wallet
-        const reauthPubkey = new PublicKey(reauth.accounts[0].address);
+        if (!reauth.accounts?.length || !reauth.accounts[0]?.address) {
+          throw new Error('Wallet re-authorization returned no accounts');
+        }
+        const reauthPubkey = parseAuthorizedAccountAddress(
+          reauth.accounts[0].address,
+        );
         if (!reauthPubkey.equals(publicKey)) {
           throw new Error(
             'Wallet mismatch: re-authorized wallet differs from connected wallet. Please reconnect.',
@@ -90,41 +147,14 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
         }
 
         const signatures = await wallet.signAndSendTransactions({
-          transactions: [
-            transaction.serialize({
-              requireAllSignatures: false,
-              verifySignatures: false,
-            }),
-          ],
+          transactions: [transaction],
         });
 
-        // signAndSendTransactions returns Uint8Array[] of 64-byte signatures.
-        // Some MWA implementations may return base64 strings instead.
         const sig = signatures[0];
-        if (typeof sig === 'string') {
-          // Already a string (base64 or base58 depending on wallet)
-          signature = sig;
-        } else {
-          // Uint8Array → base58 using proper encoding with leading-zero handling
-          const BS58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-          const bytes = new Uint8Array(sig);
-
-          // Count leading zeros (each maps to '1' in base58)
-          let leadingZeros = 0;
-          for (let i = 0; i < bytes.length && bytes[i] === 0; i++) {
-            leadingZeros++;
-          }
-
-          // Convert to BigInt for base58 division
-          let num = BigInt('0x' + Buffer.from(bytes).toString('hex'));
-          let encoded = '';
-          while (num > 0n) {
-            encoded = BS58_ALPHABET[Number(num % 58n)] + encoded;
-            num = num / 58n;
-          }
-
-          signature = '1'.repeat(leadingZeros) + encoded;
+        if (!sig) {
+          throw new Error('Wallet returned an empty signature');
         }
+        signature = sig;
       });
 
       return signature;
@@ -141,10 +171,31 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
       disconnect,
       signAndSendTransaction,
     }),
-    [connected, publicKey, connecting, connect, disconnect, signAndSendTransaction],
+    [
+      connected,
+      publicKey,
+      connecting,
+      connect,
+      disconnect,
+      signAndSendTransaction,
+    ],
   );
 
   return (
     <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
   );
+}
+
+function parseAuthorizedAccountAddress(address: string): PublicKey {
+  try {
+    const accountBytes = decodeBase64(address);
+    if (accountBytes.length === 32) {
+      return new PublicKey(accountBytes);
+    }
+  } catch {
+    // Fall through to base58 parse.
+  }
+
+  // Compatibility fallback for wallets that return base58 addresses.
+  return new PublicKey(address);
 }

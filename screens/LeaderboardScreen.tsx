@@ -11,8 +11,8 @@ export default function LeaderboardScreen() {
         <Text style={styles.comingSoonTitle}>Rankings coming soon</Text>
         <Text style={styles.comingSoonText}>
           Every donation creates a verifiable on-chain receipt. We're building a
-          public leaderboard that ranks donors by total given — transparent,
-          on Solana, no trust required.
+          public leaderboard that ranks donors by total given — transparent, on
+          Solana, no trust required.
         </Text>
       </View>
     </View>

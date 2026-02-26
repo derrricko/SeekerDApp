@@ -25,13 +25,22 @@ function TabIcon({name, color}: {name: string; color: string}) {
   );
 }
 
+const TAB_ICON_RENDERERS: Record<
+  string,
+  (props: {color: string}) => JSX.Element
+> = {
+  Give: ({color}) => <TabIcon name="Give" color={color} />,
+  Messages: ({color}) => <TabIcon name="Messages" color={color} />,
+  Leaderboard: ({color}) => <TabIcon name="Leaderboard" color={color} />,
+};
+
 export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Tab.Navigator
         screenOptions={({route}) => ({
           headerShown: false,
-          tabBarIcon: ({color}) => <TabIcon name={route.name} color={color} />,
+          tabBarIcon: TAB_ICON_RENDERERS[route.name] ?? TAB_ICON_RENDERERS.Give,
           tabBarStyle: {
             backgroundColor: '#0A0A0A',
             borderTopColor: '#1A1A1A',

@@ -32,9 +32,10 @@ screens/MessagesScreen.tsx             — Conversation list + chat view
 screens/LeaderboardScreen.tsx          — "Coming soon" placeholder
 
 components/providers/ConnectionProvider.tsx — Solana RPC connection
-components/providers/WalletProvider.tsx     — MWA wallet (connect, sign, send)
+components/providers/WalletProvider.tsx     — MWA wallet + wallet-signed Supabase auth
 
-services/supabase.ts                   — Supabase client factory
+services/auth.ts                       — createWalletAuthMessage, authenticateWalletSignature
+services/supabase.ts                   — Supabase client + JWT token management
 services/donations.ts                  — executeDonation() orchestrator
 services/chat.ts                       — Chat CRUD + useChatMessages hook
 
@@ -42,11 +43,20 @@ utils/transfer.ts                      — SOL transfer + Memo instruction build
 utils/errors.ts                        — Result<T> type, MWA/tx error handling
 utils/explorer.ts                      — Solana Explorer URL builder
 utils/retry.ts                         — AsyncStorage retry queue for orphaned donations
+utils/base64.ts                        — Base64 encode/decode (MWA address parsing)
+utils/utf8.ts                          — UTF-8 encoding wrapper
+
+supabase/functions/wallet-auth/index.ts     — Ed25519 verify → JWT issuance
+supabase/functions/record-donation/index.ts — On-chain tx verify → upsert donation + conversation
+supabase/migrations/001_v2_tables.sql       — Schema (donations, conversations, messages)
+supabase/migrations/002_v2_hardening.sql    — RLS policies + current_wallet()
+supabase/migrations/003_v2_auth_replay_guard.sql — Auth challenge replay guard
 
 navigation/AppNavigator.tsx            — Bottom tab navigator
 
 docs/SOUL.md                           — Founder voice & narrative
 docs/glimpse-stats.md                  — Market research & statistics
+STATUS.md                              — Living ship status (what works, what blocks)
 TODOS.md                               — Deferred work with full context
 ```
 
@@ -106,6 +116,49 @@ TODOS.md                               — Deferred work with full context
 - `t`: unix timestamp (seconds)
 - `app`: "glimpse" (identifies Glimpse transactions)
 
+## Wallet Auth Flow
+```
+  MWA authorize() → wallet.signMessages("glimpse-auth:{timestamp}")
+       │                        │
+       │                        ▼
+       │            services/auth.ts → POST /functions/v1/wallet-auth
+       │                        │
+       │                        ▼
+       │            Edge fn: verify ed25519 sig → issue JWT {wallet, role, exp}
+       │                        │
+       │                        ▼
+       │            services/supabase.ts → store JWT, recreate client
+       │
+       └── publicKey set → app ready for donations
+```
+
+- Auth message format: `glimpse-auth:{unix_ms_timestamp}` (5-min window)
+- JWT claims: `{ wallet, role: "authenticated", aud: "authenticated", exp }`
+- Token stored in AsyncStorage at `@glimpse_wallet_jwt`
+- `hydrateSupabaseAccessToken()` restores token on cold start
+- Migration 003 adds `auth_challenges` table to prevent replay
+
+## Server-Side Donation Recording
+```
+  After confirmTransaction() on-chain:
+       │
+       ▼
+  POST /functions/v1/record-donation  { txSignature, recipientId }
+       │  (Bearer JWT from wallet-auth)
+       ▼
+  Edge fn:
+    1. Verify JWT → extract wallet
+    2. Fetch tx from Solana RPC (jsonParsed, 6 retries)
+    3. Validate: transfer source = JWT wallet
+    4. Validate: transfer dest = RECIPIENT_WALLETS[recipientId]
+    5. Validate: memo has app="glimpse", amounts match
+    6. Upsert donation row (idempotent by tx_signature)
+    7. Upsert conversation + welcome message
+    8. Return { conversationId }
+```
+
+If recording fails, the tx is on-chain but orphaned. `addPendingConversation()` queues it in AsyncStorage. `retryPendingConversations()` runs on next wallet connect.
+
 ## Error Handling Pattern
 ```typescript
 import { Result, ok, fail, safeAsync } from './utils/errors';
@@ -119,11 +172,28 @@ if (result.success) {
 }
 ```
 
-## Chat Architecture
-- **Backend:** Supabase Realtime (postgres_changes on `messages` table)
+## Supabase Backend
+
+### Tables (migration 001)
+- `donations` — tx_signature (unique), donor_wallet, recipient_wallet, recipient_id, amount_sol
+- `conversations` — donation_id (FK), donor_wallet, admin_wallet
+- `messages` — conversation_id (FK), sender_wallet, body, media_url, media_type
+
+### RLS (migration 002)
+- `current_wallet()` SQL fn extracts wallet from JWT `request.jwt.claims`
+- Donations: **service_role insert only**, read by donor or recipient wallet
+- Conversations: **service_role insert**, read by donor or admin wallet
+- Messages: participant insert (sender_wallet must match), participant read via conversation join
+- Storage (`chat-media`): participant upload/read scoped by conversation_id in file path
+
+### Edge Functions
+- `wallet-auth` — ed25519 signature verify → JWT issuance (24h TTL)
+- `record-donation` — on-chain tx validation → upsert donation + conversation
+
+### Chat Architecture
+- **Realtime:** Supabase postgres_changes on `messages` table
 - **Media:** Supabase Storage (`chat-media` bucket), image transforms via URL params
-- **Access control:** RLS on conversations + messages (donor_wallet OR admin_wallet)
-- **Hook:** `useChatMessages(conversationId)` — handles subscribe/unsubscribe/reconnect
+- **Hook:** `useChatMessages(conversationId)` — subscribe before fetch, insertSorted, dedup by id
 
 ## Key Packages (v2 — stripped down)
 ```
@@ -151,3 +221,12 @@ react-native-safe-area-context     — Safe area
 - `react-native-get-random-values` MUST be second import (crypto)
 - RN 0.76 Hermes has native TextEncoder/TextDecoder — do NOT polyfill
 - Metro resolver maps Node.js built-ins in `metro.config.js`
+
+## Default Delivery Preferences (Project Owner)
+- Keep outputs **professional, minimal, and investor-grade** by default.
+- Go **one layer up in abstraction**: lead with thesis, positioning, and business impact before details.
+- Preserve core meaning, but tighten wording for clarity and decision-readiness.
+- Prefer clean visual systems: restrained palette, strong typography, high contrast, low ornament.
+- Avoid busy layouts, heavy glow/shading, and decorative effects unless explicitly requested.
+- For design deliverables, prioritize readability in browser and PDF export.
+- For instructions, use plain English and explicit step-by-step terminal commands when needed.

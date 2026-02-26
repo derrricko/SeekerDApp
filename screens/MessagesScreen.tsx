@@ -16,7 +16,6 @@ import {
 import {useWallet} from '../components/providers/WalletProvider';
 import {
   Conversation,
-  Message,
   fetchConversations,
   sendMessage,
   useChatMessages,
@@ -72,15 +71,21 @@ export default function MessagesScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Messages</Text>
       <Text style={styles.subtitle}>
-        Each donation opens a thread. We share updates, photos, and receipts here.
+        Each donation opens a thread. We share updates, photos, and receipts
+        here.
       </Text>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#4F46E5" style={{marginTop: 40}} />
+        <ActivityIndicator
+          size="large"
+          color="#4F46E5"
+          style={{marginTop: 40}}
+        />
       ) : conversations.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateText}>
-            No messages yet. Make a donation from the Give tab to start a thread.
+            No messages yet. Make a donation from the Give tab to start a
+            thread.
           </Text>
         </View>
       ) : (
@@ -88,9 +93,7 @@ export default function MessagesScreen() {
           data={conversations}
           keyExtractor={item => item.id}
           renderItem={({item}) => {
-            const recipient = RECIPIENTS.find(
-              r => r.id === item.recipient_id,
-            );
+            const recipient = RECIPIENTS.find(r => r.id === item.recipient_id);
             return (
               <TouchableOpacity
                 style={styles.convoCard}
@@ -100,9 +103,7 @@ export default function MessagesScreen() {
                   <Text style={styles.convoName}>
                     {recipient?.name || 'Donation'}
                   </Text>
-                  <Text style={styles.convoAmount}>
-                    {item.amount_sol} SOL
-                  </Text>
+                  <Text style={styles.convoAmount}>{item.amount_sol} SOL</Text>
                 </View>
                 <Text style={styles.convoDate}>
                   {new Date(item.created_at).toLocaleDateString()}
@@ -131,6 +132,7 @@ function ChatView({
   const {messages, loading, error} = useChatMessages(conversation.id);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const flatListRef = React.useRef<FlatList>(null);
 
   const recipient = RECIPIENTS.find(r => r.id === conversation.recipient_id);
@@ -142,13 +144,20 @@ function ChatView({
   );
 
   const handleSend = useCallback(async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim()) {
+      return;
+    }
     setSending(true);
+    setSendError(null);
     try {
       await sendMessage(conversation.id, walletAddress, inputText.trim());
       setInputText('');
-    } catch {
-      // Message will retry via realtime
+    } catch (sendErrorReason) {
+      const message =
+        sendErrorReason instanceof Error
+          ? sendErrorReason.message
+          : 'Message failed to send. Try again.';
+      setSendError(message);
     }
     setSending(false);
   }, [inputText, conversation.id, walletAddress]);
@@ -174,6 +183,10 @@ function ChatView({
       {/* Messages */}
       {loading ? (
         <ActivityIndicator size="large" color="#4F46E5" style={{flex: 1}} />
+      ) : error ? (
+        <View style={styles.chatErrorWrap}>
+          <Text style={styles.chatErrorText}>{error}</Text>
+        </View>
       ) : (
         <FlatList
           ref={flatListRef}
@@ -245,6 +258,7 @@ function ChatView({
           </Text>
         </TouchableOpacity>
       </View>
+      {sendError ? <Text style={styles.sendErrorText}>{sendError}</Text> : null}
     </KeyboardAvoidingView>
   );
 }
@@ -430,5 +444,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#fff',
+  },
+  sendErrorText: {
+    color: '#EF4444',
+    fontSize: 12,
+    textAlign: 'center',
+    paddingBottom: 8,
+  },
+  chatErrorWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  chatErrorText: {
+    fontSize: 14,
+    color: '#EF4444',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

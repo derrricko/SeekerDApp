@@ -1,5 +1,7 @@
 // v2 environment config — SOL donations only, no USDC/escrow
-export const SOLANA_CLUSTER = 'devnet' as const;
+export type SolanaCluster = 'devnet' | 'testnet' | 'mainnet-beta';
+
+export const SOLANA_CLUSTER: SolanaCluster = 'devnet';
 export const RPC_URL = 'https://api.devnet.solana.com';
 
 export const APP_IDENTITY = {

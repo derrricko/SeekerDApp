@@ -18,7 +18,9 @@ import {
   TransactionInstruction,
   LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
+import {Buffer} from 'buffer';
 import {MEMO_PROGRAM_ID} from '../config/env';
+import {utf8Encode} from './utf8';
 
 export interface DonationMemo {
   /** Donor wallet (short: first 8 chars) */
@@ -44,7 +46,12 @@ export async function buildDonationTransaction(
   donor: PublicKey,
   recipientAddress: string,
   amountSOL: number,
-): Promise<{transaction: Transaction; memo: DonationMemo; lastValidBlockHeight: number}> {
+): Promise<{
+  transaction: Transaction;
+  memo: DonationMemo;
+  blockhash: string;
+  lastValidBlockHeight: number;
+}> {
   let recipient: PublicKey;
   try {
     recipient = new PublicKey(recipientAddress);
@@ -53,7 +60,9 @@ export async function buildDonationTransaction(
   }
 
   if (!PublicKey.isOnCurve(recipient.toBytes())) {
-    throw new Error(`Recipient address is not a valid Solana wallet: ${recipientAddress}`);
+    throw new Error(
+      `Recipient address is not a valid Solana wallet: ${recipientAddress}`,
+    );
   }
 
   const lamports = Math.round(amountSOL * LAMPORTS_PER_SOL);
@@ -85,25 +94,27 @@ export async function buildDonationTransaction(
   };
 
   const memoData = JSON.stringify(memo);
+  const memoBytes = utf8Encode(memoData);
 
   // Validate memo fits in Solana memo program limit (~566 bytes)
-  if (Buffer.from(memoData).length > 566) {
+  if (memoBytes.length > 566) {
     throw new Error('Memo data exceeds maximum size');
   }
 
   const memoIx = new TransactionInstruction({
     keys: [{pubkey: donor, isSigner: true, isWritable: false}],
     programId: new PublicKey(MEMO_PROGRAM_ID),
-    data: Buffer.from(memoData),
+    data: Buffer.from(memoBytes),
   });
 
   // 3. Combine into single atomic transaction
   const transaction = new Transaction();
   transaction.add(transferIx, memoIx);
 
-  const {blockhash, lastValidBlockHeight} = await connection.getLatestBlockhash();
+  const {blockhash, lastValidBlockHeight} =
+    await connection.getLatestBlockhash();
   transaction.recentBlockhash = blockhash;
   transaction.feePayer = donor;
 
-  return {transaction, memo, lastValidBlockHeight};
+  return {transaction, memo, blockhash, lastValidBlockHeight};
 }

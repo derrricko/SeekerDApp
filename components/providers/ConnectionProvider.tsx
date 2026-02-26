@@ -15,10 +15,7 @@ export function useConnection(): Connection {
 }
 
 export function ConnectionProvider({children}: {children: React.ReactNode}) {
-  const connection = useMemo(
-    () => new Connection(RPC_URL, 'confirmed'),
-    [],
-  );
+  const connection = useMemo(() => new Connection(RPC_URL, 'confirmed'), []);
 
   return (
     <ConnectionContext.Provider value={{connection}}>

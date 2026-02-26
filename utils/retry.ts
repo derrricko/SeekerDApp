@@ -30,7 +30,9 @@ export async function getPendingConversations(): Promise<
   PendingConversation[]
 > {
   const raw = await AsyncStorage.getItem(RETRY_KEY);
-  if (!raw) return [];
+  if (!raw) {
+    return [];
+  }
   try {
     return JSON.parse(raw);
   } catch {

@@ -32,8 +32,7 @@ const MWA_AUTH_FAILED = 'ERROR_AUTHORIZATION_FAILED';
 const MWA_NOT_FOUND = 'ERROR_WALLET_NOT_FOUND';
 
 export function handleMWAError(error: unknown): AppError {
-  const message =
-    error instanceof Error ? error.message : String(error);
+  const message = error instanceof Error ? error.message : String(error);
 
   if (message.includes(MWA_USER_DECLINED)) {
     return {
@@ -69,10 +68,12 @@ export function handleMWAError(error: unknown): AppError {
 // ---------- Transaction errors ----------
 
 export function handleTransactionError(error: unknown): AppError {
-  const message =
-    error instanceof Error ? error.message : String(error);
+  const message = error instanceof Error ? error.message : String(error);
 
-  if (message.includes('insufficient lamports') || message.includes('Insufficient')) {
+  if (
+    message.includes('insufficient lamports') ||
+    message.includes('Insufficient')
+  ) {
     return {
       code: 'INSUFFICIENT_SOL',
       message: 'Not enough SOL in your wallet for this donation.',
@@ -80,7 +81,10 @@ export function handleTransactionError(error: unknown): AppError {
     };
   }
 
-  if (message.includes('Blockhash not found') || message.includes('block height exceeded')) {
+  if (
+    message.includes('Blockhash not found') ||
+    message.includes('block height exceeded')
+  ) {
     return {
       code: 'TX_EXPIRED',
       message: 'Transaction expired. Please try again.',

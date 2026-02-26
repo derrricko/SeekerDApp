@@ -18,7 +18,6 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import {useWallet} from '../components/providers/WalletProvider';
 import {useConnection} from '../components/providers/ConnectionProvider';
@@ -51,12 +50,33 @@ export default function GiveScreen() {
   const canSend = connected && selectedRecipient && validAmount;
 
   const handleConfirm = useCallback(() => {
-    if (!canSend || !selectedRecipient) return;
+    if (!canSend || !selectedRecipient) {
+      return;
+    }
     setFlowState('confirming');
   }, [canSend, selectedRecipient]);
 
+  const handleConnect = useCallback(async () => {
+    try {
+      await connect();
+    } catch (connectError) {
+      const message =
+        connectError instanceof Error
+          ? connectError.message
+          : 'Could not connect wallet';
+      setError({
+        code: 'WALLET_CONNECT_FAILED',
+        message,
+        recoverable: true,
+      });
+      setFlowState('error');
+    }
+  }, [connect]);
+
   const handleSend = useCallback(async () => {
-    if (!canSend || !publicKey || !selectedRecipient) return;
+    if (!canSend || !publicKey || !selectedRecipient) {
+      return;
+    }
 
     setFlowState('sending');
     setError(null);
@@ -118,7 +138,9 @@ export default function GiveScreen() {
         ) : (
           <TouchableOpacity
             style={styles.connectButton}
-            onPress={connect}
+            onPress={() => {
+              handleConnect().catch(() => {});
+            }}
             disabled={connecting}>
             {connecting ? (
               <ActivityIndicator color="#fff" size="small" />
@@ -225,11 +247,10 @@ export default function GiveScreen() {
         <View style={[styles.stateCard, styles.confirmCard]}>
           <Text style={styles.stateTitle}>Confirm donation</Text>
           <Text style={styles.confirmAmount}>{amountNum} SOL</Text>
-          <Text style={styles.stateText}>
-            to {selectedRecipient.name}
-          </Text>
+          <Text style={styles.stateText}>to {selectedRecipient.name}</Text>
           <Text style={styles.confirmWallet}>
-            {selectedRecipient.wallet.slice(0, 8)}...{selectedRecipient.wallet.slice(-4)}
+            {selectedRecipient.wallet.slice(0, 8)}...
+            {selectedRecipient.wallet.slice(-4)}
           </Text>
           <View style={styles.confirmButtons}>
             <TouchableOpacity
@@ -291,7 +312,10 @@ export default function GiveScreen() {
           {error.recoverable && (
             <TouchableOpacity
               style={styles.resetButton}
-              onPress={() => { setError(null); setFlowState('idle'); }}>
+              onPress={() => {
+                setError(null);
+                setFlowState('idle');
+              }}>
               <Text style={styles.resetButtonText}>Try again</Text>
             </TouchableOpacity>
           )}
