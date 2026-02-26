@@ -61,6 +61,12 @@ export async function executeDonation(
   try {
     txSignature = await signAndSend(transaction);
   } catch (error) {
+    // Check for transaction-level errors first (insufficient SOL, expired, etc.)
+    // then fall back to MWA-specific error handling
+    const txError = handleTransactionError(error);
+    if (txError.code !== 'TX_UNKNOWN') {
+      return {success: false, error: txError};
+    }
     const mwaError = handleMWAError(error);
     return {success: false, error: mwaError};
   }
@@ -130,12 +136,16 @@ async function recordAndCreateConversation(
     throw convoError;
   }
 
-  // Insert welcome message
-  await supabase.from('messages').insert({
+  // Insert welcome message — non-blocking; conversation is valid even if this fails
+  const {error: msgError} = await supabase.from('messages').insert({
     conversation_id: conversation.id,
     sender_wallet: ADMIN_WALLET,
     body: `Your donation of ${amountSOL} SOL reached its destination. We'll share updates here as the impact unfolds.`,
   });
+
+  if (msgError) {
+    console.warn('[donations] Welcome message insert failed:', msgError.message);
+  }
 
   return conversation.id;
 }

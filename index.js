@@ -4,7 +4,10 @@ import './globals';
 // 2. Crypto polyfill (MUST be before any Solana imports)
 import 'react-native-get-random-values';
 
-// 3. App imports
+// 3. Native screen optimization (must be early, before navigation renders)
+import 'react-native-screens';
+
+// 4. App imports
 import {AppRegistry} from 'react-native';
 import App from './App';
 import {name as appName} from './app.json';

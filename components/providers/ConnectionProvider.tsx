@@ -1,13 +1,13 @@
 import React, {createContext, useContext, useMemo} from 'react';
-import {Connection, clusterApiUrl} from '@solana/web3.js';
-import {SOLANA_CLUSTER} from '../../config/env';
+import {Connection} from '@solana/web3.js';
+import {RPC_URL} from '../../config/env';
 
 interface ConnectionContextType {
   connection: Connection;
 }
 
 const ConnectionContext = createContext<ConnectionContextType>({
-  connection: new Connection(clusterApiUrl('devnet')),
+  connection: new Connection(RPC_URL, 'confirmed'),
 });
 
 export function useConnection(): Connection {
@@ -16,7 +16,7 @@ export function useConnection(): Connection {
 
 export function ConnectionProvider({children}: {children: React.ReactNode}) {
   const connection = useMemo(
-    () => new Connection(clusterApiUrl(SOLANA_CLUSTER), 'confirmed'),
+    () => new Connection(RPC_URL, 'confirmed'),
     [],
   );
 

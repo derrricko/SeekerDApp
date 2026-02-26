@@ -135,6 +135,12 @@ function ChatView({
 
   const recipient = RECIPIENTS.find(r => r.id === conversation.recipient_id);
 
+  // Reverse messages for inverted FlatList (newest at bottom, rendered from bottom up)
+  const invertedMessages = React.useMemo(
+    () => [...messages].reverse(),
+    [messages],
+  );
+
   const handleSend = useCallback(async () => {
     if (!inputText.trim()) return;
     setSending(true);
@@ -146,12 +152,6 @@ function ChatView({
     }
     setSending(false);
   }, [inputText, conversation.id, walletAddress]);
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => flatListRef.current?.scrollToEnd({animated: true}), 100);
-    }
-  }, [messages.length]);
 
   const isAdmin = (senderWallet: string) =>
     senderWallet === ADMIN_WALLET || senderWallet === conversation.admin_wallet;
@@ -177,9 +177,13 @@ function ChatView({
       ) : (
         <FlatList
           ref={flatListRef}
-          data={messages}
+          data={invertedMessages}
+          inverted
           keyExtractor={item => item.id}
           contentContainerStyle={styles.messagesList}
+          initialNumToRender={20}
+          maxToRenderPerBatch={15}
+          windowSize={11}
           renderItem={({item}) => {
             const fromAdmin = isAdmin(item.sender_wallet);
             return (

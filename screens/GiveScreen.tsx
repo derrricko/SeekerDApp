@@ -143,7 +143,8 @@ export default function GiveScreen() {
                   isSelected && styles.recipientCardSelected,
                 ]}
                 onPress={() => setSelectedRecipient(r)}
-                activeOpacity={0.7}>
+                activeOpacity={0.7}
+                disabled={flowState !== 'idle'}>
                 <Text
                   style={[
                     styles.recipientName,
@@ -169,6 +170,7 @@ export default function GiveScreen() {
           value={amount}
           onChangeText={setAmount}
           keyboardType="decimal-pad"
+          editable={flowState === 'idle'}
           placeholder="0.0"
           placeholderTextColor="#888"
         />
@@ -180,7 +182,8 @@ export default function GiveScreen() {
                 styles.presetChip,
                 amountNum === preset && styles.presetChipActive,
               ]}
-              onPress={() => setAmount(String(preset))}>
+              onPress={() => setAmount(String(preset))}
+              disabled={flowState !== 'idle'}>
               <Text
                 style={[
                   styles.presetText,
@@ -194,11 +197,11 @@ export default function GiveScreen() {
       </View>
 
       {/* Amount validation hint */}
-      {amount !== '' && !validAmount && amountNum > 0 && (
+      {amount !== '' && !validAmount && (
         <Text style={styles.validationHint}>
-          {amountNum < MIN_SOL
-            ? `Minimum donation is ${MIN_SOL} SOL`
-            : `Maximum donation is ${MAX_SOL} SOL`}
+          {amountNum > MAX_SOL
+            ? `Maximum donation is ${MAX_SOL} SOL`
+            : `Minimum donation is ${MIN_SOL} SOL`}
         </Text>
       )}
 
@@ -288,7 +291,7 @@ export default function GiveScreen() {
           {error.recoverable && (
             <TouchableOpacity
               style={styles.resetButton}
-              onPress={() => setFlowState('idle')}>
+              onPress={() => { setError(null); setFlowState('idle'); }}>
               <Text style={styles.resetButtonText}>Try again</Text>
             </TouchableOpacity>
           )}

@@ -76,10 +76,18 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
       let signature = '';
       await transact(async wallet => {
         // Re-authorize in each transact session
-        await wallet.authorize({
+        const reauth = await wallet.authorize({
           chain: `solana:${SOLANA_CLUSTER}`,
           identity: APP_IDENTITY,
         });
+
+        // Verify the re-authorized wallet matches the connected wallet
+        const reauthPubkey = new PublicKey(reauth.accounts[0].address);
+        if (!reauthPubkey.equals(publicKey)) {
+          throw new Error(
+            'Wallet mismatch: re-authorized wallet differs from connected wallet. Please reconnect.',
+          );
+        }
 
         const signatures = await wallet.signAndSendTransactions({
           transactions: [

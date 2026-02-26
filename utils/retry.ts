@@ -18,6 +18,10 @@ export async function addPendingConversation(
   pending: PendingConversation,
 ): Promise<void> {
   const existing = await getPendingConversations();
+  // Deduplicate by txSignature — prevent double-queue from retries or double-taps
+  if (existing.some(p => p.txSignature === pending.txSignature)) {
+    return;
+  }
   existing.push(pending);
   await AsyncStorage.setItem(RETRY_KEY, JSON.stringify(existing));
 }

@@ -1,6 +1,6 @@
 // v2 chat service — Supabase Realtime subscriptions + message CRUD
 
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {getSupabase} from './supabase';
 
 // ---------- Types ----------
@@ -99,9 +99,10 @@ export async function uploadChatMedia(
   const supabase = getSupabase();
   const filePath = `${conversationId}/${Date.now()}-${fileName}`;
 
+  const bytes = decode(fileBase64);
   const {data, error} = await supabase.storage
     .from('chat-media')
-    .upload(filePath, decode(fileBase64), {contentType});
+    .upload(filePath, bytes.buffer as ArrayBuffer, {contentType});
 
   if (error) throw error;
 
@@ -124,35 +125,44 @@ function decode(base64: string): Uint8Array {
 
 // ---------- useChatMessages hook ----------
 
+/** Insert a message into a sorted array, deduplicating by id */
+function insertSorted(prev: Message[], msg: Message): Message[] {
+  // Deduplicate: if message already exists, skip
+  if (prev.some(m => m.id === msg.id)) return prev;
+
+  // Binary-search insert position by created_at for correct ordering
+  const ts = msg.created_at;
+  let lo = 0;
+  let hi = prev.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (prev[mid].created_at <= ts) lo = mid + 1;
+    else hi = mid;
+  }
+  const next = [...prev];
+  next.splice(lo, 0, msg);
+  return next;
+}
+
 export function useChatMessages(conversationId: string | null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const channelRef = useRef<any>(null);
 
-  // Load initial messages
+  // Single effect: subscribe first, then fetch, to avoid missing messages
+  // in the gap between fetch-complete and subscribe-active.
   useEffect(() => {
     if (!conversationId) return;
 
+    let cancelled = false;
     setLoading(true);
     setError(null);
-
-    fetchMessages(conversationId)
-      .then(msgs => {
-        setMessages(msgs);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [conversationId]);
-
-  // Subscribe to realtime updates
-  useEffect(() => {
-    if (!conversationId) return;
+    setMessages([]);
 
     const supabase = getSupabase();
+
+    // 1. Subscribe to realtime FIRST so no messages are missed
     const channel = supabase
       .channel(`chat:${conversationId}`)
       .on(
@@ -164,14 +174,43 @@ export function useChatMessages(conversationId: string | null) {
           filter: `conversation_id=eq.${conversationId}`,
         },
         payload => {
-          setMessages(prev => [...prev, payload.new as Message]);
+          if (!cancelled) {
+            const msg = payload.new as Message;
+            setMessages(prev => insertSorted(prev, msg));
+          }
         },
       )
       .subscribe();
 
     channelRef.current = channel;
 
+    // 2. Then fetch existing messages — merge with any that arrived via realtime
+    fetchMessages(conversationId)
+      .then(msgs => {
+        if (!cancelled) {
+          setMessages(prev => {
+            // Merge fetched messages with any realtime messages already received
+            const merged = [...msgs];
+            for (const rt of prev) {
+              if (!merged.some(m => m.id === rt.id)) {
+                merged.push(rt);
+              }
+            }
+            merged.sort((a, b) => a.created_at.localeCompare(b.created_at));
+            return merged;
+          });
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        if (!cancelled) {
+          setError(err.message);
+          setLoading(false);
+        }
+      });
+
     return () => {
+      cancelled = true;
       supabase.removeChannel(channel);
       channelRef.current = null;
     };

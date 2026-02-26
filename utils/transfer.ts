@@ -45,11 +45,27 @@ export async function buildDonationTransaction(
   recipientAddress: string,
   amountSOL: number,
 ): Promise<{transaction: Transaction; memo: DonationMemo; lastValidBlockHeight: number}> {
-  const recipient = new PublicKey(recipientAddress);
+  let recipient: PublicKey;
+  try {
+    recipient = new PublicKey(recipientAddress);
+  } catch {
+    throw new Error(`Invalid recipient wallet address: ${recipientAddress}`);
+  }
+
+  if (!PublicKey.isOnCurve(recipient.toBytes())) {
+    throw new Error(`Recipient address is not a valid Solana wallet: ${recipientAddress}`);
+  }
+
   const lamports = Math.round(amountSOL * LAMPORTS_PER_SOL);
 
   if (lamports <= 0) {
     throw new Error('Donation amount must be greater than 0');
+  }
+
+  // Safety cap: prevent accidental large transfers (matches GiveScreen MAX_SOL)
+  const MAX_LAMPORTS = 100 * LAMPORTS_PER_SOL;
+  if (lamports > MAX_LAMPORTS) {
+    throw new Error('Donation amount exceeds maximum of 100 SOL');
   }
 
   // 1. SOL transfer instruction
@@ -63,7 +79,7 @@ export async function buildDonationTransaction(
   const memo: DonationMemo = {
     d: donor.toBase58().slice(0, 8),
     r: recipient.toBase58().slice(0, 8),
-    a: amountSOL,
+    a: lamports / LAMPORTS_PER_SOL,
     t: Math.floor(Date.now() / 1000),
     app: 'glimpse',
   };
