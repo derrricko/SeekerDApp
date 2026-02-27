@@ -9,17 +9,23 @@ import {StatusBar} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {ConnectionProvider} from './components/providers/ConnectionProvider';
 import {WalletProvider} from './components/providers/WalletProvider';
+import {AppStateProvider} from './components/providers/AppStateProvider';
 import AppNavigator from './navigation/AppNavigator';
+import {ThemeProvider} from './theme/Theme';
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle="light-content" backgroundColor="#0A0A0A" />
-      <ConnectionProvider>
-        <WalletProvider>
-          <AppNavigator />
-        </WalletProvider>
-      </ConnectionProvider>
+      <ThemeProvider initialMode="light">
+        <StatusBar barStyle="dark-content" backgroundColor="#EDE8FA" />
+        <ConnectionProvider>
+          <WalletProvider>
+            <AppStateProvider>
+              <AppNavigator />
+            </AppStateProvider>
+          </WalletProvider>
+        </ConnectionProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

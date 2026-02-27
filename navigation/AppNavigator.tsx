@@ -1,83 +1,220 @@
-// v2 navigation — 3 tabs: Give, Messages, Leaderboard
-
-import React from 'react';
-import {Text} from 'react-native';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import React, {useCallback, useMemo, useState} from 'react';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {
+  createBottomTabNavigator,
+  BottomTabBarProps,
+} from '@react-navigation/bottom-tabs';
 import {NavigationContainer} from '@react-navigation/native';
-import GiveScreen from '../screens/GiveScreen';
-import MessagesScreen from '../screens/MessagesScreen';
+import CampaignsScreen from '../screens/CampaignsScreen';
+import HomeScreen from '../screens/HomeScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
+import HowItWorksCarousel from '../screens/HowItWorksCarousel';
 
 const Tab = createBottomTabNavigator();
 
-// Simple text icons to avoid adding a vector-icon dependency
-const TAB_ICONS: Record<string, string> = {
-  Give: '$',
-  Messages: '#',
-  Leaderboard: '*',
+const TAB_BAR_THEME = {
+  background: '#F3EFFF',
+  border: '#1A1125',
+  textPrimary: '#1A1125',
+  textTertiary: '#6E6787',
+  accent: '#6554D1',
+  brand: 'CourierPrime-Regular',
 };
 
-function TabIcon({name, color}: {name: string; color: string}) {
+interface GiveFlowContextValue {
+  openGiveFlow: () => void;
+  isGiveFlowOpen: boolean;
+}
+
+const GiveFlowContext = React.createContext<GiveFlowContextValue>({
+  openGiveFlow: () => {},
+  isGiveFlowOpen: false,
+});
+
+function AppTabBar({state, navigation}: BottomTabBarProps) {
+  const {openGiveFlow, isGiveFlowOpen} = React.useContext(GiveFlowContext);
+
   return (
-    <Text style={{fontSize: 20, color, fontWeight: '700'}}>
-      {TAB_ICONS[name] || '?'}
-    </Text>
+    <View
+      style={[
+        styles.wrap,
+        {
+          backgroundColor: TAB_BAR_THEME.background,
+          borderTopColor: TAB_BAR_THEME.border,
+        },
+      ]}>
+      <TouchableOpacity
+        onPress={openGiveFlow}
+        style={styles.sideButton}
+        activeOpacity={0.8}>
+        <View
+          style={[
+            styles.questionCircle,
+            {
+              borderColor: TAB_BAR_THEME.border,
+              backgroundColor: isGiveFlowOpen
+                ? TAB_BAR_THEME.border
+                : TAB_BAR_THEME.background,
+            },
+          ]}>
+          <Text
+            style={[
+              styles.questionText,
+              {
+                color: isGiveFlowOpen
+                  ? TAB_BAR_THEME.background
+                  : TAB_BAR_THEME.textPrimary,
+                fontFamily: TAB_BAR_THEME.brand,
+              },
+            ]}>
+            ?
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={openGiveFlow}
+        style={[
+          styles.centerButton,
+          {
+            backgroundColor: TAB_BAR_THEME.accent,
+            borderColor: TAB_BAR_THEME.border,
+          },
+        ]}
+        activeOpacity={0.9}>
+        <Text style={[styles.centerText, {fontFamily: TAB_BAR_THEME.brand}]}>
+          GIVE
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Rank')}
+        style={styles.sideButton}
+        activeOpacity={0.8}>
+        <Text
+          style={[
+            styles.sideText,
+            {
+              color:
+                state.index === 1
+                  ? TAB_BAR_THEME.textPrimary
+                  : TAB_BAR_THEME.textTertiary,
+              fontFamily: TAB_BAR_THEME.brand,
+            },
+          ]}>
+          RANK
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
-const TAB_ICON_RENDERERS: Record<
-  string,
-  (props: {color: string}) => JSX.Element
-> = {
-  Give: ({color}) => <TabIcon name="Give" color={color} />,
-  Messages: ({color}) => <TabIcon name="Messages" color={color} />,
-  Leaderboard: ({color}) => <TabIcon name="Leaderboard" color={color} />,
-};
-
-export default function AppNavigator() {
+function MainTabs() {
   return (
     <NavigationContainer>
       <Tab.Navigator
-        screenOptions={({route}) => ({
-          headerShown: false,
-          tabBarIcon: TAB_ICON_RENDERERS[route.name] ?? TAB_ICON_RENDERERS.Give,
-          tabBarStyle: {
-            backgroundColor: '#0A0A0A',
-            borderTopColor: '#1A1A1A',
-            borderTopWidth: 1,
-            paddingTop: 8,
-            paddingBottom: 8,
-            height: 60,
-          },
-          tabBarActiveTintColor: '#818CF8',
-          tabBarInactiveTintColor: '#555',
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontWeight: '600',
-          },
-        })}>
-        <Tab.Screen
-          name="Give"
-          component={GiveScreen}
-          options={{
-            tabBarLabel: 'Give',
-          }}
-        />
-        <Tab.Screen
-          name="Messages"
-          component={MessagesScreen}
-          options={{
-            tabBarLabel: 'Messages',
-          }}
-        />
-        <Tab.Screen
-          name="Leaderboard"
-          component={LeaderboardScreen}
-          options={{
-            tabBarLabel: 'Leaderboard',
-          }}
-        />
+        initialRouteName="Glimpses"
+        tabBar={AppTabBar}
+        screenOptions={{headerShown: false}}>
+        <Tab.Screen name="Glimpses" component={CampaignsScreen} />
+        <Tab.Screen name="Rank" component={LeaderboardScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );
 }
+
+export default function AppNavigator() {
+  const [entered, setEntered] = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+
+  const openGiveFlow = useCallback(() => {
+    setShowHowItWorks(true);
+  }, []);
+
+  const closeGiveFlow = useCallback(() => {
+    setShowHowItWorks(false);
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({
+      openGiveFlow,
+      isGiveFlowOpen: showHowItWorks,
+    }),
+    [openGiveFlow, showHowItWorks],
+  );
+
+  if (!entered) {
+    return (
+      <HomeScreen
+        onContinue={() => {
+          setEntered(true);
+          openGiveFlow();
+        }}
+      />
+    );
+  }
+
+  return (
+    <GiveFlowContext.Provider value={contextValue}>
+      <View style={{flex: 1}}>
+        <MainTabs />
+        <HowItWorksCarousel visible={showHowItWorks} onClose={closeGiveFlow} />
+      </View>
+    </GiveFlowContext.Provider>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: 3,
+    height: 58,
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+  },
+  sideButton: {
+    minWidth: 92,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  questionCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  questionText: {
+    fontSize: 21,
+    lineHeight: 24,
+    fontWeight: '700',
+  },
+  sideText: {
+    fontSize: 29,
+    letterSpacing: 1,
+    fontWeight: '700',
+  },
+  centerButton: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    marginTop: -48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#1A1125',
+    shadowOpacity: 0.3,
+    shadowRadius: 0,
+    shadowOffset: {width: 2, height: 2},
+    elevation: 4,
+  },
+  centerText: {
+    color: '#F3EFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
+});

@@ -13,6 +13,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import {useTheme} from '../theme/Theme';
 import {useWallet} from '../components/providers/WalletProvider';
 import {
   Conversation,
@@ -24,6 +25,7 @@ import {RECIPIENTS} from '../data/recipients';
 import {ADMIN_WALLET} from '../config/env';
 
 export default function MessagesScreen() {
+  const {theme} = useTheme();
   const {connected, publicKey} = useWallet();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,9 +50,15 @@ export default function MessagesScreen() {
 
   if (!connected) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyTitle}>Messages</Text>
-        <Text style={styles.emptyText}>
+      <View
+        style={[
+          styles.emptyContainer,
+          {backgroundColor: theme.colors.background},
+        ]}>
+        <Text style={[styles.emptyTitle, {color: theme.colors.textPrimary}]}>
+          Messages
+        </Text>
+        <Text style={[styles.emptyText, {color: theme.colors.textSecondary}]}>
           Connect your wallet to see your donation threads.
         </Text>
       </View>
@@ -68,9 +76,12 @@ export default function MessagesScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Messages</Text>
-      <Text style={styles.subtitle}>
+    <View
+      style={[styles.container, {backgroundColor: theme.colors.background}]}>
+      <Text style={[styles.title, {color: theme.colors.textPrimary}]}>
+        Messages
+      </Text>
+      <Text style={[styles.subtitle, {color: theme.colors.textSecondary}]}>
         Each donation opens a thread. We share updates, photos, and receipts
         here.
       </Text>
@@ -78,12 +89,13 @@ export default function MessagesScreen() {
       {loading ? (
         <ActivityIndicator
           size="large"
-          color="#4F46E5"
+          color={theme.colors.accent}
           style={{marginTop: 40}}
         />
       ) : conversations.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>
+          <Text
+            style={[styles.emptyStateText, {color: theme.colors.textTertiary}]}>
             No messages yet. Make a donation from the Give tab to start a
             thread.
           </Text>
@@ -96,16 +108,33 @@ export default function MessagesScreen() {
             const recipient = RECIPIENTS.find(r => r.id === item.recipient_id);
             return (
               <TouchableOpacity
-                style={styles.convoCard}
+                style={[
+                  styles.convoCard,
+                  {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
                 onPress={() => setActiveConvo(item)}
                 activeOpacity={0.7}>
                 <View style={styles.convoHeader}>
-                  <Text style={styles.convoName}>
+                  <Text
+                    style={[
+                      styles.convoName,
+                      {color: theme.colors.textPrimary},
+                    ]}>
                     {recipient?.name || 'Donation'}
                   </Text>
-                  <Text style={styles.convoAmount}>{item.amount_sol} SOL</Text>
+                  <Text
+                    style={[styles.convoAmount, {color: theme.colors.accent}]}>
+                    {item.amount_sol} SOL
+                  </Text>
                 </View>
-                <Text style={styles.convoDate}>
+                <Text
+                  style={[
+                    styles.convoDate,
+                    {color: theme.colors.textTertiary},
+                  ]}>
                   {new Date(item.created_at).toLocaleDateString()}
                 </Text>
               </TouchableOpacity>
@@ -129,6 +158,7 @@ function ChatView({
   walletAddress: string;
   onBack: () => void;
 }) {
+  const {theme} = useTheme();
   const {messages, loading, error} = useChatMessages(conversation.id);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
@@ -167,25 +197,34 @@ function ChatView({
 
   return (
     <KeyboardAvoidingView
-      style={styles.chatContainer}
+      style={[styles.chatContainer, {backgroundColor: theme.colors.background}]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={90}>
       {/* Header */}
-      <View style={styles.chatHeader}>
+      <View
+        style={[styles.chatHeader, {borderBottomColor: theme.colors.border}]}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={[styles.backText, {color: theme.colors.accent}]}>
+            ← Back
+          </Text>
         </TouchableOpacity>
-        <Text style={styles.chatTitle}>
+        <Text style={[styles.chatTitle, {color: theme.colors.textPrimary}]}>
           {recipient?.name || 'Thread'} · {conversation.amount_sol} SOL
         </Text>
       </View>
 
       {/* Messages */}
       {loading ? (
-        <ActivityIndicator size="large" color="#4F46E5" style={{flex: 1}} />
+        <ActivityIndicator
+          size="large"
+          color={theme.colors.accent}
+          style={{flex: 1}}
+        />
       ) : error ? (
         <View style={styles.chatErrorWrap}>
-          <Text style={styles.chatErrorText}>{error}</Text>
+          <Text style={[styles.chatErrorText, {color: theme.colors.danger}]}>
+            {error}
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -203,7 +242,15 @@ function ChatView({
               <View
                 style={[
                   styles.bubble,
-                  fromAdmin ? styles.bubbleAdmin : styles.bubbleDonor,
+                  fromAdmin
+                    ? [
+                        styles.bubbleAdmin,
+                        {backgroundColor: theme.colors.surface},
+                      ]
+                    : [
+                        styles.bubbleDonor,
+                        {backgroundColor: theme.colors.accent},
+                      ],
                 ]}>
                 {item.media_url && (
                   <Image
@@ -216,14 +263,16 @@ function ChatView({
                   <Text
                     style={[
                       styles.bubbleText,
-                      fromAdmin
-                        ? styles.bubbleTextAdmin
-                        : styles.bubbleTextDonor,
+                      {color: theme.colors.textPrimary},
                     ]}>
                     {item.body}
                   </Text>
                 )}
-                <Text style={styles.bubbleTime}>
+                <Text
+                  style={[
+                    styles.bubbleTime,
+                    {color: theme.colors.textTertiary},
+                  ]}>
                   {new Date(item.created_at).toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -236,20 +285,37 @@ function ChatView({
       )}
 
       {/* Input */}
-      <View style={styles.inputBar}>
+      <View
+        style={[
+          styles.inputBar,
+          {
+            borderTopColor: theme.colors.border,
+            backgroundColor: theme.colors.background,
+          },
+        ]}>
         <TextInput
-          style={styles.chatInput}
+          style={[
+            styles.chatInput,
+            {
+              backgroundColor: theme.colors.surface,
+              color: theme.colors.textPrimary,
+              borderColor: theme.colors.border,
+            },
+          ]}
           value={inputText}
           onChangeText={setInputText}
           placeholder="Say something..."
-          placeholderTextColor="#666"
+          placeholderTextColor={theme.colors.textTertiary}
           multiline
           maxLength={500}
         />
         <TouchableOpacity
           style={[
             styles.sendChatButton,
-            (!inputText.trim() || sending) && styles.sendChatButtonDisabled,
+            {backgroundColor: theme.colors.accent},
+            (!inputText.trim() || sending) && {
+              backgroundColor: theme.colors.surfaceAlt,
+            },
           ]}
           onPress={handleSend}
           disabled={!inputText.trim() || sending}>
@@ -258,7 +324,11 @@ function ChatView({
           </Text>
         </TouchableOpacity>
       </View>
-      {sendError ? <Text style={styles.sendErrorText}>{sendError}</Text> : null}
+      {sendError ? (
+        <Text style={[styles.sendErrorText, {color: theme.colors.danger}]}>
+          {sendError}
+        </Text>
+      ) : null}
     </KeyboardAvoidingView>
   );
 }
@@ -266,18 +336,15 @@ function ChatView({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0A0A',
     padding: 24,
   },
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#FAFAFA',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
-    color: '#888',
     lineHeight: 22,
     marginBottom: 24,
   },
@@ -285,18 +352,15 @@ const styles = StyleSheet.create({
   // Empty states
   emptyContainer: {
     flex: 1,
-    backgroundColor: '#0A0A0A',
     padding: 24,
   },
   emptyTitle: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#FAFAFA',
     marginBottom: 16,
   },
   emptyText: {
     fontSize: 15,
-    color: '#888',
     lineHeight: 22,
   },
   emptyState: {
@@ -305,19 +369,16 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 15,
-    color: '#666',
     textAlign: 'center',
     lineHeight: 22,
   },
 
   // Conversation list
   convoCard: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 14,
+    borderRadius: 0,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
   },
   convoHeader: {
     flexDirection: 'row',
@@ -328,41 +389,34 @@ const styles = StyleSheet.create({
   convoName: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#FAFAFA',
   },
   convoAmount: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#818CF8',
   },
   convoDate: {
     fontSize: 13,
-    color: '#666',
   },
 
   // Chat view
   chatContainer: {
     flex: 1,
-    backgroundColor: '#0A0A0A',
   },
   chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1A1A1A',
   },
   backButton: {
     marginRight: 12,
   },
   backText: {
     fontSize: 16,
-    color: '#818CF8',
   },
   chatTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#FAFAFA',
   },
   messagesList: {
     padding: 16,
@@ -372,40 +426,35 @@ const styles = StyleSheet.create({
   // Bubbles
   bubble: {
     maxWidth: '80%',
-    borderRadius: 16,
+    borderRadius: 0,
     padding: 12,
     marginBottom: 8,
   },
   bubbleAdmin: {
     alignSelf: 'flex-start',
-    backgroundColor: '#1A1A1A',
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: 0,
   },
   bubbleDonor: {
     alignSelf: 'flex-end',
-    backgroundColor: '#4F46E5',
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 0,
   },
   bubbleText: {
     fontSize: 15,
     lineHeight: 21,
   },
-  bubbleTextAdmin: {
-    color: '#EAEAEA',
-  },
+  bubbleTextAdmin: {},
   bubbleTextDonor: {
     color: '#fff',
   },
   bubbleTime: {
     fontSize: 11,
-    color: '#666',
     marginTop: 4,
     alignSelf: 'flex-end',
   },
   mediaImage: {
     width: '100%',
     height: 200,
-    borderRadius: 10,
+    borderRadius: 0,
     marginBottom: 8,
   },
 
@@ -415,30 +464,21 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     padding: 12,
     borderTopWidth: 1,
-    borderTopColor: '#1A1A1A',
-    backgroundColor: '#0A0A0A',
   },
   chatInput: {
     flex: 1,
-    backgroundColor: '#1A1A1A',
-    borderRadius: 20,
+    borderRadius: 0,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
-    color: '#FAFAFA',
     maxHeight: 100,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
   },
   sendChatButton: {
-    backgroundColor: '#4F46E5',
-    borderRadius: 20,
+    borderRadius: 0,
     paddingHorizontal: 18,
     paddingVertical: 10,
     marginLeft: 8,
-  },
-  sendChatButtonDisabled: {
-    backgroundColor: '#2A2A2A',
   },
   sendChatButtonText: {
     fontSize: 15,
@@ -446,7 +486,6 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   sendErrorText: {
-    color: '#EF4444',
     fontSize: 12,
     textAlign: 'center',
     paddingBottom: 8,
@@ -459,7 +498,6 @@ const styles = StyleSheet.create({
   },
   chatErrorText: {
     fontSize: 14,
-    color: '#EF4444',
     textAlign: 'center',
     lineHeight: 20,
   },

@@ -3,6 +3,15 @@
 > Last updated: 2026-02-26 by Claude Code
 > Branch: `v2/give-portal`
 
+## Default Working Mode
+
+- `interface-design` + `interaction-design` for all UI iteration
+- `fixing-motion-performance` for lag/stutter fixes
+- `12-principles-of-animation` for final motion review
+- `solana-dev` referenced on every code touch before merge
+
+This is the default process unless explicitly overridden.
+
 ## What Works Right Now
 
 - **Wallet connect** via MWA 2.0 (authorize + sign messages + sign transactions)
@@ -20,7 +29,7 @@
 
 | # | Blocker | Owner | Status |
 |---|---------|-------|--------|
-| 1 | Commit all untracked work to git | Claude Code | NOW |
+| 1 | Commit all untracked work to git | Claude Code | Completed |
 | 2 | Deploy Supabase migrations (001-003) | Derrick | Pending |
 | 3 | Deploy edge functions (wallet-auth, record-donation) | Derrick | Pending |
 | 4 | E2E test: connect → donate → see conversation | Either | After deploy |

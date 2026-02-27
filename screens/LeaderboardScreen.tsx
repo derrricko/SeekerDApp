@@ -1,54 +1,117 @@
-// v2 Leaderboard — placeholder for hackathon demo
-
 import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
+import {StyleSheet, Text, View} from 'react-native';
+import {useTheme} from '../theme/Theme';
+import AppHeader from '../ui/AppHeader';
+import ScreenContainer from '../ui/ScreenContainer';
+import SurfaceCard from '../ui/SurfaceCard';
 
 export default function LeaderboardScreen() {
+  const {theme} = useTheme();
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Leaderboard</Text>
-      <View style={styles.comingSoon}>
-        <Text style={styles.comingSoonTitle}>Rankings coming soon</Text>
-        <Text style={styles.comingSoonText}>
-          Every donation creates a verifiable on-chain receipt. We're building a
-          public leaderboard that ranks donors by total given — transparent, on
-          Solana, no trust required.
-        </Text>
-      </View>
+    <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+      <AppHeader title="Rank" />
+      <ScreenContainer>
+        <SurfaceCard>
+          <View style={styles.innerList}>
+            {[1, 2, 3, 4, 5].map(i => (
+              <View key={i} style={styles.row}>
+                <Text style={styles.rowRank}>#{i}</Text>
+                <View style={styles.fakeAvatar} />
+                <View style={{flex: 1}}>
+                  <View style={styles.linePrimary} />
+                  <View style={styles.lineSecondary} />
+                </View>
+                <Text style={styles.points}>{1000 - i * 150}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View
+            style={[
+              styles.overlay,
+              {backgroundColor: 'rgba(237,232,250,0.82)'},
+            ]}>
+            <View style={[styles.overlayCard, theme.shadows.card]}>
+              <Text style={styles.overlayLock}>⌾</Text>
+              <Text style={styles.overlayText}>COMING SOON</Text>
+            </View>
+          </View>
+        </SurfaceCard>
+      </ScreenContainer>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0A0A0A',
-    padding: 24,
+  root: {flex: 1},
+  innerList: {
+    opacity: 0.28,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#FAFAFA',
-    marginBottom: 24,
-  },
-  comingSoon: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#2A2A2A',
+  row: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
+    borderBottomWidth: 2,
+    borderStyle: 'dashed',
+    borderBottomColor: 'rgba(26,17,37,0.25)',
+    paddingVertical: 10,
   },
-  comingSoonTitle: {
+  rowRank: {
+    width: 34,
+    fontSize: 17,
+    color: '#1A1125',
+    fontWeight: '700',
+  },
+  fakeAvatar: {
+    width: 34,
+    height: 34,
+    borderWidth: 2,
+    borderColor: '#1A1125',
+    backgroundColor: '#1A1125',
+  },
+  linePrimary: {
+    height: 10,
+    width: 128,
+    backgroundColor: '#1A1125',
+    marginBottom: 6,
+  },
+  lineSecondary: {
+    height: 8,
+    width: 80,
+    backgroundColor: 'rgba(26,17,37,0.5)',
+  },
+  points: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#818CF8',
-    marginBottom: 12,
+    color: '#1A1125',
+    fontWeight: '700',
+    minWidth: 52,
+    textAlign: 'right',
   },
-  comingSoonText: {
-    fontSize: 15,
-    color: '#888',
-    lineHeight: 22,
-    textAlign: 'center',
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  overlayCard: {
+    borderWidth: 2,
+    borderColor: '#1A1125',
+    backgroundColor: '#6554D1',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    alignItems: 'center',
+    transform: [{rotate: '-2deg'}],
+  },
+  overlayLock: {
+    fontSize: 28,
+    color: '#EDE8FA',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  overlayText: {
+    color: '#EDE8FA',
+    fontSize: 24,
+    letterSpacing: 1.5,
+    fontWeight: '700',
   },
 });

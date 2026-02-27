@@ -1,5 +1,17 @@
 # Glimpse v2 — Solana Mobile DApp
 
+## Default Collaboration Profile (Locked)
+
+Use this skill stack by default for all implementation and review work:
+
+1. `interface-design` for screen structure, spacing, hierarchy, and visual consistency
+2. `interaction-design` for transitions, microinteractions, and UX polish
+3. `fixing-motion-performance` when motion feels slow or unstable on device
+4. `12-principles-of-animation` as final animation quality audit
+5. `solana-dev` referenced on every code change (frontend or backend) to ensure Solana best-practice alignment
+
+Rule: any touched code path should be checked against the Solana dev playbook before sign-off.
+
 ## What Changed (v1 → v2)
 
 Glimpse pivoted from a complex USDC escrow/vault system to a simple, direct SOL donation app with on-chain receipts and donor-recipient messaging. Built for the Monolith hackathon by a solo founder.
@@ -57,6 +69,7 @@ navigation/AppNavigator.tsx            — Bottom tab navigator
 docs/SOUL.md                           — Founder voice & narrative
 docs/glimpse-stats.md                  — Market research & statistics
 STATUS.md                              — Living ship status (what works, what blocks)
+memory/MEMORY.md                       — Persistent cross-session memory and backend runbook
 TODOS.md                               — Deferred work with full context
 ```
 

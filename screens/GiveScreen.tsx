@@ -1,602 +1,323 @@
-// v2 Give Screen — single scrollable donation flow
-//
-// LAYOUT:
-//   ┌─────────────────────────┐
-//   │  Wallet status / connect│
-//   │  Recipient grid (2-col) │
-//   │  Amount input + presets │
-//   │  Send button            │
-//   │  Success / error state  │
-//   └─────────────────────────┘
-
-import React, {useState, useCallback} from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
-import {useWallet} from '../components/providers/WalletProvider';
+import React, {useMemo, useState} from 'react';
+import {StyleSheet, Text, TextInput, View} from 'react-native';
+import {DonationCadence} from '../components/providers/AppStateProvider';
 import {useConnection} from '../components/providers/ConnectionProvider';
+import {useWallet} from '../components/providers/WalletProvider';
 import {executeDonation, DonationResult} from '../services/donations';
-import {RECIPIENTS, Recipient} from '../data/recipients';
-import {getExplorerUrl} from '../utils/explorer';
-import {AppError} from '../utils/errors';
+import {RECIPIENTS} from '../data/recipients';
+import {useTheme} from '../theme/Theme';
+import AppHeader from '../ui/AppHeader';
+import PrimaryButton from '../ui/PrimaryButton';
+import ScreenContainer from '../ui/ScreenContainer';
+import SegmentedControl from '../ui/SegmentedControl';
+import SurfaceCard from '../ui/SurfaceCard';
 
-type FlowState = 'idle' | 'confirming' | 'sending' | 'success' | 'error';
+type Step = 'form' | 'confirm' | 'done';
 
-const PRESETS = [0.1, 0.5, 1.0, 5.0];
-const MIN_SOL = 0.001;
-const MAX_SOL = 100;
+// Default to open-fund for hackathon. Recipient picker can be added to UI later.
+const DEFAULT_RECIPIENT =
+  RECIPIENTS.find(r => r.id === 'open-fund') || RECIPIENTS[0];
 
 export default function GiveScreen() {
-  const {connected, publicKey, connecting, connect, signAndSendTransaction} =
-    useWallet();
+  const {theme} = useTheme();
   const connection = useConnection();
+  const {connected, publicKey, connect, connecting, signAndSendTransaction} =
+    useWallet();
 
-  const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(
-    null,
-  );
-  const [amount, setAmount] = useState('');
-  const [flowState, setFlowState] = useState<FlowState>('idle');
-  const [result, setResult] = useState<DonationResult | null>(null);
-  const [error, setError] = useState<AppError | null>(null);
+  const [amountInput, setAmountInput] = useState('');
+  const [cadence, setCadence] = useState<DonationCadence>('one_time');
+  const [step, setStep] = useState<Step>('form');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [receipt, setReceipt] = useState<DonationResult | null>(null);
 
-  const amountNum = parseFloat(amount) || 0;
-  const validAmount = amountNum >= MIN_SOL && amountNum <= MAX_SOL;
-  const canSend = connected && selectedRecipient && validAmount;
+  const amount = useMemo(() => {
+    const parsed = Number(amountInput);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }, [amountInput]);
 
-  const handleConfirm = useCallback(() => {
-    if (!canSend || !selectedRecipient) {
+  const canContinue = amount > 0;
+
+  const runDonation = async () => {
+    if (!canContinue) {
       return;
     }
-    setFlowState('confirming');
-  }, [canSend, selectedRecipient]);
-
-  const handleConnect = useCallback(async () => {
-    try {
-      await connect();
-    } catch (connectError) {
-      const message =
-        connectError instanceof Error
-          ? connectError.message
-          : 'Could not connect wallet';
-      setError({
-        code: 'WALLET_CONNECT_FAILED',
-        message,
-        recoverable: true,
-      });
-      setFlowState('error');
-    }
-  }, [connect]);
-
-  const handleSend = useCallback(async () => {
-    if (!canSend || !publicKey || !selectedRecipient) {
+    if (!connected || !publicKey) {
+      setError('Connect your wallet first.');
       return;
     }
+    setLoading(true);
+    setError('');
 
-    setFlowState('sending');
-    setError(null);
-
-    const donationResult = await executeDonation(
+    const result = await executeDonation(
       connection,
       publicKey,
-      selectedRecipient.wallet,
-      selectedRecipient.id,
-      amountNum,
+      DEFAULT_RECIPIENT.wallet,
+      DEFAULT_RECIPIENT.id,
+      amount,
       signAndSendTransaction,
     );
 
-    if (donationResult.success) {
-      setResult(donationResult.data);
-      setFlowState('success');
+    if (result.success) {
+      setReceipt(result.data);
+      setStep('done');
     } else {
-      setError(donationResult.error);
-      setFlowState('error');
+      setError(result.error.message);
+      if (result.error.recoverable) {
+        setStep('confirm');
+      } else {
+        setStep('form');
+      }
     }
-  }, [
-    canSend,
-    publicKey,
-    selectedRecipient,
-    amountNum,
-    connection,
-    signAndSendTransaction,
-  ]);
+    setLoading(false);
+  };
 
-  const handleReset = () => {
-    setFlowState('idle');
-    setSelectedRecipient(null);
-    setAmount('');
-    setResult(null);
-    setError(null);
+  const reset = () => {
+    setAmountInput('');
+    setCadence('one_time');
+    setStep('form');
+    setError('');
+    setReceipt(null);
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled">
-      {/* Header */}
-      <Text style={styles.title}>Give</Text>
-      <Text style={styles.subtitle}>
-        Send SOL directly. Every donation creates a verifiable on-chain receipt.
-      </Text>
-
-      {/* Wallet */}
-      <View style={styles.section}>
-        {connected && publicKey ? (
-          <View style={styles.walletConnected}>
-            <View style={styles.walletDot} />
-            <Text style={styles.walletText}>
-              {publicKey.toBase58().slice(0, 4)}...
-              {publicKey.toBase58().slice(-4)}
-            </Text>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.connectButton}
-            onPress={() => {
-              handleConnect().catch(() => {});
-            }}
-            disabled={connecting}>
-            {connecting ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.connectButtonText}>Connect Wallet</Text>
-            )}
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Recipients */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Pick a recipient</Text>
-        <View style={styles.recipientGrid}>
-          {RECIPIENTS.map(r => {
-            const isSelected = selectedRecipient?.id === r.id;
-            return (
-              <TouchableOpacity
-                key={r.id}
-                style={[
-                  styles.recipientCard,
-                  isSelected && styles.recipientCardSelected,
-                ]}
-                onPress={() => setSelectedRecipient(r)}
-                activeOpacity={0.7}
-                disabled={flowState !== 'idle'}>
-                <Text
-                  style={[
-                    styles.recipientName,
-                    isSelected && styles.recipientNameSelected,
-                  ]}>
-                  {r.name}
-                </Text>
-                <Text style={styles.recipientCategory}>{r.category}</Text>
-                <Text style={styles.recipientDesc} numberOfLines={2}>
-                  {r.description}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* Amount */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Amount (SOL)</Text>
-        <TextInput
-          style={styles.amountInput}
-          value={amount}
-          onChangeText={setAmount}
-          keyboardType="decimal-pad"
-          editable={flowState === 'idle'}
-          placeholder="0.0"
-          placeholderTextColor="#888"
-        />
-        <View style={styles.presets}>
-          {PRESETS.map(preset => (
-            <TouchableOpacity
-              key={preset}
+    <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+      <AppHeader title="Give" />
+      <ScreenContainer>
+        {!connected && (
+          <SurfaceCard style={{marginBottom: theme.spacing.md}}>
+            <Text
               style={[
-                styles.presetChip,
-                amountNum === preset && styles.presetChipActive,
-              ]}
-              onPress={() => setAmount(String(preset))}
-              disabled={flowState !== 'idle'}>
+                styles.eyebrow,
+                {
+                  color: theme.colors.textTertiary,
+                  fontFamily: theme.typography.brand,
+                },
+              ]}>
+              WALLET
+            </Text>
+            <Text
+              style={[
+                styles.helper,
+                {color: theme.colors.textSecondary, marginBottom: 12},
+              ]}>
+              Connect your Solana wallet to donate.
+            </Text>
+            <PrimaryButton
+              label={connecting ? 'Connecting...' : 'Connect Wallet'}
+              onPress={connect}
+              disabled={connecting}
+            />
+          </SurfaceCard>
+        )}
+        <SurfaceCard>
+          {step === 'form' && (
+            <>
               <Text
                 style={[
-                  styles.presetText,
-                  amountNum === preset && styles.presetTextActive,
+                  styles.eyebrow,
+                  {
+                    color: theme.colors.textTertiary,
+                    fontFamily: theme.typography.brand,
+                  },
                 ]}>
-                {preset}
+                NEW CONTRIBUTION
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+              <Text
+                style={[styles.headline, {color: theme.colors.textPrimary}]}>
+                Enter amount
+              </Text>
 
-      {/* Amount validation hint */}
-      {amount !== '' && !validAmount && (
-        <Text style={styles.validationHint}>
-          {amountNum > MAX_SOL
-            ? `Maximum donation is ${MAX_SOL} SOL`
-            : `Minimum donation is ${MIN_SOL} SOL`}
-        </Text>
-      )}
+              <TextInput
+                value={amountInput}
+                onChangeText={setAmountInput}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                placeholderTextColor={theme.colors.textTertiary}
+                style={[
+                  styles.input,
+                  {
+                    borderColor: theme.colors.border,
+                    color: theme.colors.textPrimary,
+                    backgroundColor: theme.colors.surfaceAlt,
+                  },
+                ]}
+              />
 
-      {/* Send Button */}
-      {flowState === 'idle' && (
-        <TouchableOpacity
-          style={[styles.sendButton, !canSend && styles.sendButtonDisabled]}
-          onPress={handleConfirm}
-          disabled={!canSend}
-          activeOpacity={0.8}>
-          <Text style={styles.sendButtonText}>
-            {selectedRecipient
-              ? `Send ${amountNum || '...'} SOL to ${selectedRecipient.name}`
-              : 'Select a recipient'}
-          </Text>
-        </TouchableOpacity>
-      )}
+              <Text
+                style={[
+                  styles.eyebrow,
+                  {
+                    color: theme.colors.textTertiary,
+                    fontFamily: theme.typography.brand,
+                    marginTop: 8,
+                  },
+                ]}>
+                COMMITMENT
+              </Text>
 
-      {/* Confirmation step */}
-      {flowState === 'confirming' && selectedRecipient && (
-        <View style={[styles.stateCard, styles.confirmCard]}>
-          <Text style={styles.stateTitle}>Confirm donation</Text>
-          <Text style={styles.confirmAmount}>{amountNum} SOL</Text>
-          <Text style={styles.stateText}>to {selectedRecipient.name}</Text>
-          <Text style={styles.confirmWallet}>
-            {selectedRecipient.wallet.slice(0, 8)}...
-            {selectedRecipient.wallet.slice(-4)}
-          </Text>
-          <View style={styles.confirmButtons}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setFlowState('idle')}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.confirmSendButton}
-              onPress={handleSend}
-              activeOpacity={0.8}>
-              <Text style={styles.confirmSendButtonText}>Confirm & Send</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+              <SegmentedControl<DonationCadence>
+                value={cadence}
+                onChange={setCadence}
+                options={[
+                  {label: 'One-time', value: 'one_time'},
+                  {label: 'Daily', value: 'daily'},
+                ]}
+              />
 
-      {/* Sending state */}
-      {flowState === 'sending' && (
-        <View style={styles.stateCard}>
-          <ActivityIndicator size="large" color="#4F46E5" />
-          <Text style={styles.stateText}>
-            Sending {amountNum} SOL to {selectedRecipient?.name}...
-          </Text>
-        </View>
-      )}
+              <Text
+                style={[styles.helper, {color: theme.colors.textSecondary}]}>
+                Daily commitments build streaks and increase weighted impact.
+              </Text>
 
-      {/* Success state */}
-      {flowState === 'success' && result && (
-        <View style={[styles.stateCard, styles.successCard]}>
-          <Text style={styles.successEmoji}>✓</Text>
-          <Text style={styles.stateTitle}>Donation sent</Text>
-          <Text style={styles.stateText}>
-            {amountNum} SOL to {selectedRecipient?.name}
-          </Text>
-          <Text style={styles.txLink}>
-            {getExplorerUrl(result.txSignature)}
-          </Text>
-          {result.conversationId ? (
-            <Text style={styles.chatHint}>
-              A message thread has been created. Check the Messages tab.
-            </Text>
-          ) : (
-            <Text style={styles.chatHint}>
-              Chat room will be created when you reopen the app.
-            </Text>
+              {!!error && (
+                <Text style={[styles.error, {color: theme.colors.danger}]}>
+                  {error}
+                </Text>
+              )}
+
+              <PrimaryButton
+                label="Continue"
+                onPress={() => {
+                  if (!canContinue) {
+                    setError('Enter a number above zero.');
+                    return;
+                  }
+                  setError('');
+                  setStep('confirm');
+                }}
+                style={{marginTop: 14}}
+              />
+            </>
           )}
-          <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-            <Text style={styles.resetButtonText}>Give again</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
-      {/* Error state */}
-      {flowState === 'error' && error && (
-        <View style={[styles.stateCard, styles.errorCard]}>
-          <Text style={styles.stateTitle}>Something went wrong</Text>
-          <Text style={styles.stateText}>{error.message}</Text>
-          {error.recoverable && (
-            <TouchableOpacity
-              style={styles.resetButton}
-              onPress={() => {
-                setError(null);
-                setFlowState('idle');
-              }}>
-              <Text style={styles.resetButtonText}>Try again</Text>
-            </TouchableOpacity>
+          {step === 'confirm' && (
+            <>
+              <Text
+                style={[
+                  styles.eyebrow,
+                  {
+                    color: theme.colors.textTertiary,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                CONFIRM
+              </Text>
+              <Text
+                style={[styles.headline, {color: theme.colors.textPrimary}]}>
+                {amount} SOL
+              </Text>
+              <Text
+                style={[styles.helper, {color: theme.colors.textSecondary}]}>
+                {cadence === 'daily' ? 'Daily commitment' : 'One-time donation'}
+              </Text>
+
+              <View style={styles.confirmActions}>
+                <PrimaryButton
+                  label="Back"
+                  variant="secondary"
+                  fullWidth={false}
+                  style={styles.confirmBtn}
+                  onPress={() => setStep('form')}
+                />
+                <PrimaryButton
+                  label={loading ? 'Sending...' : 'Send'}
+                  fullWidth={false}
+                  style={styles.confirmBtn}
+                  onPress={runDonation}
+                  disabled={loading}
+                />
+              </View>
+            </>
           )}
-        </View>
-      )}
-    </ScrollView>
+
+          {step === 'done' && receipt && (
+            <>
+              <Text
+                style={[
+                  styles.eyebrow,
+                  {
+                    color: theme.colors.textTertiary,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                COMPLETE
+              </Text>
+              <Text
+                style={[styles.headline, {color: theme.colors.textPrimary}]}>
+                RECEIVED
+              </Text>
+              <Text
+                style={[styles.helper, {color: theme.colors.textSecondary}]}>
+                {receipt.memo.a} SOL · {DEFAULT_RECIPIENT.name}
+              </Text>
+              <Text
+                style={[styles.helper, {color: theme.colors.textSecondary}]}
+                numberOfLines={1}>
+                TX {receipt.txSignature.slice(0, 16)}...
+              </Text>
+              {receipt.conversationId && (
+                <Text
+                  style={[
+                    styles.helper,
+                    {color: theme.colors.accent, marginTop: 4},
+                  ]}>
+                  Message thread created
+                </Text>
+              )}
+              <PrimaryButton
+                label="Give Again"
+                onPress={reset}
+                style={{marginTop: 16}}
+              />
+            </>
+          )}
+        </SurfaceCard>
+      </ScreenContainer>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: '#0A0A0A',
   },
-  content: {
-    padding: 24,
-    paddingBottom: 100,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#FAFAFA',
+  eyebrow: {
+    fontSize: 12,
+    letterSpacing: 1.2,
     marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 15,
-    color: '#888',
+  headline: {
+    fontSize: 40,
+    lineHeight: 46,
+    fontWeight: '700',
+    marginBottom: 10,
+    textTransform: 'uppercase',
+  },
+  input: {
+    borderWidth: 2,
+    borderRadius: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 34,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  helper: {
+    fontSize: 16,
     lineHeight: 22,
-    marginBottom: 32,
   },
-  section: {
-    marginBottom: 28,
-  },
-  sectionLabel: {
+  error: {
+    marginTop: 8,
     fontSize: 14,
     fontWeight: '600',
-    color: '#AAA',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
-
-  // Wallet
-  walletConnected: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A1A1A',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#2A2A2A',
-  },
-  walletDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#22C55E',
-    marginRight: 10,
-  },
-  walletText: {
-    fontSize: 15,
-    color: '#FAFAFA',
-    fontFamily: 'monospace',
-  },
-  connectButton: {
-    backgroundColor: '#4F46E5',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  connectButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-
-  // Recipients
-  recipientGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  recipientCard: {
-    width: '47%',
-    backgroundColor: '#1A1A1A',
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1.5,
-    borderColor: '#2A2A2A',
-  },
-  recipientCardSelected: {
-    borderColor: '#4F46E5',
-    backgroundColor: '#1A1A2E',
-  },
-  recipientName: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#FAFAFA',
-    marginBottom: 4,
-  },
-  recipientNameSelected: {
-    color: '#818CF8',
-  },
-  recipientCategory: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  recipientDesc: {
-    fontSize: 13,
-    color: '#888',
-    lineHeight: 18,
-  },
-
-  // Amount
-  amountInput: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#FAFAFA',
-    borderWidth: 1,
-    borderColor: '#2A2A2A',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  presets: {
+  confirmActions: {
     flexDirection: 'row',
     gap: 10,
-  },
-  presetChip: {
-    flex: 1,
-    backgroundColor: '#1A1A1A',
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#2A2A2A',
-  },
-  presetChipActive: {
-    borderColor: '#4F46E5',
-    backgroundColor: '#1A1A2E',
-  },
-  presetText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#888',
-  },
-  presetTextActive: {
-    color: '#818CF8',
-  },
-
-  // Validation
-  validationHint: {
-    fontSize: 13,
-    color: '#EF4444',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-
-  // Send button
-  sendButton: {
-    backgroundColor: '#4F46E5',
-    borderRadius: 14,
-    padding: 18,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#2A2A2A',
-  },
-  sendButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#fff',
-  },
-
-  // State cards
-  stateCard: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#2A2A2A',
-    marginTop: 8,
-  },
-  confirmCard: {
-    borderColor: '#4F46E540',
-  },
-  confirmAmount: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#818CF8',
-    marginVertical: 8,
-  },
-  confirmWallet: {
-    fontSize: 12,
-    color: '#666',
-    fontFamily: 'monospace',
-    marginTop: 4,
-  },
-  confirmButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 20,
-    width: '100%',
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: '#2A2A2A',
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#AAA',
-  },
-  confirmSendButton: {
-    flex: 1,
-    backgroundColor: '#4F46E5',
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  confirmSendButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  successCard: {
-    borderColor: '#22C55E40',
-  },
-  errorCard: {
-    borderColor: '#EF444440',
-  },
-  successEmoji: {
-    fontSize: 32,
-    color: '#22C55E',
-    marginBottom: 12,
-  },
-  stateTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FAFAFA',
-    marginBottom: 8,
-  },
-  stateText: {
-    fontSize: 15,
-    color: '#AAA',
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 22,
-  },
-  txLink: {
-    fontSize: 12,
-    color: '#818CF8',
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  chatHint: {
-    fontSize: 14,
-    color: '#22C55E',
     marginTop: 16,
-    textAlign: 'center',
   },
-  resetButton: {
-    marginTop: 20,
-    backgroundColor: '#2A2A2A',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  resetButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FAFAFA',
+  confirmBtn: {
+    flex: 1,
   },
 });
