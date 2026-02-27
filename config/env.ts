@@ -1,8 +1,8 @@
-// v2 environment config — USDC-only donation flow
+// v2 environment config — USDC-only donation flow (MAINNET)
 export type SolanaCluster = 'devnet' | 'testnet' | 'mainnet-beta';
 
-export const SOLANA_CLUSTER: SolanaCluster = 'devnet';
-export const RPC_URL = 'https://api.devnet.solana.com';
+export const SOLANA_CLUSTER: SolanaCluster = 'mainnet-beta';
+export const RPC_URL = 'https://api.mainnet-beta.solana.com';
 
 export const APP_IDENTITY = {
   name: 'Glimpse',
@@ -18,12 +18,13 @@ export const SUPABASE_ANON_KEY =
 // Solana Memo Program v2
 export const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 
-// Admin wallet (giveglimpse.skr)
-export const ADMIN_WALLET = 'HQ5C58Tu11cy8Q8Lfjpj8sRTW25wY7VnwgoW61cfMsY5';
+// Glimpse Seeker device wallet — receives all donations AND acts as admin
+// for donor chat threads. Single wallet = full on-chain transparency.
+export const ADMIN_WALLET = 'DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk';
 
-// Single destination pool wallet (fund matching/distribution happens off-chain).
+// Same wallet as admin — all donations go here, matching happens off-chain.
 export const MATCHING_POOL_WALLET =
-  '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T';
+  'DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk';
 
 // USDC mint by cluster.
 const USDC_MINTS: Record<SolanaCluster, string> = {

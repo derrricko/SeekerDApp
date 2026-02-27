@@ -58,6 +58,9 @@ export default function GiveScreen() {
   };
 
   const runDonation = async () => {
+    if (loading) {
+      return;
+    }
     if (!canContinue) {
       return;
     }
