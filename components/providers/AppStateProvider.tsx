@@ -6,7 +6,9 @@ import React, {
   useState,
 } from 'react';
 
-export type DonationCadence = 'one_time' | 'daily';
+import {DonationCadence} from '../../data/donationConfig';
+
+export type {DonationCadence};
 export type LeaderboardScope = 'campaign' | 'all_time';
 
 export interface CampaignMilestone {
@@ -285,8 +287,8 @@ export function AppStateProvider({children}: {children: React.ReactNode}) {
               : 'New one-time contribution received',
           body:
             cadence === 'daily'
-              ? `A ${normalizedAmount} SOL daily commitment was recorded. Streak weighting increased impact score.`
-              : `A ${normalizedAmount} SOL one-time contribution was recorded and added to the campaign tally.`,
+              ? `A ${normalizedAmount} USDC daily commitment was recorded. Streak weighting increased impact score.`
+              : `A ${normalizedAmount} USDC one-time contribution was recorded and added to the campaign tally.`,
           timestampLabel: 'Just now',
         };
 

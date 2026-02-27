@@ -13,6 +13,11 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
 import {useTheme} from '../theme/Theme';
 import {useWallet} from '../components/providers/WalletProvider';
 import {
@@ -21,7 +26,7 @@ import {
   sendMessage,
   useChatMessages,
 } from '../services/chat';
-import {RECIPIENTS} from '../data/recipients';
+import {getRecipientLabel} from '../data/donationConfig';
 import {ADMIN_WALLET} from '../config/env';
 import AppHeader from '../ui/AppHeader';
 import SurfaceCard from '../ui/SurfaceCard';
@@ -56,6 +61,8 @@ function shortThreadId(id: string) {
 
 export default function MessagesScreen() {
   const {theme} = useTheme();
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const {connected, publicKey} = useWallet();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,20 +70,45 @@ export default function MessagesScreen() {
 
   const walletAddress = publicKey?.toBase58() || '';
 
-  useEffect(() => {
+  const loadConversations = useCallback(async () => {
     if (!connected || !walletAddress) {
       setLoading(false);
       return;
     }
 
     setLoading(true);
-    fetchConversations(walletAddress)
-      .then(convos => {
-        setConversations(convos);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    try {
+      const convos = await fetchConversations(walletAddress);
+      setConversations(convos);
+    } finally {
+      setLoading(false);
+    }
   }, [connected, walletAddress]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadConversations().catch(() => setLoading(false));
+    }, [loadConversations]),
+  );
+
+  useEffect(() => {
+    const targetConversationId =
+      typeof route.params?.conversationId === 'string'
+        ? route.params.conversationId
+        : null;
+
+    if (!targetConversationId || conversations.length === 0 || activeConvo) {
+      return;
+    }
+
+    const target = conversations.find(c => c.id === targetConversationId);
+    if (!target) {
+      return;
+    }
+
+    setActiveConvo(target);
+    navigation.setParams({conversationId: undefined});
+  }, [route.params, conversations, activeConvo, navigation]);
 
   if (activeConvo) {
     return (
@@ -158,11 +190,10 @@ export default function MessagesScreen() {
               keyExtractor={item => item.id}
               contentContainerStyle={styles.threadListContent}
               renderItem={({item, index}) => {
-                const recipient = RECIPIENTS.find(
-                  r => r.id === item.recipient_id,
-                );
-                const recipientName = recipient?.name || 'Donation Thread';
-                const amount = Number(item.amount_sol || 0).toFixed(2);
+                const recipientName = getRecipientLabel(item.recipient_id);
+                const displayAmount = item.amount_usdc ?? item.amount_sol ?? 0;
+                const displayToken = item.amount_usdc != null ? 'USDC' : 'SOL';
+                const amount = Number(displayAmount).toFixed(2);
                 const isLast = index === conversations.length - 1;
 
                 return (
@@ -242,7 +273,7 @@ export default function MessagesScreen() {
                           styles.threadAmount,
                           {color: theme.colors.accent},
                         ]}>
-                        {amount} SOL
+                        {amount} {displayToken}
                       </Text>
                       <Text
                         style={[
@@ -279,8 +310,10 @@ function ChatView({
   const [sendError, setSendError] = useState<string | null>(null);
   const flatListRef = React.useRef<FlatList>(null);
 
-  const recipient = RECIPIENTS.find(r => r.id === conversation.recipient_id);
-  const amount = Number(conversation.amount_sol || 0).toFixed(2);
+  const recipientName = getRecipientLabel(conversation.recipient_id);
+  const displayAmount = conversation.amount_usdc ?? conversation.amount_sol ?? 0;
+  const displayToken = conversation.amount_usdc != null ? 'USDC' : 'SOL';
+  const amount = Number(displayAmount).toFixed(2);
 
   const invertedMessages = React.useMemo(
     () => [...messages].reverse(),
@@ -344,7 +377,7 @@ function ChatView({
           <View style={styles.chatMetaWrap}>
             <Text
               style={[styles.chatRecipient, {color: theme.colors.textPrimary}]}>
-              {recipient?.name || 'Thread'}
+              {recipientName}
             </Text>
             <Text
               style={[
@@ -354,7 +387,7 @@ function ChatView({
                   fontFamily: theme.typography.brand,
                 },
               ]}>
-              {amount} SOL • {shortThreadId(conversation.id)}
+              {amount} {displayToken} • {shortThreadId(conversation.id)}
             </Text>
           </View>
         </View>

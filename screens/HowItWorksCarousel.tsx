@@ -7,9 +7,11 @@ const TYPING_TARGET = '250.00';
 export default function HowItWorksCarousel({
   visible,
   onClose,
+  onComplete,
 }: {
   visible: boolean;
   onClose: () => void;
+  onComplete?: () => void;
 }) {
   const [step, setStep] = useState(0);
   const [poolType, setPoolType] = useState<'private' | 'public'>('private');
@@ -70,7 +72,11 @@ export default function HowItWorksCarousel({
 
   const handlePrimary = () => {
     if (step === TOTAL_STEPS - 1) {
-      onClose();
+      if (onComplete) {
+        onComplete();
+      } else {
+        onClose();
+      }
       return;
     }
     setStep(current => current + 1);

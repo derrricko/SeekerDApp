@@ -1,5 +1,6 @@
 import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
 import {useAppState} from '../components/providers/AppStateProvider';
 import {useTheme} from '../theme/Theme';
 import AppHeader from '../ui/AppHeader';
@@ -8,6 +9,7 @@ import SurfaceCard from '../ui/SurfaceCard';
 
 export default function CampaignsScreen() {
   const {theme} = useTheme();
+  const navigation = useNavigation<any>();
   const {glimpses} = useAppState();
 
   return (
@@ -93,6 +95,7 @@ export default function CampaignsScreen() {
                 <TouchableOpacity
                   key={glimpse.id}
                   activeOpacity={0.82}
+                  onPress={() => navigation.navigate('Messages')}
                   style={[
                     styles.activityRow,
                     !isLast && {
