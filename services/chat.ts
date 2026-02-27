@@ -23,7 +23,6 @@ export interface Conversation {
   admin_wallet: string;
   created_at: string;
   // Joined from donations table
-  amount_sol?: number;
   amount_usdc?: number;
   recipient_id?: string;
 }
@@ -36,7 +35,7 @@ export async function fetchConversations(
   const supabase = getSupabase();
   const {data, error} = await supabase
     .from('conversations')
-    .select('*, donations(amount_sol, amount_usdc, recipient_id)')
+    .select('*, donations(amount_usdc, recipient_id)')
     .or(`donor_wallet.eq.${walletAddress},admin_wallet.eq.${walletAddress}`)
     .order('created_at', {ascending: false});
 
@@ -45,7 +44,6 @@ export async function fetchConversations(
   }
   return (data || []).map(c => ({
     ...c,
-    amount_sol: c.donations?.amount_sol,
     amount_usdc: c.donations?.amount_usdc,
     recipient_id: c.donations?.recipient_id,
   }));
@@ -117,11 +115,15 @@ export async function uploadChatMedia(
     throw error;
   }
 
-  const {data: urlData} = supabase.storage
+  const {data: urlData, error: urlError} = await supabase.storage
     .from('chat-media')
-    .getPublicUrl(data.path);
+    .createSignedUrl(data.path, 3600); // 1-hour expiry
 
-  return urlData.publicUrl;
+  if (urlError || !urlData?.signedUrl) {
+    throw urlError || new Error('Failed to create signed URL');
+  }
+
+  return urlData.signedUrl;
 }
 
 // ---------- useChatMessages hook ----------

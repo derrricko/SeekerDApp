@@ -279,6 +279,15 @@ export default function GiveScreen() {
                     setError('Enter a USDC amount between 0.01 and 10,000.');
                     return;
                   }
+                  if (
+                    selectedCauses.length < 2 ||
+                    selectedCauses.length > MAX_CAUSES
+                  ) {
+                    setError(
+                      `Select between 2 and ${MAX_CAUSES} causes to continue.`,
+                    );
+                    return;
+                  }
                   setError('');
                   setStep('confirm');
                 }}

@@ -197,7 +197,7 @@ export default function MessagesScreen() {
               contentContainerStyle={styles.threadListContent}
               renderItem={({item, index}) => {
                 const recipientName = getRecipientLabel(item.recipient_id);
-                const displayAmount = item.amount_usdc ?? item.amount_sol ?? 0;
+                const displayAmount = item.amount_usdc ?? 0;
                 const displayToken = 'USDC';
                 const amount = Number(displayAmount).toFixed(2);
                 const isLast = index === conversations.length - 1;
@@ -318,8 +318,7 @@ function ChatView({
   const flatListRef = React.useRef<FlatList>(null);
 
   const recipientName = getRecipientLabel(conversation.recipient_id);
-  const displayAmount =
-    conversation.amount_usdc ?? conversation.amount_sol ?? 0;
+  const displayAmount = conversation.amount_usdc ?? 0;
   const displayToken = 'USDC';
   const amount = Number(displayAmount).toFixed(2);
 

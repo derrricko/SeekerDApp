@@ -84,6 +84,13 @@ serve(async req => {
       return json({error: 'txSignature is required'}, 400);
     }
 
+    if (causePreferences.length < 2 || causePreferences.length > 3) {
+      return json(
+        {error: 'Between 2 and 3 cause preferences are required.'},
+        400,
+      );
+    }
+
     const parsed = await fetchAndValidateUSDCTransaction(txSignature, wallet);
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -323,13 +330,15 @@ async function fetchAndValidateUSDCTransaction(
 // ---------- RPC helpers ----------
 
 async function getTransactionWithRetry(txSignature: string): Promise<any> {
-  const maxAttempts = 6;
+  // Finalized commitment takes ~12-15s on mainnet. Retry with backoff
+  // to allow enough time: 2s, 4s, 6s, 8s, 10s, 12s, 14s = 56s total.
+  const maxAttempts = 8;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const tx = await rpc('getTransaction', [
       txSignature,
       {
         encoding: 'jsonParsed',
-        commitment: 'confirmed',
+        commitment: 'finalized',
         maxSupportedTransactionVersion: 0,
       },
     ]);
@@ -338,7 +347,7 @@ async function getTransactionWithRetry(txSignature: string): Promise<any> {
     }
 
     if (attempt < maxAttempts) {
-      await sleep(500 * attempt);
+      await sleep(2000 * attempt);
     }
   }
 
