@@ -1,9 +1,19 @@
-// v2 environment config — USDC-only donation flow (MAINNET)
+// v2 environment config — USDC-only donation flow
+// Toggle __DEV__ to switch between devnet (debug builds) and mainnet (release).
 export type SolanaCluster = 'devnet' | 'testnet' | 'mainnet-beta';
 
-export const SOLANA_CLUSTER: SolanaCluster = 'mainnet-beta';
-export const RPC_URL =
-  'https://mainnet.helius-rpc.com/?api-key=595f9a7c-9775-4e7b-b1f7-eb69cd88558f';
+export const SOLANA_CLUSTER: SolanaCluster = __DEV__
+  ? 'devnet'
+  : 'mainnet-beta';
+
+const RPC_URLS: Record<SolanaCluster, string> = {
+  devnet: 'https://api.devnet.solana.com',
+  testnet: 'https://api.testnet.solana.com',
+  'mainnet-beta':
+    'https://mainnet.helius-rpc.com/?api-key=595f9a7c-9775-4e7b-b1f7-eb69cd88558f',
+};
+
+export const RPC_URL = RPC_URLS[SOLANA_CLUSTER];
 
 export const APP_IDENTITY = {
   name: 'Glimpse',
