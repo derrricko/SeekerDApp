@@ -1,6 +1,6 @@
 // v2 Messages Screen — conversation list + chat view
 
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,36 @@ import {
 } from '../services/chat';
 import {RECIPIENTS} from '../data/recipients';
 import {ADMIN_WALLET} from '../config/env';
+import AppHeader from '../ui/AppHeader';
+import SurfaceCard from '../ui/SurfaceCard';
+
+function initials(label: string) {
+  const words = label
+    .replace(/[^a-zA-Z0-9\s]/g, ' ')
+    .split(' ')
+    .filter(Boolean);
+
+  if (words.length === 0) {
+    return 'GL';
+  }
+
+  if (words.length === 1) {
+    return words[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${words[0][0]}${words[1][0]}`.toUpperCase();
+}
+
+function formatShortDate(value: string) {
+  return new Date(value).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function shortThreadId(id: string) {
+  return `#${id.slice(0, 6).toUpperCase()}`;
+}
 
 export default function MessagesScreen() {
   const {theme} = useTheme();
@@ -48,23 +78,6 @@ export default function MessagesScreen() {
       .catch(() => setLoading(false));
   }, [connected, walletAddress]);
 
-  if (!connected) {
-    return (
-      <View
-        style={[
-          styles.emptyContainer,
-          {backgroundColor: theme.colors.background},
-        ]}>
-        <Text style={[styles.emptyTitle, {color: theme.colors.textPrimary}]}>
-          Messages
-        </Text>
-        <Text style={[styles.emptyText, {color: theme.colors.textSecondary}]}>
-          Connect your wallet to see your donation threads.
-        </Text>
-      </View>
-    );
-  }
-
   if (activeConvo) {
     return (
       <ChatView
@@ -75,79 +88,180 @@ export default function MessagesScreen() {
     );
   }
 
-  return (
-    <View
-      style={[styles.container, {backgroundColor: theme.colors.background}]}>
-      <Text style={[styles.title, {color: theme.colors.textPrimary}]}>
-        Messages
-      </Text>
-      <Text style={[styles.subtitle, {color: theme.colors.textSecondary}]}>
-        Each donation opens a thread. We share updates, photos, and receipts
-        here.
-      </Text>
+  if (!connected) {
+    return (
+      <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+        <AppHeader title="Messages" />
 
-      {loading ? (
-        <ActivityIndicator
-          size="large"
-          color={theme.colors.accent}
-          style={{marginTop: 40}}
-        />
-      ) : conversations.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text
-            style={[styles.emptyStateText, {color: theme.colors.textTertiary}]}>
-            No messages yet. Make a donation from the Give tab to start a
-            thread.
-          </Text>
+        <View style={styles.contentWrap}>
+          <SurfaceCard style={styles.stateCard}>
+            <Text
+              style={[
+                styles.stateTitle,
+                {
+                  color: theme.colors.textPrimary,
+                  fontFamily: theme.typography.brand,
+                },
+              ]}>
+              WALLET REQUIRED
+            </Text>
+            <Text
+              style={[styles.stateBody, {color: theme.colors.textSecondary}]}>
+              Connect your wallet to view donation threads and impact replies.
+            </Text>
+          </SurfaceCard>
         </View>
-      ) : (
-        <FlatList
-          data={conversations}
-          keyExtractor={item => item.id}
-          renderItem={({item}) => {
-            const recipient = RECIPIENTS.find(r => r.id === item.recipient_id);
-            return (
-              <TouchableOpacity
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+      <AppHeader title="Messages" />
+
+      <View style={styles.contentWrap}>
+        <SurfaceCard style={styles.panel} padded={false}>
+          <View style={styles.panelHeader}>
+            <Text
+              style={[
+                styles.panelLabel,
+                {
+                  color: theme.colors.textTertiary,
+                  fontFamily: theme.typography.brand,
+                },
+              ]}>
+              RECENT THREADS
+            </Text>
+          </View>
+
+          {loading ? (
+            <View style={styles.loaderWrap}>
+              <ActivityIndicator size="large" color={theme.colors.accent} />
+            </View>
+          ) : conversations.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text
                 style={[
-                  styles.convoCard,
+                  styles.emptyStateText,
                   {
-                    backgroundColor: theme.colors.surface,
-                    borderColor: theme.colors.border,
+                    color: theme.colors.textSecondary,
+                    fontFamily: theme.typography.brand,
                   },
-                ]}
-                onPress={() => setActiveConvo(item)}
-                activeOpacity={0.7}>
-                <View style={styles.convoHeader}>
-                  <Text
+                ]}>
+                No threads yet. Start from the Donate flow to open your first
+                message thread.
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={conversations}
+              keyExtractor={item => item.id}
+              contentContainerStyle={styles.threadListContent}
+              renderItem={({item, index}) => {
+                const recipient = RECIPIENTS.find(
+                  r => r.id === item.recipient_id,
+                );
+                const recipientName = recipient?.name || 'Donation Thread';
+                const amount = Number(item.amount_sol || 0).toFixed(2);
+                const isLast = index === conversations.length - 1;
+
+                return (
+                  <TouchableOpacity
                     style={[
-                      styles.convoName,
-                      {color: theme.colors.textPrimary},
-                    ]}>
-                    {recipient?.name || 'Donation'}
-                  </Text>
-                  <Text
-                    style={[styles.convoAmount, {color: theme.colors.accent}]}>
-                    {item.amount_sol} SOL
-                  </Text>
-                </View>
-                <Text
-                  style={[
-                    styles.convoDate,
-                    {color: theme.colors.textTertiary},
-                  ]}>
-                  {new Date(item.created_at).toLocaleDateString()}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
-          contentContainerStyle={{paddingBottom: 100}}
-        />
-      )}
+                      styles.threadRow,
+                      {
+                        borderBottomColor: 'rgba(26,17,37,0.1)',
+                        borderBottomWidth: isLast ? 0 : 1,
+                      },
+                    ]}
+                    onPress={() => setActiveConvo(item)}
+                    activeOpacity={0.8}>
+                    <View
+                      style={[
+                        styles.threadAvatar,
+                        {
+                          borderColor: 'rgba(101,84,209,0.38)',
+                          backgroundColor: 'rgba(101,84,209,0.22)',
+                        },
+                      ]}>
+                      <Text
+                        style={[
+                          styles.threadAvatarText,
+                          {
+                            color: theme.colors.textPrimary,
+                            fontFamily: theme.typography.brand,
+                          },
+                        ]}>
+                        {initials(recipientName)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.threadBody}>
+                      <Text
+                        style={[
+                          styles.threadTitle,
+                          {color: theme.colors.textPrimary},
+                        ]}>
+                        {recipientName}
+                      </Text>
+
+                      <View style={styles.threadMetaRow}>
+                        <Text
+                          style={[
+                            styles.threadMeta,
+                            {
+                              color: theme.colors.textSecondary,
+                              fontFamily: theme.typography.brand,
+                            },
+                          ]}>
+                          {formatShortDate(item.created_at)}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.threadDot,
+                            {color: theme.colors.textTertiary},
+                          ]}>
+                          •
+                        </Text>
+                        <Text
+                          style={[
+                            styles.threadId,
+                            {
+                              color: theme.colors.accent,
+                              fontFamily: theme.typography.brand,
+                            },
+                          ]}>
+                          {shortThreadId(item.id)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.threadRight}>
+                      <Text
+                        style={[
+                          styles.threadAmount,
+                          {color: theme.colors.accent},
+                        ]}>
+                        {amount} SOL
+                      </Text>
+                      <Text
+                        style={[
+                          styles.threadChevron,
+                          {color: theme.colors.textTertiary},
+                        ]}>
+                        ›
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          )}
+        </SurfaceCard>
+      </View>
     </View>
   );
 }
-
-// ---------- Chat View ----------
 
 function ChatView({
   conversation,
@@ -166,8 +280,8 @@ function ChatView({
   const flatListRef = React.useRef<FlatList>(null);
 
   const recipient = RECIPIENTS.find(r => r.id === conversation.recipient_id);
+  const amount = Number(conversation.amount_sol || 0).toFixed(2);
 
-  // Reverse messages for inverted FlatList (newest at bottom, rendered from bottom up)
   const invertedMessages = React.useMemo(
     () => [...messages].reverse(),
     [messages],
@@ -177,8 +291,10 @@ function ChatView({
     if (!inputText.trim()) {
       return;
     }
+
     setSending(true);
     setSendError(null);
+
     try {
       await sendMessage(conversation.id, walletAddress, inputText.trim());
       setInputText('');
@@ -189,6 +305,7 @@ function ChatView({
           : 'Message failed to send. Try again.';
       setSendError(message);
     }
+
     setSending(false);
   }, [inputText, conversation.id, walletAddress]);
 
@@ -196,294 +313,425 @@ function ChatView({
     senderWallet === ADMIN_WALLET || senderWallet === conversation.admin_wallet;
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.chatContainer, {backgroundColor: theme.colors.background}]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}>
-      {/* Header */}
-      <View
-        style={[styles.chatHeader, {borderBottomColor: theme.colors.border}]}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={[styles.backText, {color: theme.colors.accent}]}>
-            ← Back
-          </Text>
-        </TouchableOpacity>
-        <Text style={[styles.chatTitle, {color: theme.colors.textPrimary}]}>
-          {recipient?.name || 'Thread'} · {conversation.amount_sol} SOL
-        </Text>
-      </View>
+    <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+      <AppHeader title="Messages" />
 
-      {/* Messages */}
-      {loading ? (
-        <ActivityIndicator
-          size="large"
-          color={theme.colors.accent}
-          style={{flex: 1}}
-        />
-      ) : error ? (
-        <View style={styles.chatErrorWrap}>
-          <Text style={[styles.chatErrorText, {color: theme.colors.danger}]}>
-            {error}
-          </Text>
+      <KeyboardAvoidingView
+        style={styles.chatBody}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={90}>
+        <View
+          style={[
+            styles.chatTopCard,
+            {
+              backgroundColor: 'rgba(26,17,37,0.04)',
+              borderColor: 'rgba(26,17,37,0.12)',
+            },
+          ]}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <Text
+              style={[
+                styles.backText,
+                {
+                  color: theme.colors.accent,
+                  fontFamily: theme.typography.brand,
+                },
+              ]}>
+              ← Back
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.chatMetaWrap}>
+            <Text
+              style={[styles.chatRecipient, {color: theme.colors.textPrimary}]}>
+              {recipient?.name || 'Thread'}
+            </Text>
+            <Text
+              style={[
+                styles.chatMeta,
+                {
+                  color: theme.colors.textSecondary,
+                  fontFamily: theme.typography.brand,
+                },
+              ]}>
+              {amount} SOL • {shortThreadId(conversation.id)}
+            </Text>
+          </View>
         </View>
-      ) : (
-        <FlatList
-          ref={flatListRef}
-          data={invertedMessages}
-          inverted
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.messagesList}
-          initialNumToRender={20}
-          maxToRenderPerBatch={15}
-          windowSize={11}
-          renderItem={({item}) => {
-            const fromAdmin = isAdmin(item.sender_wallet);
-            return (
-              <View
-                style={[
-                  styles.bubble,
-                  fromAdmin
-                    ? [
-                        styles.bubbleAdmin,
-                        {backgroundColor: theme.colors.surface},
-                      ]
-                    : [
-                        styles.bubbleDonor,
-                        {backgroundColor: theme.colors.accent},
-                      ],
-                ]}>
-                {item.media_url && (
-                  <Image
-                    source={{uri: `${item.media_url}?width=300&height=300`}}
-                    style={styles.mediaImage}
-                    resizeMode="cover"
-                  />
-                )}
-                {item.body && (
+
+        {loading ? (
+          <View style={styles.loaderWrap}>
+            <ActivityIndicator size="large" color={theme.colors.accent} />
+          </View>
+        ) : error ? (
+          <View style={styles.chatErrorWrap}>
+            <Text style={[styles.chatErrorText, {color: theme.colors.danger}]}>
+              {error}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={invertedMessages}
+            inverted
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.messagesList}
+            initialNumToRender={20}
+            maxToRenderPerBatch={15}
+            windowSize={11}
+            renderItem={({item}) => {
+              const fromAdmin = isAdmin(item.sender_wallet);
+
+              return (
+                <View
+                  style={[
+                    styles.bubble,
+                    fromAdmin
+                      ? [
+                          styles.bubbleAdmin,
+                          {
+                            backgroundColor: 'rgba(26,17,37,0.06)',
+                            borderColor: 'rgba(26,17,37,0.14)',
+                          },
+                        ]
+                      : [
+                          styles.bubbleDonor,
+                          {
+                            backgroundColor: theme.colors.accent,
+                            borderColor: theme.colors.accentPressed,
+                          },
+                        ],
+                  ]}>
+                  {item.media_url && (
+                    <Image
+                      source={{uri: `${item.media_url}?width=300&height=300`}}
+                      style={styles.mediaImage}
+                      resizeMode="cover"
+                    />
+                  )}
+
+                  {item.body ? (
+                    <Text
+                      style={[
+                        styles.bubbleText,
+                        {
+                          color: fromAdmin
+                            ? theme.colors.textPrimary
+                            : 'rgba(248,244,255,0.98)',
+                        },
+                      ]}>
+                      {item.body}
+                    </Text>
+                  ) : null}
+
                   <Text
                     style={[
-                      styles.bubbleText,
-                      {color: theme.colors.textPrimary},
+                      styles.bubbleTime,
+                      {
+                        color: fromAdmin
+                          ? theme.colors.textTertiary
+                          : 'rgba(244,240,255,0.74)',
+                      },
                     ]}>
-                    {item.body}
+                    {new Date(item.created_at).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </Text>
-                )}
-                <Text
-                  style={[
-                    styles.bubbleTime,
-                    {color: theme.colors.textTertiary},
-                  ]}>
-                  {new Date(item.created_at).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </Text>
-              </View>
-            );
-          }}
-        />
-      )}
+                </View>
+              );
+            }}
+          />
+        )}
 
-      {/* Input */}
-      <View
-        style={[
-          styles.inputBar,
-          {
-            borderTopColor: theme.colors.border,
-            backgroundColor: theme.colors.background,
-          },
-        ]}>
-        <TextInput
+        <View
           style={[
-            styles.chatInput,
+            styles.inputBar,
             {
-              backgroundColor: theme.colors.surface,
-              color: theme.colors.textPrimary,
-              borderColor: theme.colors.border,
+              borderTopColor: 'rgba(26,17,37,0.12)',
+              backgroundColor: theme.colors.background,
             },
-          ]}
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder="Say something..."
-          placeholderTextColor={theme.colors.textTertiary}
-          multiline
-          maxLength={500}
-        />
-        <TouchableOpacity
-          style={[
-            styles.sendChatButton,
-            {backgroundColor: theme.colors.accent},
-            (!inputText.trim() || sending) && {
-              backgroundColor: theme.colors.surfaceAlt,
-            },
-          ]}
-          onPress={handleSend}
-          disabled={!inputText.trim() || sending}>
-          <Text style={styles.sendChatButtonText}>
-            {sending ? '...' : 'Send'}
+          ]}>
+          <TextInput
+            style={[
+              styles.chatInput,
+              {
+                backgroundColor: theme.colors.surface,
+                color: theme.colors.textPrimary,
+                borderColor: 'rgba(26,17,37,0.16)',
+              },
+            ]}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Write a reply..."
+            placeholderTextColor={theme.colors.textTertiary}
+            multiline
+            maxLength={500}
+          />
+
+          <TouchableOpacity
+            style={[
+              styles.sendChatButton,
+              {backgroundColor: theme.colors.accent},
+              (!inputText.trim() || sending) && {
+                backgroundColor: theme.colors.surfaceAlt,
+                borderColor: 'rgba(26,17,37,0.16)',
+              },
+            ]}
+            onPress={handleSend}
+            activeOpacity={0.85}
+            disabled={!inputText.trim() || sending}>
+            <Text
+              style={[
+                styles.sendChatButtonText,
+                {fontFamily: theme.typography.brand},
+              ]}>
+              {sending ? '...' : 'Send'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {sendError ? (
+          <Text style={[styles.sendErrorText, {color: theme.colors.danger}]}>
+            {sendError}
           </Text>
-        </TouchableOpacity>
-      </View>
-      {sendError ? (
-        <Text style={[styles.sendErrorText, {color: theme.colors.danger}]}>
-          {sendError}
-        </Text>
-      ) : null}
-    </KeyboardAvoidingView>
+        ) : null}
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    padding: 24,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-
-  // Empty states
-  emptyContainer: {
+  contentWrap: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 100,
   },
-  emptyTitle: {
-    fontSize: 32,
+  panel: {
+    flex: 1,
+    borderRadius: 16,
+    borderWidth: 2,
+    paddingTop: 0,
+    paddingHorizontal: 0,
+    paddingBottom: 0,
+    overflow: 'hidden',
+  },
+  panelHeader: {
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(26,17,37,0.12)',
+  },
+  panelLabel: {
+    fontSize: 10,
+    lineHeight: 12,
+    letterSpacing: 1,
     fontWeight: '700',
-    marginBottom: 16,
   },
-  emptyText: {
+  loaderWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 36,
+  },
+  stateCard: {
+    borderRadius: 14,
+    borderWidth: 2,
+  },
+  stateTitle: {
+    fontSize: 16,
+    lineHeight: 18,
+    letterSpacing: 1,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  stateBody: {
     fontSize: 15,
     lineHeight: 22,
   },
   emptyState: {
-    marginTop: 40,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 22,
+    paddingVertical: 28,
   },
   emptyStateText: {
-    fontSize: 15,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-
-  // Conversation list
-  convoCard: {
-    borderRadius: 0,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-  },
-  convoHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  convoName: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  convoAmount: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  convoDate: {
     fontSize: 13,
+    lineHeight: 20,
+    textAlign: 'center',
   },
-
-  // Chat view
-  chatContainer: {
-    flex: 1,
-  },
-  chatHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    marginRight: 12,
-  },
-  backText: {
-    fontSize: 16,
-  },
-  chatTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  messagesList: {
-    padding: 16,
+  threadListContent: {
     paddingBottom: 8,
   },
-
-  // Bubbles
+  threadRow: {
+    minHeight: 74,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  threadAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  threadAvatarText: {
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: '700',
+  },
+  threadBody: {
+    flex: 1,
+    marginRight: 8,
+  },
+  threadTitle: {
+    fontSize: 19,
+    lineHeight: 22,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  threadMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  threadMeta: {
+    fontSize: 10,
+    lineHeight: 12,
+  },
+  threadDot: {
+    marginHorizontal: 5,
+    fontSize: 10,
+    lineHeight: 12,
+  },
+  threadId: {
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: '700',
+  },
+  threadRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  threadAmount: {
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: '700',
+    minWidth: 64,
+    textAlign: 'right',
+  },
+  threadChevron: {
+    fontSize: 14,
+    lineHeight: 15,
+    fontWeight: '700',
+  },
+  chatBody: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+  },
+  chatTopCard: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  backText: {
+    fontSize: 12,
+    lineHeight: 14,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+  },
+  chatMetaWrap: {
+    width: '100%',
+  },
+  chatRecipient: {
+    fontSize: 18,
+    lineHeight: 21,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  chatMeta: {
+    fontSize: 10,
+    lineHeight: 12,
+    letterSpacing: 0.6,
+  },
+  messagesList: {
+    paddingHorizontal: 2,
+    paddingBottom: 10,
+  },
   bubble: {
-    maxWidth: '80%',
-    borderRadius: 0,
-    padding: 12,
+    maxWidth: '82%',
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 11,
     marginBottom: 8,
   },
   bubbleAdmin: {
     alignSelf: 'flex-start',
-    borderBottomLeftRadius: 0,
   },
   bubbleDonor: {
     alignSelf: 'flex-end',
-    borderBottomRightRadius: 0,
   },
   bubbleText: {
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  bubbleTextAdmin: {},
-  bubbleTextDonor: {
-    color: '#fff',
+    fontSize: 14,
+    lineHeight: 20,
   },
   bubbleTime: {
-    fontSize: 11,
-    marginTop: 4,
+    fontSize: 10,
+    marginTop: 5,
     alignSelf: 'flex-end',
   },
   mediaImage: {
     width: '100%',
-    height: 200,
-    borderRadius: 0,
+    height: 180,
+    borderRadius: 8,
     marginBottom: 8,
   },
-
-  // Input bar
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 12,
+    paddingTop: 10,
+    paddingBottom: 8,
     borderTopWidth: 1,
   },
   chatInput: {
     flex: 1,
-    borderRadius: 0,
-    paddingHorizontal: 16,
+    borderRadius: 12,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    fontSize: 15,
+    fontSize: 14,
     maxHeight: 100,
     borderWidth: 1,
   },
   sendChatButton: {
-    borderRadius: 0,
-    paddingHorizontal: 18,
+    borderRadius: 12,
+    paddingHorizontal: 15,
     paddingVertical: 10,
     marginLeft: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   sendChatButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '700',
     color: '#fff',
+    letterSpacing: 0.4,
   },
   sendErrorText: {
     fontSize: 12,

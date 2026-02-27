@@ -78,21 +78,21 @@ const USER_ID = 'you';
 
 const INITIAL_GLIMPSES: GlimpseCard[] = [
   {
-    id: 'g-042',
-    tag: 'GLIMPSE #042',
-    title: 'Animal Shelter',
+    id: 'g-001',
+    tag: 'GLIMPSE #001',
+    title: '#001',
     visibility: 'Public',
     dateLabel: 'Oct 24',
     status: 'Fulfilled',
     raised: 150,
   },
   {
-    id: 'g-038',
-    tag: 'GLIMPSE #038',
-    title: 'City Food Bank',
+    id: 'g-002',
+    tag: 'GLIMPSE #002',
+    title: '#002',
     visibility: 'Private',
     dateLabel: 'Sep 12',
-    status: 'Fulfilled',
+    status: 'Active',
     raised: 50,
   },
 ];

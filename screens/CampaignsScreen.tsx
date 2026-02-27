@@ -1,5 +1,5 @@
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {useAppState} from '../components/providers/AppStateProvider';
 import {useTheme} from '../theme/Theme';
 import AppHeader from '../ui/AppHeader';
@@ -12,128 +12,212 @@ export default function CampaignsScreen() {
 
   return (
     <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
-      <AppHeader title="Glimpses" />
+      <AppHeader title="My Glimpses" />
       <ScreenContainer>
-        {glimpses.map(glimpse => (
-          <SurfaceCard key={glimpse.id} style={styles.card}>
-            {/** Replit card tag bar */}
-            <View style={styles.tagRow}>
-              <View />
+        <SurfaceCard style={styles.panel}>
+          <View style={styles.panelTop}>
+            <View
+              style={[
+                styles.toggle,
+                {
+                  borderColor: 'rgba(26,17,37,0.1)',
+                  backgroundColor: 'rgba(26,17,37,0.06)',
+                },
+              ]}>
               <View
                 style={[
-                  styles.tag,
-                  {
-                    backgroundColor:
-                      glimpse.visibility === 'Private'
-                        ? theme.colors.textPrimary
-                        : theme.colors.accent,
-                    borderColor: theme.colors.border,
-                  },
+                  styles.toggleActive,
+                  {backgroundColor: 'rgba(26,17,37,0.18)'},
                 ]}>
                 <Text
                   style={[
-                    styles.tagText,
-                    {
-                      color: '#FFFFFF',
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  {glimpse.tag}
-                </Text>
-              </View>
-            </View>
-
-            <Text style={[styles.title, {color: theme.colors.textPrimary}]}>
-              {glimpse.title.toUpperCase()}
-            </Text>
-
-            <View style={styles.metaRow}>
-              {glimpse.visibility === 'Public' ? (
-                <Text
-                  style={[
-                    styles.metaBadge,
-                    {
-                      color: theme.colors.accent,
-                      borderColor: theme.colors.accent,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  {glimpse.visibility.toUpperCase()}
-                </Text>
-              ) : (
-                <Text
-                  style={[
-                    styles.privateMeta,
+                    styles.toggleText,
                     {
                       color: theme.colors.textPrimary,
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
-                  ▢ PRIVATE
+                  Table
                 </Text>
-              )}
-              <Text
-                style={[styles.metaDot, {color: theme.colors.textSecondary}]}>
-                •
-              </Text>
+              </View>
               <Text
                 style={[
-                  styles.metaDate,
+                  styles.toggleText,
                   {
                     color: theme.colors.textSecondary,
                     fontFamily: theme.typography.brand,
                   },
                 ]}>
-                {glimpse.dateLabel.toUpperCase()}
+                Feed
               </Text>
             </View>
+          </View>
 
-            <View
-              style={[
-                styles.separator,
-                {borderBottomColor: theme.colors.border},
-              ]}
-            />
+          <View
+            style={[styles.panelRule, {backgroundColor: 'rgba(26,17,37,0.12)'}]}
+          />
 
-            <View style={styles.footerRow}>
-              <View>
-                <Text
+          <Text
+            style={[
+              styles.sectionLabel,
+              {
+                color: theme.colors.textTertiary,
+                fontFamily: theme.typography.brand,
+              },
+            ]}>
+            RECENT ACTIVITY
+          </Text>
+
+          <View
+            style={[
+              styles.activityList,
+              {
+                backgroundColor: 'rgba(26,17,37,0.04)',
+                borderColor: 'rgba(26,17,37,0.08)',
+              },
+            ]}>
+            {glimpses.map((glimpse, index) => {
+              const isLast = index === glimpses.length - 1;
+              const statusColor =
+                glimpse.visibility === 'Private'
+                  ? theme.colors.textPrimary
+                  : theme.colors.accent;
+              const stageLabel =
+                glimpse.status === 'Fulfilled' ? 'Completed' : 'Processing';
+              const stageColor =
+                glimpse.status === 'Fulfilled'
+                  ? theme.colors.success
+                  : theme.colors.accent;
+
+              return (
+                <TouchableOpacity
+                  key={glimpse.id}
+                  activeOpacity={0.82}
                   style={[
-                    styles.label,
-                    {
-                      color: theme.colors.textTertiary,
-                      fontFamily: theme.typography.brand,
+                    styles.activityRow,
+                    !isLast && {
+                      borderBottomWidth: 1,
+                      borderBottomColor: 'rgba(26,17,37,0.1)',
                     },
                   ]}>
-                  STATUS
-                </Text>
-                <Text
-                  style={[styles.status, {color: theme.colors.textPrimary}]}>
-                  ◉ {glimpse.status.toUpperCase()}
-                </Text>
-              </View>
+                  <View
+                    style={[
+                      styles.avatar,
+                      {
+                        backgroundColor:
+                          glimpse.visibility === 'Private'
+                            ? 'rgba(26,17,37,0.2)'
+                            : 'rgba(101,84,209,0.28)',
+                        borderColor:
+                          glimpse.visibility === 'Private'
+                            ? 'rgba(26,17,37,0.25)'
+                            : 'rgba(101,84,209,0.4)',
+                      },
+                    ]}>
+                    <Text
+                      style={[
+                        styles.avatarText,
+                        {
+                          color: theme.colors.textPrimary,
+                          fontFamily: theme.typography.brand,
+                        },
+                      ]}>
+                      {glimpse.title.slice(0, 2).toUpperCase()}
+                    </Text>
+                  </View>
 
-              <View style={{alignItems: 'flex-end'}}>
-                <Text
-                  style={[styles.label, {color: theme.colors.textTertiary}]}>
-                  RAISED
-                </Text>
-                <Text
-                  style={[
-                    styles.raised,
-                    {
-                      color:
-                        glimpse.visibility === 'Private'
-                          ? theme.colors.textPrimary
-                          : theme.colors.accent,
-                    },
-                  ]}>
-                  ${Math.round(glimpse.raised).toLocaleString()}
-                </Text>
-              </View>
-            </View>
-          </SurfaceCard>
-        ))}
+                  <View style={styles.rowBody}>
+                    <Text
+                      style={[
+                        styles.rowTitle,
+                        {color: theme.colors.textPrimary},
+                      ]}>
+                      {glimpse.title}
+                    </Text>
+                    <View style={styles.rowMeta}>
+                      <Text
+                        style={[
+                          styles.rowDate,
+                          {
+                            color: theme.colors.textSecondary,
+                            fontFamily: theme.typography.brand,
+                          },
+                        ]}>
+                        {glimpse.dateLabel}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.rowDot,
+                          {color: theme.colors.textTertiary},
+                        ]}>
+                        •
+                      </Text>
+                      <Text
+                        style={[
+                          styles.rowHash,
+                          {
+                            color: statusColor,
+                            fontFamily: theme.typography.brand,
+                          },
+                        ]}>
+                        {glimpse.id.toUpperCase()}
+                      </Text>
+                    </View>
+
+                    <View style={styles.stageRow}>
+                      <View
+                        style={[styles.stageDot, {backgroundColor: stageColor}]}
+                      />
+                      <Text
+                        style={[
+                          styles.stageText,
+                          {
+                            color: stageColor,
+                            fontFamily: theme.typography.brand,
+                          },
+                        ]}>
+                        {stageLabel}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.rowRight}>
+                    <Text
+                      style={[
+                        styles.amount,
+                        {
+                          color:
+                            glimpse.visibility === 'Private'
+                              ? theme.colors.textPrimary
+                              : theme.colors.accent,
+                        },
+                      ]}>
+                      ${glimpse.raised.toFixed(2)}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.chevron,
+                        {color: theme.colors.textTertiary},
+                      ]}>
+                      ›
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <Text
+            style={[
+              styles.note,
+              {
+                color: theme.colors.textTertiary,
+                fontFamily: theme.typography.brand,
+              },
+            ]}>
+            New glimpse receipts appear here after funds lock.
+          </Text>
+        </SurfaceCard>
       </ScreenContainer>
     </View>
   );
@@ -143,82 +227,142 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  card: {
+  panel: {
     marginBottom: 18,
-    paddingTop: 12,
-  },
-  tagRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  tag: {
+    borderRadius: 16,
     borderWidth: 2,
-    borderRadius: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingTop: 14,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
   },
-  tagText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  title: {
-    fontSize: 40,
-    lineHeight: 46,
-    fontWeight: '700',
-    marginBottom: 12,
-    letterSpacing: 0.6,
-  },
-  metaRow: {
+  panelTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    justifyContent: 'flex-end',
   },
-  metaBadge: {
-    borderWidth: 2,
-    borderRadius: 999,
+  toggle: {
+    borderWidth: 1,
+    borderRadius: 9,
+    paddingVertical: 3,
+    paddingHorizontal: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  toggleActive: {
+    borderRadius: 6,
+    paddingVertical: 3,
     paddingHorizontal: 10,
-    paddingVertical: 2,
-    fontSize: 12,
-    letterSpacing: 0.8,
   },
-  metaDot: {
-    marginHorizontal: 8,
-    fontSize: 14,
-  },
-  metaDate: {
-    fontSize: 12,
-    letterSpacing: 1,
-  },
-  privateMeta: {
-    fontSize: 12,
-    letterSpacing: 0.8,
+  toggleText: {
+    fontSize: 11,
+    lineHeight: 14,
     fontWeight: '700',
   },
-  separator: {
-    borderBottomWidth: 2,
-    borderStyle: 'dashed',
-    marginBottom: 14,
+  panelRule: {
+    height: 1,
+    marginTop: 12,
+    marginBottom: 10,
   },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  label: {
+  sectionLabel: {
     fontSize: 10,
+    lineHeight: 12,
     letterSpacing: 1,
+    marginBottom: 10,
+  },
+  activityList: {
+    borderRadius: 10,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  activityRow: {
+    minHeight: 66,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+  },
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  avatarText: {
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: '700',
+  },
+  rowBody: {
+    flex: 1,
+    marginRight: 8,
+  },
+  rowTitle: {
+    fontSize: 22,
+    lineHeight: 24,
+    fontWeight: '600',
     marginBottom: 4,
   },
-  status: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+  rowMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  raised: {
-    fontSize: 43,
+  stageRow: {
+    marginTop: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stageDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 6,
+    marginRight: 5,
+  },
+  stageText: {
+    fontSize: 9,
+    lineHeight: 12,
+    letterSpacing: 0.6,
     fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  rowDate: {
+    fontSize: 10,
+    lineHeight: 12,
+  },
+  rowDot: {
+    marginHorizontal: 5,
+    fontSize: 10,
+    lineHeight: 12,
+  },
+  rowHash: {
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: '700',
+  },
+  rowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  amount: {
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: '700',
+    minWidth: 58,
+    textAlign: 'right',
+  },
+  chevron: {
+    fontSize: 14,
+    lineHeight: 15,
+    fontWeight: '700',
+  },
+  note: {
+    marginTop: 10,
+    fontSize: 10,
+    lineHeight: 14,
     letterSpacing: 0.2,
   },
 });

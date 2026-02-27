@@ -1,21 +1,8 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {
-  FlatList,
-  Modal,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  useWindowDimensions,
-  ViewToken,
-} from 'react-native';
-import {useTheme} from '../theme/Theme';
-import SurfaceCard from '../ui/SurfaceCard';
+import React, {useEffect, useState} from 'react';
+import {Modal, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
-type SlideKey = 'step-1' | 'step-2' | 'step-3' | 'step-4' | 'step-5';
-
-const SLIDES: SlideKey[] = ['step-1', 'step-2', 'step-3', 'step-4', 'step-5'];
+const TOTAL_STEPS = 6;
+const TYPING_TARGET = '250.00';
 
 export default function HowItWorksCarousel({
   visible,
@@ -24,181 +11,69 @@ export default function HowItWorksCarousel({
   visible: boolean;
   onClose: () => void;
 }) {
-  const {theme} = useTheme();
-  const {width} = useWindowDimensions();
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const [amount, setAmount] = useState<number | null>(null);
-  const [poolType, setPoolType] = useState<'public' | 'private' | null>(null);
-  const [option1, setOption1] = useState('');
-  const [option2, setOption2] = useState('');
-
-  const listRef = useRef<FlatList<SlideKey>>(null);
-
-  const cardWidth = Math.min(width - 28, 420);
-
-  const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 70,
-  }).current;
-
-  const onViewableItemsChanged = useRef(
-    ({viewableItems}: {viewableItems: ViewToken[]}) => {
-      const first = viewableItems[0];
-      if (!first || typeof first.index !== 'number') {
-        return;
-      }
-      setCurrentIndex(first.index);
-    },
-  ).current;
+  const [step, setStep] = useState(0);
+  const [poolType, setPoolType] = useState<'private' | 'public'>('private');
+  const [typedAmount, setTypedAmount] = useState('');
+  const [cursorVisible, setCursorVisible] = useState(true);
 
   useEffect(() => {
     if (!visible) {
       return;
     }
-
-    setCurrentIndex(0);
-
-    requestAnimationFrame(() => {
-      listRef.current?.scrollToIndex({index: 0, animated: false});
-    });
+    setStep(0);
   }, [visible]);
 
-  const canPrev = currentIndex > 0;
-
-  const goToIndex = (nextIndex: number) => {
-    listRef.current?.scrollToIndex({index: nextIndex, animated: true});
-    setCurrentIndex(nextIndex);
-  };
-
-  const nextLabel = useMemo(() => {
-    if (currentIndex === SLIDES.length - 1) {
-      return 'Lock & Continue';
-    }
-    return 'Next';
-  }, [currentIndex]);
-
-  const renderSlide = ({item}: {item: SlideKey}) => {
-    if (item === 'step-1') {
-      return (
-        <StepCard number="1" title="Donation Amount">
-          <View style={styles.amountRow}>
-            {[10, 50, 100].map(value => {
-              const selected = amount === value;
-              return (
-                <TouchableOpacity
-                  key={value}
-                  onPress={() => setAmount(value)}
-                  style={[
-                    styles.amountButton,
-                    {
-                      borderColor: '#1A1125',
-                      backgroundColor: selected ? '#1A1125' : '#EDE8FA',
-                    },
-                    selected ? theme.shadows.subtle : theme.shadows.card,
-                  ]}
-                  activeOpacity={0.9}>
-                  <Text
-                    style={[
-                      styles.amountText,
-                      {
-                        color: selected ? '#EDE8FA' : '#1A1125',
-                        fontFamily: theme.typography.brand,
-                      },
-                    ]}>
-                    ${value}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </StepCard>
-      );
+  useEffect(() => {
+    if (!visible || step !== 0) {
+      return;
     }
 
-    if (item === 'step-2') {
-      return (
-        <StepCard number="2" title="Where Should It Go?">
-          <Text style={[styles.smallLabel, {color: '#4C4466'}]}>
-            ENTER 2-3 OPTIONS
-          </Text>
-          <TextInput
-            value={option1}
-            onChangeText={setOption1}
-            placeholder="OPTION 1..."
-            placeholderTextColor="#7A7391"
-            style={styles.input}
-          />
-          <TextInput
-            value={option2}
-            onChangeText={setOption2}
-            placeholder="OPTION 2..."
-            placeholderTextColor="#7A7391"
-            style={styles.input}
-          />
-        </StepCard>
-      );
+    let index = 0;
+    let deleting = false;
+    let pauseTicks = 0;
+
+    setTypedAmount('');
+    setCursorVisible(true);
+
+    const typingTimer = setInterval(() => {
+      if (pauseTicks > 0) {
+        pauseTicks -= 1;
+        return;
+      }
+
+      if (!deleting) {
+        index += 1;
+        setTypedAmount(TYPING_TARGET.slice(0, index));
+        if (index >= TYPING_TARGET.length) {
+          deleting = true;
+          pauseTicks = 8;
+        }
+      } else {
+        index -= 1;
+        setTypedAmount(TYPING_TARGET.slice(0, Math.max(index, 0)));
+        if (index <= 0) {
+          deleting = false;
+          pauseTicks = 6;
+        }
+      }
+    }, 95);
+
+    const cursorTimer = setInterval(() => {
+      setCursorVisible(current => !current);
+    }, 420);
+
+    return () => {
+      clearInterval(typingTimer);
+      clearInterval(cursorTimer);
+    };
+  }, [step, visible]);
+
+  const handlePrimary = () => {
+    if (step === TOTAL_STEPS - 1) {
+      onClose();
+      return;
     }
-
-    if (item === 'step-3') {
-      return (
-        <StepCard number="3" title="Pool Type">
-          <PoolTypeButton
-            selected={poolType === 'private'}
-            title="Private Pool"
-            body="Self-funded entirely by you."
-            onPress={() => setPoolType('private')}
-          />
-          <PoolTypeButton
-            selected={poolType === 'public'}
-            title="Public Pool"
-            body="Allow others to add to the donation."
-            onPress={() => setPoolType('public')}
-          />
-        </StepCard>
-      );
-    }
-
-    if (item === 'step-4') {
-      return (
-        <StepCard number="4" title="Refundable">
-          <View style={styles.infoTagWrap}>
-            <View style={[styles.infoTag, {backgroundColor: '#1A1125'}]}>
-              <Text style={styles.infoTagText}>GUARANTEE</Text>
-            </View>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoIcon}>↺</Text>
-            <View style={{flex: 1}}>
-              <Text style={styles.infoTitle}>REFUNDABLE</Text>
-              <Text style={styles.infoBody}>
-                100% refundable before 48 hours.
-              </Text>
-            </View>
-          </View>
-        </StepCard>
-      );
-    }
-
-    return (
-      <StepCard number="5" title="Transparency">
-        <View style={styles.infoTagWrap}>
-          <View style={[styles.infoTag, {backgroundColor: '#6554D1'}]}>
-            <Text style={styles.infoTagText}>PROOF</Text>
-          </View>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.infoIcon}>≣</Text>
-          <View style={{flex: 1}}>
-            <Text style={styles.infoTitle}>TRANSPARENCY</Text>
-            <Text style={styles.infoBody}>
-              Receipts uploaded 5-7 days after lock.
-            </Text>
-          </View>
-        </View>
-      </StepCard>
-    );
+    setStep(current => current + 1);
   };
 
   return (
@@ -208,361 +83,627 @@ export default function HowItWorksCarousel({
       animationType="fade"
       onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View
-          style={[
-            styles.panel,
-            {
-              width: cardWidth,
-              borderColor: '#1A1125',
-              backgroundColor: '#F3EFFF',
-            },
-          ]}>
-          <View style={styles.headerRow}>
-            <Text
-              style={[
-                styles.headerTitle,
-                {color: '#1A1125', fontFamily: theme.typography.brand},
-              ]}>
-              HOW IT WORKS
-            </Text>
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles.closeBtn}
-              activeOpacity={0.8}>
-              <Text style={styles.closeText}>X</Text>
-            </TouchableOpacity>
-          </View>
-
-          <FlatList
-            ref={listRef}
-            data={SLIDES}
-            keyExtractor={item => item}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            renderItem={({item}) => (
-              <View style={{width: cardWidth - 24, paddingRight: 10}}>
-                {renderSlide({item})}
-              </View>
-            )}
-            onViewableItemsChanged={onViewableItemsChanged}
-            viewabilityConfig={viewabilityConfig}
-            getItemLayout={(_, index) => ({
-              length: cardWidth - 24,
-              offset: (cardWidth - 24) * index,
-              index,
-            })}
-          />
-
-          <View style={styles.footerRow}>
-            <TouchableOpacity
-              onPress={() => goToIndex(currentIndex - 1)}
-              disabled={!canPrev}
-              style={[styles.arrowBtn, {opacity: canPrev ? 1 : 0.35}]}>
-              <Text style={styles.arrowText}>‹</Text>
-            </TouchableOpacity>
-
-            <View style={styles.dotsRow}>
-              {SLIDES.map((slide, idx) => (
+        <View style={styles.sheet}>
+          <View style={styles.topRow}>
+            <View style={styles.progressRow}>
+              {Array.from({length: TOTAL_STEPS}).map((_, index) => (
                 <View
-                  key={slide}
+                  key={`dot-${index}`}
                   style={[
-                    styles.dot,
-                    {
-                      backgroundColor:
-                        idx === currentIndex ? '#6554D1' : '#B8B1D4',
-                    },
+                    styles.progressDot,
+                    index === step && styles.progressDotActive,
                   ]}
                 />
               ))}
             </View>
 
             <TouchableOpacity
-              onPress={() => {
-                if (currentIndex === SLIDES.length - 1) {
-                  onClose();
-                  return;
-                }
-                goToIndex(currentIndex + 1);
-              }}
-              style={styles.nextBtn}
-              activeOpacity={0.9}>
-              <Text style={styles.nextText}>{nextLabel.toUpperCase()}</Text>
+              onPress={onClose}
+              style={styles.closeButton}
+              activeOpacity={0.85}>
+              <Text style={styles.closeText}>×</Text>
             </TouchableOpacity>
           </View>
+
+          <View style={styles.content}>
+            {renderStep(
+              step,
+              poolType,
+              setPoolType,
+              typedAmount,
+              cursorVisible,
+            )}
+          </View>
+
+          <TouchableOpacity
+            onPress={handlePrimary}
+            style={styles.primaryButton}
+            activeOpacity={0.9}>
+            <Text style={styles.primaryText}>
+              {step === TOTAL_STEPS - 1 ? 'Open App' : 'Continue →'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
   );
 }
 
-function StepCard({
-  number,
-  title,
-  children,
-}: {
-  number: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.stepRow}>
-      <View style={styles.stepBadge}>
-        <Text style={styles.stepBadgeText}>{number}</Text>
+function renderStep(
+  step: number,
+  poolType: 'private' | 'public',
+  setPoolType: (value: 'private' | 'public') => void,
+  typedAmount: string,
+  cursorVisible: boolean,
+) {
+  if (step === 0) {
+    return (
+      <View style={styles.stepWrap}>
+        <Text style={[styles.title, styles.titleSentence]}>
+          Choose how much you want to give.
+        </Text>
+
+        <View style={styles.moneyLoopCard}>
+          <View style={styles.moneyLoopHeader}>
+            <View style={styles.moneyLoopDot} />
+            <View style={styles.moneyLoopDot} />
+            <View style={styles.moneyLoopDot} />
+          </View>
+
+          <View style={styles.typingBox}>
+            <Text style={styles.typingPrefix}>$</Text>
+            <Text style={styles.typingText}>{typedAmount || '0'}</Text>
+            <View
+              style={[styles.typingCursor, {opacity: cursorVisible ? 1 : 0}]}
+            />
+          </View>
+
+          <View style={styles.keypadRow}>
+            <View style={styles.keypadKey} />
+            <View style={styles.keypadKey} />
+            <View style={styles.keypadKey} />
+          </View>
+          <View style={styles.keypadRow}>
+            <View style={styles.keypadKey} />
+            <View style={styles.keypadKey} />
+            <View style={styles.keypadKey} />
+          </View>
+        </View>
       </View>
-      <SurfaceCard style={styles.stepCard}>
-        <Text style={styles.stepTitle}>{title.toUpperCase()}</Text>
-        {children}
-      </SurfaceCard>
+    );
+  }
+
+  if (step === 1) {
+    return (
+      <View style={styles.stepWrap}>
+        <Text style={[styles.title, styles.titleSentenceSmall]}>
+          choose 2-3 causes or organizations that are near to your heart.
+        </Text>
+        <CausesIcon />
+      </View>
+    );
+  }
+
+  if (step === 2) {
+    return (
+      <View style={styles.stepWrap}>
+        <Text style={[styles.title, styles.titleSentenceSmall]}>
+          donate as a group or privately.
+        </Text>
+        <View style={styles.choiceRow}>
+          <TouchableOpacity
+            onPress={() => setPoolType('private')}
+            activeOpacity={0.85}
+            style={[
+              styles.choiceCard,
+              poolType === 'private'
+                ? styles.choiceCardActive
+                : styles.choiceCardInactive,
+            ]}>
+            <View style={styles.choiceInner}>
+              <PrivatePoolIcon />
+              <Text style={styles.choiceLabel}>Private</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setPoolType('public')}
+            activeOpacity={0.85}
+            style={[
+              styles.choiceCard,
+              poolType === 'public'
+                ? styles.choiceCardActive
+                : styles.choiceCardInactive,
+            ]}>
+            <View style={styles.choiceInner}>
+              <PublicPoolIcon />
+              <Text style={styles.choiceLabel}>Group</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <View style={styles.stepWrap}>
+        <Text style={[styles.title, styles.titleSentenceSmall]}>
+          We connect you directly to the need.
+        </Text>
+        <ConnectIcon />
+      </View>
+    );
+  }
+
+  if (step === 4) {
+    return (
+      <View style={styles.stepWrap}>
+        <Text style={styles.title}>Refundable</Text>
+        <Text style={styles.icon}>↩</Text>
+        <Text style={styles.body}>
+          Your deposited money can be withdrawn within 48 hours if you change
+          your mind.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.stepWrap}>
+      <Text style={styles.title}>Transparency</Text>
+      <View style={styles.docIcon}>
+        <View style={styles.docFold} />
+        <View style={styles.docLine} />
+        <View style={styles.docLine} />
+      </View>
+      <Text style={styles.bodySpread}>
+        5-7 days after funds are locked,{'\n'}your Glimpse is updated with
+        {'\n'}photos, receipts, and impact.
+      </Text>
     </View>
   );
 }
 
-function PoolTypeButton({
-  selected,
-  title,
-  body,
-  onPress,
-}: {
-  selected: boolean;
-  title: string;
-  body: string;
-  onPress: () => void;
-}) {
+function CausesIcon() {
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={[
-        styles.poolBtn,
-        {
-          backgroundColor: selected ? '#1A1125' : '#EDE8FA',
-          borderColor: '#1A1125',
-        },
-      ]}
-      activeOpacity={0.85}>
-      <Text
-        style={[styles.poolTitle, {color: selected ? '#EDE8FA' : '#1A1125'}]}>
-        {title.toUpperCase()}
-      </Text>
-      <Text
-        style={[styles.poolBody, {color: selected ? '#CFC7F1' : '#4C4466'}]}>
-        {body}
-      </Text>
-    </TouchableOpacity>
+    <View style={styles.lineIconFrame}>
+      <View style={styles.causeIconRow}>
+        <View style={styles.causeIconDot} />
+        <View style={styles.causeIconLine} />
+      </View>
+      <View style={styles.causeIconRow}>
+        <View style={styles.causeIconDot} />
+        <View style={styles.causeIconLine} />
+      </View>
+      <View style={styles.causeIconRow}>
+        <View style={styles.causeIconDot} />
+        <View style={styles.causeIconLine} />
+      </View>
+    </View>
+  );
+}
+
+function ConnectIcon() {
+  return (
+    <View style={styles.lineIconFrame}>
+      <View style={styles.connectTopRow}>
+        <View style={styles.connectSourceNode} />
+        <View style={styles.connectSourceNode} />
+      </View>
+      <View style={styles.connectTopBar} />
+      <View style={styles.connectCenterDot} />
+      <View style={styles.connectDropLine} />
+      <View style={styles.connectNeedNode} />
+      <View style={styles.connectNeedMark} />
+    </View>
+  );
+}
+
+function PrivatePoolIcon() {
+  return (
+    <View style={styles.optionIconWrap}>
+      <View style={styles.singleHead} />
+      <View style={styles.singleBody} />
+    </View>
+  );
+}
+
+function PublicPoolIcon() {
+  return (
+    <View style={styles.optionIconWrap}>
+      <View style={styles.publicHeads}>
+        <View style={styles.publicHead} />
+        <View style={styles.publicHead} />
+      </View>
+      <View style={styles.publicBase} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(23, 16, 42, 0.18)',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    paddingHorizontal: 14,
   },
-  panel: {
-    borderWidth: 3,
-    padding: 12,
+  sheet: {
+    width: '100%',
+    maxWidth: 420,
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 14,
+    backgroundColor: '#F4F2FA',
   },
-  headerRow: {
+  topRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: '#1A1125',
-    paddingBottom: 8,
+    justifyContent: 'space-between',
+    marginBottom: 6,
   },
-  headerTitle: {
-    fontSize: 27,
-    letterSpacing: 1.5,
-    fontWeight: '700',
+  progressRow: {
+    flexDirection: 'row',
+    gap: 5,
+    marginLeft: 8,
   },
-  closeBtn: {
-    width: 28,
-    height: 28,
-    borderWidth: 2,
-    borderColor: '#1A1125',
+  progressDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 10,
+    backgroundColor: '#CEC8E4',
+  },
+  progressDotActive: {
+    width: 16,
+    backgroundColor: '#6554D1',
+  },
+  closeButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EDE8FA',
+    backgroundColor: '#E5E2EF',
   },
   closeText: {
-    fontSize: 15,
-    color: '#1A1125',
-    fontWeight: '700',
-  },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    minHeight: 274,
-    paddingVertical: 2,
-  },
-  stepBadge: {
-    width: 42,
-    height: 42,
-    borderRadius: 0,
-    borderWidth: 2,
-    borderColor: '#1A1125',
-    backgroundColor: '#6554D1',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  stepBadgeText: {
-    color: '#EDE8FA',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  stepCard: {
-    flex: 1,
-  },
-  stepTitle: {
-    fontSize: 21,
-    lineHeight: 24,
-    fontWeight: '700',
-    color: '#1A1125',
-    marginBottom: 8,
-    letterSpacing: 0.9,
-  },
-  amountRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  amountButton: {
-    flex: 1,
-    minHeight: 44,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  amountText: {
-    fontSize: 19,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  smallLabel: {
-    fontSize: 11,
-    letterSpacing: 1,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 2,
-    borderColor: '#1A1125',
-    backgroundColor: '#EDE8FA',
+    color: '#9C95B7',
     fontSize: 16,
     fontWeight: '700',
-    color: '#1A1125',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 8,
+    lineHeight: 18,
   },
-  poolBtn: {
-    borderWidth: 2,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 8,
-  },
-  poolTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: 0.7,
-  },
-  poolBody: {
-    marginTop: 4,
-    fontSize: 14,
-    lineHeight: 19,
-    fontWeight: '600',
-  },
-  infoTagWrap: {
-    alignItems: 'flex-end',
-    marginTop: -16,
-    marginBottom: 8,
-  },
-  infoTag: {
-    borderWidth: 2,
-    borderColor: '#1A1125',
+  content: {
+    minHeight: 230,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingTop: 8,
   },
-  infoTagText: {
-    fontSize: 10,
-    letterSpacing: 0.8,
-    fontWeight: '700',
-    color: '#EDE8FA',
+  stepWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  infoRow: {
-    flexDirection: 'row',
-    gap: 10,
-    alignItems: 'flex-start',
+  stepWrapTop: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 6,
   },
-  infoIcon: {
-    fontSize: 22,
-    color: '#6554D1',
-    fontWeight: '700',
-    lineHeight: 26,
+  title: {
+    color: '#17102A',
+    textAlign: 'center',
+    fontSize: 37,
+    lineHeight: 42,
+    fontWeight: '800',
+    marginBottom: 12,
   },
-  infoTitle: {
-    fontSize: 20,
-    lineHeight: 23,
-    color: '#1A1125',
-    fontWeight: '700',
-    letterSpacing: 0.5,
+  titleSentence: {
+    fontSize: 33,
+    lineHeight: 38,
+    marginBottom: 2,
+    maxWidth: 305,
   },
-  infoBody: {
-    marginTop: 2,
-    color: '#4C4466',
-    fontSize: 14,
-    lineHeight: 19,
-    fontWeight: '600',
+  titleSentenceSmall: {
+    fontSize: 30,
+    lineHeight: 35,
+    marginBottom: 8,
+    maxWidth: 300,
   },
-  footerRow: {
+  body: {
     marginTop: 8,
+    color: '#5E5878',
+    textAlign: 'center',
+    fontSize: 16,
+    lineHeight: 21,
+    fontFamily: 'CourierPrime-Regular',
+    maxWidth: 280,
+  },
+  bodySpread: {
+    marginTop: 10,
+    color: '#5E5878',
+    textAlign: 'center',
+    fontSize: 15,
+    lineHeight: 27,
+    letterSpacing: 0.35,
+    fontFamily: 'CourierPrime-Regular',
+    width: '100%',
+    maxWidth: 320,
+    paddingHorizontal: 6,
+  },
+  moneyLoopCard: {
+    marginTop: 14,
+    width: '100%',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#DDD7EE',
+    backgroundColor: '#F8F6FD',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  moneyLoopHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 10,
+  },
+  moneyLoopDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 6,
+    backgroundColor: '#CEC8E4',
+    marginRight: 5,
+  },
+  typingBox: {
+    width: '100%',
+    minHeight: 50,
+    borderRadius: 12,
+    paddingHorizontal: 13,
+    backgroundColor: '#EEEBF9',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  typingPrefix: {
+    color: '#6554D1',
+    fontSize: 26,
+    lineHeight: 30,
+    fontWeight: '700',
+    marginRight: 2,
+    fontFamily: 'CourierPrime-Regular',
+  },
+  typingText: {
+    color: '#6554D1',
+    fontSize: 26,
+    lineHeight: 30,
+    fontWeight: '700',
+    fontFamily: 'CourierPrime-Regular',
+  },
+  typingCursor: {
+    marginLeft: 6,
+    width: 2,
+    height: 24,
+    borderRadius: 2,
+    backgroundColor: '#6554D1',
+  },
+  keypadRow: {
+    marginTop: 7,
+    flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  arrowBtn: {
-    width: 36,
-    height: 36,
+  keypadKey: {
+    flex: 1,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#E5E0F3',
+    marginHorizontal: 3,
+  },
+  lineIconFrame: {
+    width: 50,
+    height: 60,
+    borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#1A1125',
+    borderColor: '#6554D1',
+    marginTop: 2,
+    marginBottom: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EDE8FA',
+    position: 'relative',
   },
-  arrowText: {
-    fontSize: 25,
-    lineHeight: 28,
-    color: '#1A1125',
-    fontWeight: '700',
-  },
-  dotsRow: {
+  causeIconRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    marginVertical: 2,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 99,
-  },
-  nextBtn: {
-    borderWidth: 2,
-    borderColor: '#1A1125',
+  causeIconDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 3,
     backgroundColor: '#6554D1',
-    minWidth: 124,
-    minHeight: 38,
+    marginRight: 4,
+  },
+  causeIconLine: {
+    width: 19,
+    height: 2,
+    borderRadius: 2,
+    backgroundColor: '#6554D1',
+  },
+  choiceRow: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    gap: 10,
+  },
+  choiceCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    minHeight: 100,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 10,
+    paddingVertical: 12,
   },
-  nextText: {
-    color: '#EDE8FA',
-    fontSize: 14,
+  choiceCardActive: {
+    borderColor: '#6554D1',
+    backgroundColor: '#F5F2FF',
+  },
+  choiceCardInactive: {
+    borderColor: '#DDD6EE',
+    backgroundColor: '#F8F5FD',
+  },
+  choiceInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  choiceLabel: {
+    marginTop: 8,
+    color: '#17102A',
+    fontSize: 15,
     fontWeight: '700',
-    letterSpacing: 0.8,
+    fontFamily: 'CourierPrime-Regular',
+  },
+  connectTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  connectSourceNode: {
+    width: 8,
+    height: 8,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#6554D1',
+  },
+  connectTopBar: {
+    width: 26,
+    height: 1.5,
+    borderRadius: 2,
+    backgroundColor: '#6554D1',
+    marginTop: 2,
+  },
+  connectCenterDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 6,
+    backgroundColor: '#6554D1',
+    marginTop: 3,
+  },
+  connectDropLine: {
+    width: 1.5,
+    height: 12,
+    borderRadius: 2,
+    backgroundColor: '#6554D1',
+    marginTop: 2,
+  },
+  connectNeedNode: {
+    width: 16,
+    height: 10,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#6554D1',
+    marginTop: 2,
+  },
+  connectNeedMark: {
+    position: 'absolute',
+    top: 38,
+    width: 6,
+    height: 6,
+    borderRadius: 4,
+    backgroundColor: '#6554D1',
+  },
+  optionIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#CEC8E4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 2,
+  },
+  singleHead: {
+    width: 7,
+    height: 7,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#6554D1',
+    marginBottom: 2,
+  },
+  singleBody: {
+    width: 12,
+    height: 6,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#6554D1',
+  },
+  publicHeads: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  publicHead: {
+    width: 6,
+    height: 6,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#6554D1',
+    backgroundColor: 'transparent',
+    marginHorizontal: 1,
+  },
+  publicBase: {
+    width: 15,
+    height: 5,
+    borderWidth: 1.5,
+    borderColor: '#6554D1',
+    borderRadius: 5,
+    marginTop: 2,
+    backgroundColor: 'transparent',
+  },
+  icon: {
+    color: '#6554D1',
+    fontSize: 52,
+    lineHeight: 58,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  docIcon: {
+    width: 50,
+    height: 60,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#6554D1',
+    marginTop: 2,
+    marginBottom: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  docFold: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 10,
+    height: 10,
+    borderTopWidth: 2,
+    borderRightWidth: 2,
+    borderColor: '#6554D1',
+  },
+  docLine: {
+    width: 22,
+    height: 2,
+    backgroundColor: '#6554D1',
+    marginVertical: 2,
+    borderRadius: 2,
+  },
+  primaryButton: {
+    marginTop: 4,
+    minHeight: 52,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6554D1',
+  },
+  primaryText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: 'CourierPrime-Regular',
   },
 });
