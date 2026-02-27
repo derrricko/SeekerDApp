@@ -18,12 +18,18 @@ import {
   useNavigation,
   useRoute,
 } from '@react-navigation/native';
+import {
+  launchImageLibrary,
+  launchCamera,
+  type Asset,
+} from 'react-native-image-picker';
 import {useTheme} from '../theme/Theme';
 import {useWallet} from '../components/providers/WalletProvider';
 import {
   Conversation,
   fetchConversations,
   sendMessage,
+  uploadChatMedia,
   useChatMessages,
 } from '../services/chat';
 import {getRecipientLabel} from '../data/donationConfig';
@@ -192,7 +198,7 @@ export default function MessagesScreen() {
               renderItem={({item, index}) => {
                 const recipientName = getRecipientLabel(item.recipient_id);
                 const displayAmount = item.amount_usdc ?? item.amount_sol ?? 0;
-                const displayToken = item.amount_usdc != null ? 'USDC' : 'SOL';
+                const displayToken = 'USDC';
                 const amount = Number(displayAmount).toFixed(2);
                 const isLast = index === conversations.length - 1;
 
@@ -308,11 +314,13 @@ function ChatView({
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [pickedImage, setPickedImage] = useState<Asset | null>(null);
   const flatListRef = React.useRef<FlatList>(null);
 
   const recipientName = getRecipientLabel(conversation.recipient_id);
-  const displayAmount = conversation.amount_usdc ?? conversation.amount_sol ?? 0;
-  const displayToken = conversation.amount_usdc != null ? 'USDC' : 'SOL';
+  const displayAmount =
+    conversation.amount_usdc ?? conversation.amount_sol ?? 0;
+  const displayToken = 'USDC';
   const amount = Number(displayAmount).toFixed(2);
 
   const invertedMessages = React.useMemo(
@@ -320,8 +328,50 @@ function ChatView({
     [messages],
   );
 
+  const pickPhoto = useCallback(() => {
+    launchImageLibrary(
+      {
+        mediaType: 'photo',
+        includeBase64: true,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+      },
+      response => {
+        if (response.didCancel || response.errorCode) {
+          return;
+        }
+        const asset = response.assets?.[0];
+        if (asset) {
+          setPickedImage(asset);
+        }
+      },
+    );
+  }, []);
+
+  const takePhoto = useCallback(() => {
+    launchCamera(
+      {
+        mediaType: 'photo',
+        includeBase64: true,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+      },
+      response => {
+        if (response.didCancel || response.errorCode) {
+          return;
+        }
+        const asset = response.assets?.[0];
+        if (asset) {
+          setPickedImage(asset);
+        }
+      },
+    );
+  }, []);
+
   const handleSend = useCallback(async () => {
-    if (!inputText.trim()) {
+    if (!inputText.trim() && !pickedImage) {
       return;
     }
 
@@ -329,8 +379,30 @@ function ChatView({
     setSendError(null);
 
     try {
-      await sendMessage(conversation.id, walletAddress, inputText.trim());
+      let mediaUrl: string | undefined;
+      let mediaType: 'image' | undefined;
+
+      if (pickedImage?.base64) {
+        const fileName = pickedImage.fileName || `photo-${Date.now()}.jpg`;
+        const contentType = pickedImage.type || 'image/jpeg';
+        mediaUrl = await uploadChatMedia(
+          conversation.id,
+          fileName,
+          pickedImage.base64,
+          contentType,
+        );
+        mediaType = 'image';
+      }
+
+      await sendMessage(
+        conversation.id,
+        walletAddress,
+        inputText.trim() || undefined,
+        mediaUrl,
+        mediaType,
+      );
       setInputText('');
+      setPickedImage(null);
     } catch (sendErrorReason) {
       const message =
         sendErrorReason instanceof Error
@@ -340,7 +412,7 @@ function ChatView({
     }
 
     setSending(false);
-  }, [inputText, conversation.id, walletAddress]);
+  }, [inputText, pickedImage, conversation.id, walletAddress]);
 
   const isAdmin = (senderWallet: string) =>
     senderWallet === ADMIN_WALLET || senderWallet === conversation.admin_wallet;
@@ -477,6 +549,21 @@ function ChatView({
           />
         )}
 
+        {pickedImage?.uri && (
+          <View style={styles.previewRow}>
+            <Image
+              source={{uri: pickedImage.uri}}
+              style={styles.previewThumb}
+            />
+            <TouchableOpacity onPress={() => setPickedImage(null)}>
+              <Text
+                style={[styles.previewRemove, {color: theme.colors.danger}]}>
+                Remove
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View
           style={[
             styles.inputBar,
@@ -485,6 +572,26 @@ function ChatView({
               backgroundColor: theme.colors.background,
             },
           ]}>
+          <TouchableOpacity
+            style={styles.mediaButton}
+            onPress={pickPhoto}
+            activeOpacity={0.7}>
+            <Text
+              style={[styles.mediaButtonIcon, {color: theme.colors.accent}]}>
+              IMG
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.mediaButton}
+            onPress={takePhoto}
+            activeOpacity={0.7}>
+            <Text
+              style={[styles.mediaButtonIcon, {color: theme.colors.accent}]}>
+              CAM
+            </Text>
+          </TouchableOpacity>
+
           <TextInput
             style={[
               styles.chatInput,
@@ -506,14 +613,14 @@ function ChatView({
             style={[
               styles.sendChatButton,
               {backgroundColor: theme.colors.accent},
-              (!inputText.trim() || sending) && {
+              ((!inputText.trim() && !pickedImage) || sending) && {
                 backgroundColor: theme.colors.surfaceAlt,
                 borderColor: 'rgba(26,17,37,0.16)',
               },
             ]}
             onPress={handleSend}
             activeOpacity={0.85}
-            disabled={!inputText.trim() || sending}>
+            disabled={(!inputText.trim() && !pickedImage) || sending}>
             <Text
               style={[
                 styles.sendChatButtonText,
@@ -734,6 +841,33 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 8,
     marginBottom: 8,
+  },
+  previewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingTop: 8,
+    gap: 10,
+  },
+  previewThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+  },
+  previewRemove: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  mediaButton: {
+    paddingHorizontal: 6,
+    paddingVertical: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mediaButtonIcon: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   inputBar: {
     flexDirection: 'row',
