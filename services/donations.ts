@@ -1,10 +1,10 @@
-// v2 donation service — orchestrates the full donation flow
+// v2 donation service — orchestrates the full USDC donation flow
 //
 // FLOW:
-//   buildDonationTransaction()
-//      → signAndSendTransaction()
+//   buildDonationTransaction()  (SPL USDC transferChecked + Memo)
+//      → signAndSendTransaction()  via MWA
 //      → confirmTransaction() on-chain
-//      → secure record-donation edge function (server verifies tx)
+//      → secure record-donation edge function (server verifies SPL tx)
 //                                                              ↓ (on failure)
 //                                                        addPendingConversation()
 
@@ -24,6 +24,7 @@ import {
 } from '../utils/retry';
 import {SUPABASE_ANON_KEY, SUPABASE_URL} from '../config/env';
 import {getSupabaseAccessToken} from './supabase';
+import {DonationCadence, DonationMode} from '../data/donationConfig';
 
 export interface DonationResult {
   txSignature: string;
@@ -32,8 +33,8 @@ export interface DonationResult {
 }
 
 /**
- * Execute a full donation:
- * 1. Build SOL + memo transaction
+ * Execute a full USDC donation:
+ * 1. Build SPL USDC transferChecked + Memo transaction
  * 2. Sign and send via MWA
  * 3. Confirm on-chain settlement
  * 4. Record via secure backend verifier + create conversation
@@ -45,14 +46,17 @@ export async function executeDonation(
   donorPubkey: PublicKey,
   recipientWallet: string,
   recipientId: string,
-  amountSOL: number,
+  amountUSDC: number,
+  cadence: DonationCadence,
   signAndSend: (tx: Transaction) => Promise<string>,
+  causePreferences: string[] = [],
+  donationMode: DonationMode = 'solo',
 ): Promise<Result<DonationResult>> {
-  if (!Number.isFinite(amountSOL) || amountSOL <= 0) {
+  if (!Number.isFinite(amountUSDC) || amountUSDC <= 0) {
     return fail('INVALID_AMOUNT', 'Donation amount must be greater than 0');
   }
 
-  // 1. Build transaction
+  // 1. Build USDC SPL transaction
   let transaction;
   let memo: DonationMemo;
   let blockhash = '';
@@ -62,13 +66,23 @@ export async function executeDonation(
       connection,
       donorPubkey,
       recipientWallet,
-      amountSOL,
+      amountUSDC,
+      cadence,
     );
     transaction = result.transaction;
     memo = result.memo;
     blockhash = result.blockhash;
     lastValidBlockHeight = result.lastValidBlockHeight;
   } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    // Surface specific pre-flight errors (insufficient balance, no ATA, etc.)
+    if (
+      msg.includes('Insufficient') ||
+      msg.includes('token account not found') ||
+      msg.includes('exceeds maximum')
+    ) {
+      return fail('BUILD_FAILED', msg);
+    }
     return fail(
       'BUILD_FAILED',
       'Could not build transaction. Please try again.',
@@ -118,6 +132,8 @@ export async function executeDonation(
     conversationId = await recordAndCreateConversationSecure(
       txSignature,
       recipientId,
+      causePreferences,
+      donationMode,
     );
   } catch (error) {
     // TX is on-chain but Supabase failed — queue retry
@@ -125,7 +141,9 @@ export async function executeDonation(
       txSignature,
       donorWallet: donorPubkey.toBase58(),
       recipientId,
-      amountSOL,
+      amountUSDC,
+      causePreferences,
+      donationMode,
       timestamp: Date.now(),
     });
   }
@@ -144,6 +162,8 @@ export async function retryPendingConversations(): Promise<void> {
       await recordAndCreateConversationSecure(
         item.txSignature,
         item.recipientId,
+        item.causePreferences || [],
+        (item.donationMode as DonationMode) || 'solo',
       );
       await removePendingConversation(item.txSignature);
     } catch (error) {
@@ -155,6 +175,8 @@ export async function retryPendingConversations(): Promise<void> {
 async function recordAndCreateConversationSecure(
   txSignature: string,
   recipientId: string,
+  causePreferences: string[],
+  donationMode: DonationMode,
 ): Promise<string> {
   const token = getSupabaseAccessToken();
   if (!token) {
@@ -168,7 +190,12 @@ async function recordAndCreateConversationSecure(
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({txSignature, recipientId}),
+    body: JSON.stringify({
+      txSignature,
+      recipientId,
+      causePreferences,
+      donationMode,
+    }),
   });
 
   const payload = await safeParseJson(response);

@@ -1,3 +1,16 @@
+// v2 USDC donation recording — validates SPL transferChecked on-chain
+//
+// VALIDATION FLOW:
+//   1. Verify JWT → extract wallet
+//   2. Fetch tx from Solana RPC (jsonParsed, 6 retries)
+//   3. Find spl-token transferChecked instruction
+//   4. Validate: info.mint === USDC_MINT
+//   5. Validate: info.authority === JWT wallet (donor)
+//   6. Validate: info.destination === MATCHING_POOL_USDC_ATA
+//   7. Validate: memo has tok="usdc", app="glimpse"
+//   8. Upsert donation (amount_usdc, cause_preferences, donation_mode, hold tracking)
+//   9. Upsert conversation + welcome message (48h hold copy)
+
 import {serve} from 'https://deno.land/std@0.177.0/http/server.ts';
 import {verify} from 'https://deno.land/x/djwt@v3.0.1/mod.ts';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.48.1';
@@ -6,21 +19,33 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const JWT_SECRET =
   Deno.env.get('JWT_SECRET') || Deno.env.get('SUPABASE_JWT_SECRET')!;
-const SOLANA_RPC_URL = Deno.env.get('SOLANA_RPC_URL') || 'https://api.devnet.solana.com';
+const SOLANA_RPC_URL =
+  Deno.env.get('SOLANA_RPC_URL') || 'https://api.devnet.solana.com';
 const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 const ADMIN_WALLET =
   Deno.env.get('ADMIN_WALLET') ||
   'HQ5C58Tu11cy8Q8Lfjpj8sRTW25wY7VnwgoW61cfMsY5';
 
-const RECIPIENT_WALLETS: Record<string, string> = {
-  'maria-car': '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T',
-  'evan-beheard': '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T',
-  'jasmine-brakes': '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T',
-  'open-fund': '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T',
-};
+// USDC mint addresses (devnet + mainnet)
+const USDC_MINT_DEVNET = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU';
+const USDC_MINT_MAINNET = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const VALID_USDC_MINTS = new Set([USDC_MINT_DEVNET, USDC_MINT_MAINNET]);
+
+// Matching pool wallet + pre-computed USDC ATA
+//   ATA = getAssociatedTokenAddress(USDC_MINT_DEVNET, MATCHING_POOL_WALLET)
+//   Computed via @solana/spl-token on the client side.
+const MATCHING_POOL_WALLET = '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T';
+const MATCHING_POOL_USDC_ATA =
+  '9gAg5NYALAkFjnSbr8M3XGEa7mgSsng2G4Um7HD6Kw5h';
+
+// 48-hour hold window (ms)
+const HOLD_DURATION_MS = 48 * 60 * 60 * 1000;
+
+const ALLOWED_ORIGIN =
+  Deno.env.get('ALLOWED_ORIGIN') || 'https://giveglimpse.com';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
 };
@@ -47,20 +72,24 @@ serve(async req => {
     const txSignature =
       typeof body?.txSignature === 'string' ? body.txSignature.trim() : '';
     const recipientId =
-      typeof body?.recipientId === 'string' ? body.recipientId.trim() : '';
-    const expectedRecipientWallet = RECIPIENT_WALLETS[recipientId];
+      typeof body?.recipientId === 'string'
+        ? body.recipientId.trim()
+        : 'matching-pool';
+    const causePreferences = Array.isArray(body?.causePreferences)
+      ? body.causePreferences.filter(
+          (c: unknown) => typeof c === 'string',
+        )
+      : [];
+    const donationMode =
+      body?.donationMode === 'group' ? 'group' : 'solo';
 
     if (!txSignature) {
       return json({error: 'txSignature is required'}, 400);
     }
-    if (!expectedRecipientWallet) {
-      return json({error: 'Unknown recipientId'}, 400);
-    }
 
-    const parsed = await fetchAndValidateDonationTransaction(
+    const parsed = await fetchAndValidateUSDCTransaction(
       txSignature,
       wallet,
-      expectedRecipientWallet,
     );
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -70,17 +99,20 @@ serve(async req => {
     const donationId = await upsertDonation({
       supabase,
       txSignature,
-      donorWallet: parsed.source,
-      recipientWallet: parsed.destination,
+      donorWallet: parsed.authority,
+      recipientWallet: MATCHING_POOL_WALLET,
       recipientId,
-      amountSol: parsed.amountSol,
+      amountUSDC: parsed.amountUSDC,
+      cadence: parsed.cadence,
+      causePreferences,
+      donationMode,
     });
 
     const conversationId = await upsertConversation({
       supabase,
       donationId,
-      donorWallet: parsed.source,
-      amountSol: parsed.amountSol,
+      donorWallet: parsed.authority,
+      amountUSDC: parsed.amountUSDC,
     });
 
     return json(
@@ -88,9 +120,9 @@ serve(async req => {
         txSignature,
         donationId,
         conversationId,
-        donorWallet: parsed.source,
-        recipientWallet: parsed.destination,
-        amountSol: parsed.amountSol,
+        donorWallet: parsed.authority,
+        recipientWallet: MATCHING_POOL_WALLET,
+        amountUSDC: parsed.amountUSDC,
       },
       200,
     );
@@ -100,6 +132,8 @@ serve(async req => {
     return json({error: message}, 500);
   }
 });
+
+// ---------- Auth ----------
 
 function extractBearerToken(header: string): string | null {
   const prefix = 'Bearer ';
@@ -139,15 +173,35 @@ async function verifyWalletFromJwt(token: string): Promise<string> {
   return wallet;
 }
 
-async function fetchAndValidateDonationTransaction(
+// ---------- Transaction Validation (USDC SPL transferChecked) ----------
+//
+//   jsonParsed output for spl-token transferChecked:
+//   {
+//     program: "spl-token",
+//     parsed: {
+//       type: "transferChecked",
+//       info: {
+//         source: "<donor ATA>",
+//         mint: "<USDC mint>",
+//         destination: "<pool ATA>",
+//         authority: "<donor wallet>",
+//         tokenAmount: { amount: "5000000", decimals: 6, uiAmount: 5.0 }
+//       }
+//     }
+//   }
+
+interface ParsedUSDCTransaction {
+  authority: string;
+  destination: string;
+  mint: string;
+  amountUSDC: number;
+  cadence: 'one_time' | 'daily';
+}
+
+async function fetchAndValidateUSDCTransaction(
   txSignature: string,
   expectedDonorWallet: string,
-  expectedRecipientWallet: string,
-): Promise<{
-  source: string;
-  destination: string;
-  amountSol: number;
-}> {
+): Promise<ParsedUSDCTransaction> {
   const tx = await getTransactionWithRetry(txSignature);
 
   if (!tx) {
@@ -157,34 +211,69 @@ async function fetchAndValidateDonationTransaction(
     throw new Error('Transaction failed on-chain');
   }
 
-  const instructions: any[] = tx.transaction?.message?.instructions || [];
-  const transferIx = instructions.find(
-    ix => ix?.program === 'system' && ix?.parsed?.type === 'transfer',
+  // Inner instructions can contain the transferChecked when an ATA creation
+  // wraps the transfer. Check both top-level and inner instructions.
+  const topInstructions: any[] =
+    tx.transaction?.message?.instructions || [];
+  const innerInstructions: any[] = (tx.meta?.innerInstructions || []).flatMap(
+    (inner: any) => inner.instructions || [],
+  );
+  const allInstructions = [...topInstructions, ...innerInstructions];
+
+  // Find spl-token transferChecked instruction
+  const transferIx = allInstructions.find(
+    ix =>
+      ix?.program === 'spl-token' &&
+      ix?.parsed?.type === 'transferChecked',
   );
 
   if (!transferIx) {
-    throw new Error('No system transfer instruction found in transaction');
+    throw new Error(
+      'No SPL token transferChecked instruction found in transaction',
+    );
   }
 
-  const source = transferIx.parsed?.info?.source;
-  const destination = transferIx.parsed?.info?.destination;
-  const lamports = Number(transferIx.parsed?.info?.lamports);
-
-  if (typeof source !== 'string' || typeof destination !== 'string') {
-    throw new Error('Invalid transfer instruction shape');
+  const info = transferIx.parsed?.info;
+  if (!info) {
+    throw new Error('Invalid transferChecked instruction shape');
   }
-  if (!Number.isFinite(lamports) || lamports <= 0) {
+
+  const authority = info.authority as string;
+  const destination = info.destination as string;
+  const mint = info.mint as string;
+  const tokenAmount = info.tokenAmount;
+
+  if (!authority || !destination || !mint) {
+    throw new Error('Missing fields in transferChecked instruction');
+  }
+
+  // Validate USDC mint
+  if (!VALID_USDC_MINTS.has(mint)) {
+    throw new Error(
+      `Invalid token mint: ${mint}. Only USDC transfers are accepted.`,
+    );
+  }
+
+  // Validate donor wallet matches JWT
+  if (authority !== expectedDonorWallet) {
+    throw new Error('Transaction authority does not match authenticated wallet');
+  }
+
+  // Validate destination is the matching pool USDC ATA
+  if (destination !== MATCHING_POOL_USDC_ATA) {
+    throw new Error(
+      'Transaction destination does not match matching pool USDC account',
+    );
+  }
+
+  // Extract amount (tokenAmount.uiAmount is the human-readable USDC amount)
+  const amountUSDC = Number(tokenAmount?.uiAmount);
+  if (!Number.isFinite(amountUSDC) || amountUSDC <= 0) {
     throw new Error('Invalid transfer amount');
   }
 
-  if (source !== expectedDonorWallet) {
-    throw new Error('Transaction donor does not match authenticated wallet');
-  }
-  if (destination !== expectedRecipientWallet) {
-    throw new Error('Transaction recipient does not match selected recipient');
-  }
-
-  const memoIx = instructions.find(
+  // Validate memo
+  const memoIx = topInstructions.find(
     ix =>
       ix?.programId === MEMO_PROGRAM_ID ||
       ix?.program === 'spl-memo' ||
@@ -198,8 +287,8 @@ async function fetchAndValidateDonationTransaction(
     typeof memoIx.parsed === 'string'
       ? memoIx.parsed
       : typeof memoIx.parsed?.memo === 'string'
-      ? memoIx.parsed.memo
-      : null;
+        ? memoIx.parsed.memo
+        : null;
   if (!memoText) {
     throw new Error('Memo instruction payload is missing');
   }
@@ -214,21 +303,32 @@ async function fetchAndValidateDonationTransaction(
   if (memo?.app !== 'glimpse') {
     throw new Error('Memo app marker is invalid');
   }
-  if (memo?.d !== source.slice(0, 8) || memo?.r !== destination.slice(0, 8)) {
-    throw new Error('Memo participant markers do not match transfer');
+  if (memo?.tok !== 'usdc') {
+    throw new Error('Memo token marker must be "usdc"');
   }
+
+  // Validate memo amount matches transfer (within rounding tolerance)
   const memoAmount = Number(memo?.a);
-  const amountSol = lamports / 1_000_000_000;
-  if (!Number.isFinite(memoAmount) || Math.abs(memoAmount - amountSol) > 1e-9) {
+  if (
+    !Number.isFinite(memoAmount) ||
+    Math.abs(memoAmount - amountUSDC) > 0.000001
+  ) {
     throw new Error('Memo amount does not match transfer amount');
   }
 
+  const cadence =
+    memo?.c === 'daily' || memo?.c === 'one_time' ? memo.c : 'one_time';
+
   return {
-    source,
+    authority,
     destination,
-    amountSol,
+    mint,
+    amountUSDC,
+    cadence,
   };
 }
+
+// ---------- RPC helpers ----------
 
 async function getTransactionWithRetry(txSignature: string): Promise<any> {
   const maxAttempts = 6;
@@ -268,7 +368,8 @@ async function rpc(method: string, params: unknown[]): Promise<any> {
   const payload = await response.json();
   if (!response.ok || payload?.error) {
     throw new Error(
-      payload?.error?.message || `RPC ${method} failed with status ${response.status}`,
+      payload?.error?.message ||
+        `RPC ${method} failed with status ${response.status}`,
     );
   }
   return payload.result;
@@ -278,13 +379,18 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// ---------- Database upserts ----------
+
 async function upsertDonation(params: {
   supabase: ReturnType<typeof createClient>;
   txSignature: string;
   donorWallet: string;
   recipientWallet: string;
   recipientId: string;
-  amountSol: number;
+  amountUSDC: number;
+  cadence: 'one_time' | 'daily';
+  causePreferences: string[];
+  donationMode: string;
 }): Promise<string> {
   const {
     supabase,
@@ -292,12 +398,15 @@ async function upsertDonation(params: {
     donorWallet,
     recipientWallet,
     recipientId,
-    amountSol,
+    amountUSDC,
+    cadence,
+    causePreferences,
+    donationMode,
   } = params;
 
   const {data: existing, error: existingError} = await supabase
     .from('donations')
-    .select('id, donor_wallet, recipient_wallet, recipient_id')
+    .select('id, donor_wallet, recipient_wallet')
     .eq('tx_signature', txSignature)
     .maybeSingle();
 
@@ -308,40 +417,73 @@ async function upsertDonation(params: {
   if (existing) {
     if (
       existing.donor_wallet !== donorWallet ||
-      existing.recipient_wallet !== recipientWallet ||
-      existing.recipient_id !== recipientId
+      existing.recipient_wallet !== recipientWallet
     ) {
       throw new Error('Existing donation record does not match tx details');
     }
     return existing.id;
   }
 
-  const {data: inserted, error: insertError} = await supabase
+  const holdExpiresAt = new Date(Date.now() + HOLD_DURATION_MS).toISOString();
+
+  let insertResult = await supabase
     .from('donations')
     .insert({
       tx_signature: txSignature,
       donor_wallet: donorWallet,
       recipient_wallet: recipientWallet,
       recipient_id: recipientId,
-      amount_sol: amountSol,
+      amount_usdc: amountUSDC,
+      cadence,
+      donation_mode: donationMode,
+      cause_preferences: causePreferences,
+      hold_status: 'pending',
+      hold_expires_at: holdExpiresAt,
     })
     .select('id')
     .single();
 
-  if (insertError) {
-    throw insertError;
+  // Backward compatibility: if new columns don't exist yet (migration not applied),
+  // retry with minimal columns.
+  if (insertResult.error) {
+    const code = insertResult.error.code || '';
+    const msg = (insertResult.error.message || '').toLowerCase();
+    const missingColumn =
+      code === '42703' ||
+      msg.includes('amount_usdc') ||
+      msg.includes('donation_mode') ||
+      msg.includes('hold_status') ||
+      msg.includes('cause_preferences');
+
+    if (missingColumn) {
+      insertResult = await supabase
+        .from('donations')
+        .insert({
+          tx_signature: txSignature,
+          donor_wallet: donorWallet,
+          recipient_wallet: recipientWallet,
+          recipient_id: recipientId,
+          amount_sol: amountUSDC, // fallback: store in amount_sol
+        })
+        .select('id')
+        .single();
+    }
   }
 
-  return inserted.id;
+  if (insertResult.error) {
+    throw insertResult.error;
+  }
+
+  return insertResult.data.id;
 }
 
 async function upsertConversation(params: {
   supabase: ReturnType<typeof createClient>;
   donationId: string;
   donorWallet: string;
-  amountSol: number;
+  amountUSDC: number;
 }): Promise<string> {
-  const {supabase, donationId, donorWallet, amountSol} = params;
+  const {supabase, donationId, donorWallet, amountUSDC} = params;
 
   const {data: existing, error: existingError} = await supabase
     .from('conversations')
@@ -371,14 +513,18 @@ async function upsertConversation(params: {
     throw insertError;
   }
 
+  // Welcome message with 48-hour hold copy
   const {error: messageError} = await supabase.from('messages').insert({
     conversation_id: inserted.id,
     sender_wallet: ADMIN_WALLET,
-    body: `Your donation of ${amountSol} SOL reached its destination. We'll share updates here as the impact unfolds.`,
+    body: `Your donation of ${amountUSDC} USDC is being processed. We are connecting you to a need based on the data and information you provided us. We will be reaching out with updates in this message thread. Remember you have 48 hours to request a refund.`,
   });
 
   if (messageError) {
-    console.warn('[record-donation] welcome message insert failed:', messageError);
+    console.warn(
+      '[record-donation] welcome message insert failed:',
+      messageError,
+    );
   }
 
   return inserted.id;
