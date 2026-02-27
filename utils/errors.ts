@@ -1,5 +1,4 @@
-// v2 error handling — MWA + SOL transaction errors
-// NO Anchor error codes, NO USDC references
+// v2 error handling — MWA + USDC transaction errors
 
 // ---------- Result type ----------
 
@@ -71,12 +70,34 @@ export function handleTransactionError(error: unknown): AppError {
   const message = error instanceof Error ? error.message : String(error);
 
   if (
+    message.includes('Insufficient USDC') ||
+    message.includes('insufficient funds')
+  ) {
+    return {
+      code: 'INSUFFICIENT_USDC',
+      message: 'Not enough USDC in your wallet for this donation.',
+      recoverable: true,
+    };
+  }
+
+  if (
+    message.includes('USDC token account not found') ||
+    message.includes('TokenAccountNotFoundError')
+  ) {
+    return {
+      code: 'USDC_ACCOUNT_NOT_FOUND',
+      message: 'No USDC found in your wallet. Add USDC to donate.',
+      recoverable: false,
+    };
+  }
+
+  if (
     message.includes('insufficient lamports') ||
     message.includes('Insufficient')
   ) {
     return {
       code: 'INSUFFICIENT_SOL',
-      message: 'Not enough SOL in your wallet for this donation.',
+      message: 'Not enough SOL for transaction fees.',
       recoverable: true,
     };
   }

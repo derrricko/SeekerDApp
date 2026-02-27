@@ -10,7 +10,11 @@ export interface PendingConversation {
   txSignature: string;
   donorWallet: string;
   recipientId: string;
-  amountSOL: number;
+  /** @deprecated Use amountUSDC for new donations */
+  amountSOL?: number;
+  amountUSDC?: number;
+  causePreferences?: string[];
+  donationMode?: string;
   timestamp: number;
 }
 
