@@ -8,6 +8,14 @@ export interface CauseOption {
   label: string;
 }
 
+export interface CampaignOption {
+  id: string;
+  label: string;
+  summary: string;
+  causePreferences: string[];
+  minimumUSDC: number;
+}
+
 export const MATCHING_POOL = {
   id: 'matching-pool',
   name: 'Glimpse Matching Pool',
@@ -25,9 +33,36 @@ export const CAUSE_OPTIONS: CauseOption[] = [
   {id: 'education', label: 'Education'},
 ];
 
-const NAME_BY_RECIPIENT_ID: Record<string, string> = {
-  'matching-pool': MATCHING_POOL.name,
-};
+export const CAMPAIGN_OPTIONS: CampaignOption[] = [
+  {
+    id: 'teacher-supplies',
+    label: 'Supplies for public school teachers',
+    summary:
+      'Funds urgent classroom supplies like notebooks, markers, books, and project materials so teachers can keep students equipped without paying out of pocket.',
+    causePreferences: ['education', 'teacher-supplies'],
+    minimumUSDC: 10,
+  },
+  {
+    id: 'single-moms-crisis',
+    label: 'Support for single moms and families in crisis',
+    summary:
+      'Supports families facing immediate hardship with essentials like transportation, groceries, and critical household stability during emergency periods.',
+    causePreferences: ['family-crisis', 'single-moms'],
+    minimumUSDC: 25,
+  },
+  {
+    id: 'foster-care-after-school',
+    label: 'Foster care after school programs, diapers and formula',
+    summary:
+      'Helps foster and vulnerable children access after-school programs while covering essentials like diapers and formula for younger kids in care.',
+    causePreferences: ['foster-care', 'child-essentials', 'after-school'],
+    minimumUSDC: 15,
+  },
+];
+
+const NAME_BY_RECIPIENT_ID: Record<string, string> = Object.fromEntries(
+  CAMPAIGN_OPTIONS.map(c => [c.id, c.label]),
+);
 
 export function getRecipientLabel(recipientId?: string | null): string {
   if (!recipientId) {

@@ -92,14 +92,6 @@ export default function HowItWorksScreen() {
           </StepCard>
 
           <InfoCard
-            tag="GUARANTEE"
-            title="Refundable"
-            body="100% refundable before 48 hours."
-            icon="↺"
-            darkTag
-          />
-
-          <InfoCard
             tag="PROOF"
             title="Transparency"
             body="Receipts uploaded 5-7 days after lock."

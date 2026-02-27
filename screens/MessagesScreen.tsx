@@ -1,4 +1,5 @@
-// v2 Messages Screen — conversation list + chat view
+// v2 Messages Screen — direct chat view (no thread list)
+// Navigated to via conversationId param from the donation flow.
 
 import React, {useCallback, useEffect, useState} from 'react';
 import {
@@ -13,11 +14,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import {
-  useFocusEffect,
-  useNavigation,
-  useRoute,
-} from '@react-navigation/native';
+import {useRoute} from '@react-navigation/native';
 import {
   launchImageLibrary,
   launchCamera,
@@ -27,6 +24,7 @@ import {useTheme} from '../theme/Theme';
 import {useWallet} from '../components/providers/WalletProvider';
 import {
   Conversation,
+  Message,
   fetchConversations,
   sendMessage,
   uploadChatMedia,
@@ -37,101 +35,122 @@ import {ADMIN_WALLET} from '../config/env';
 import AppHeader from '../ui/AppHeader';
 import SurfaceCard from '../ui/SurfaceCard';
 
-function initials(label: string) {
-  const words = label
-    .replace(/[^a-zA-Z0-9\s]/g, ' ')
-    .split(' ')
-    .filter(Boolean);
+// ---------- DEV MOCK DATA ----------
+// Fake conversation + messages so you can design the UI without a real donation.
+// Only used when __DEV__ is true. Delete this block before release.
 
-  if (words.length === 0) {
-    return 'GL';
-  }
+const MOCK_WALLET = 'DEVmock1111111111111111111111111111111111111';
 
-  if (words.length === 1) {
-    return words[0].slice(0, 2).toUpperCase();
-  }
+const MOCK_CONVERSATION: Conversation = {
+  id: 'aaaa1111-2222-3333-4444-555566667777',
+  donation_id: 'don-001',
+  donor_wallet: MOCK_WALLET,
+  admin_wallet: ADMIN_WALLET,
+  created_at: new Date(Date.now() - 3600_000).toISOString(),
+  amount_usdc: 25.0,
+  recipient_id: 'single-moms-crisis',
+};
 
-  return `${words[0][0]}${words[1][0]}`.toUpperCase();
-}
+const MOCK_MESSAGES: Message[] = [
+  {
+    id: 'msg-a1',
+    conversation_id: 'aaaa1111-2222-3333-4444-555566667777',
+    sender_wallet: ADMIN_WALLET,
+    body: "Thank you for your $25 donation to support single moms in crisis. We're reviewing needs now and will update you here within 48 hours.",
+    media_url: null,
+    media_type: null,
+    created_at: new Date(Date.now() - 3500_000).toISOString(),
+  },
+  {
+    id: 'msg-a2',
+    conversation_id: 'aaaa1111-2222-3333-4444-555566667777',
+    sender_wallet: MOCK_WALLET,
+    body: 'Thank you, excited to help!',
+    media_url: null,
+    media_type: null,
+    created_at: new Date(Date.now() - 3000_000).toISOString(),
+  },
+  {
+    id: 'msg-a3',
+    conversation_id: 'aaaa1111-2222-3333-4444-555566667777',
+    sender_wallet: ADMIN_WALLET,
+    body: "Your donation went to Maria — a single mom in Muscatine who needed help covering groceries and gas this week. Here's her thank-you note.",
+    media_url: null,
+    media_type: null,
+    created_at: new Date(Date.now() - 1800_000).toISOString(),
+  },
+];
 
-function formatShortDate(value: string) {
-  return new Date(value).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-  });
-}
+// ---------- Helpers ----------
 
 function shortThreadId(id: string) {
   return `#${id.slice(0, 6).toUpperCase()}`;
 }
 
+// ---------- Main Screen ----------
+
 export default function MessagesScreen() {
   const {theme} = useTheme();
-  const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const {connected, publicKey} = useWallet();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeConvo, setActiveConvo] = useState<Conversation | null>(null);
 
-  const walletAddress = publicKey?.toBase58() || '';
+  const walletAddress = publicKey?.toBase58() || (__DEV__ ? MOCK_WALLET : '');
+  const useMocks = __DEV__;
 
-  const loadConversations = useCallback(async () => {
-    if (!connected || !walletAddress) {
-      setLoading(false);
-      return;
-    }
+  const conversationId: string | undefined = route.params?.conversationId;
 
-    setLoading(true);
-    try {
-      const convos = await fetchConversations(walletAddress);
-      setConversations(convos);
-    } finally {
-      setLoading(false);
-    }
-  }, [connected, walletAddress]);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadConversations().catch(() => setLoading(false));
-    }, [loadConversations]),
+  // In dev mode, use mock conversation. In prod, look up by conversationId.
+  const [conversation, setConversation] = useState<Conversation | null>(
+    useMocks ? MOCK_CONVERSATION : null,
   );
+  const [loading, setLoading] = useState(!useMocks);
 
+  // Fetch the conversation from Supabase when we have an ID (prod only)
   useEffect(() => {
-    const targetConversationId =
-      typeof route.params?.conversationId === 'string'
-        ? route.params.conversationId
-        : null;
-
-    if (!targetConversationId || conversations.length === 0 || activeConvo) {
+    if (useMocks || !conversationId || !connected || !walletAddress) {
+      setLoading(false);
       return;
     }
 
-    const target = conversations.find(c => c.id === targetConversationId);
-    if (!target) {
-      return;
-    }
+    let cancelled = false;
+    setLoading(true);
 
-    setActiveConvo(target);
-    navigation.setParams({conversationId: undefined});
-  }, [route.params, conversations, activeConvo, navigation]);
+    fetchConversations(walletAddress)
+      .then(convos => {
+        if (cancelled) {
+          return;
+        }
+        const target = convos.find(c => c.id === conversationId);
+        setConversation(target || null);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
 
-  if (activeConvo) {
-    return (
-      <ChatView
-        conversation={activeConvo}
-        walletAddress={walletAddress}
-        onBack={() => setActiveConvo(null)}
-      />
-    );
-  }
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId, connected, walletAddress, useMocks]);
 
-  if (!connected) {
+  if (loading) {
     return (
       <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
         <AppHeader title="Messages" />
+        <View style={styles.loaderWrap}>
+          <ActivityIndicator size="large" color={theme.colors.accent} />
+        </View>
+      </View>
+    );
+  }
 
-        <View style={styles.contentWrap}>
+  if (!conversation) {
+    return (
+      <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+        <AppHeader title="Messages" />
+        <View style={styles.emptyWrap}>
           <SurfaceCard style={styles.stateCard}>
             <Text
               style={[
@@ -141,11 +160,11 @@ export default function MessagesScreen() {
                   fontFamily: theme.typography.brand,
                 },
               ]}>
-              WALLET REQUIRED
+              NO CONVERSATION
             </Text>
             <Text
               style={[styles.stateBody, {color: theme.colors.textSecondary}]}>
-              Connect your wallet to view donation threads and impact replies.
+              Complete a donation to start a message thread.
             </Text>
           </SurfaceCard>
         </View>
@@ -154,163 +173,30 @@ export default function MessagesScreen() {
   }
 
   return (
-    <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
-      <AppHeader title="Messages" />
-
-      <View style={styles.contentWrap}>
-        <SurfaceCard style={styles.panel} padded={false}>
-          <View style={styles.panelHeader}>
-            <Text
-              style={[
-                styles.panelLabel,
-                {
-                  color: theme.colors.textTertiary,
-                  fontFamily: theme.typography.brand,
-                },
-              ]}>
-              RECENT THREADS
-            </Text>
-          </View>
-
-          {loading ? (
-            <View style={styles.loaderWrap}>
-              <ActivityIndicator size="large" color={theme.colors.accent} />
-            </View>
-          ) : conversations.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text
-                style={[
-                  styles.emptyStateText,
-                  {
-                    color: theme.colors.textSecondary,
-                    fontFamily: theme.typography.brand,
-                  },
-                ]}>
-                No threads yet. Start from the Donate flow to open your first
-                message thread.
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={conversations}
-              keyExtractor={item => item.id}
-              contentContainerStyle={styles.threadListContent}
-              renderItem={({item, index}) => {
-                const recipientName = getRecipientLabel(item.recipient_id);
-                const displayAmount = item.amount_usdc ?? 0;
-                const displayToken = 'USDC';
-                const amount = Number(displayAmount).toFixed(2);
-                const isLast = index === conversations.length - 1;
-
-                return (
-                  <TouchableOpacity
-                    style={[
-                      styles.threadRow,
-                      {
-                        borderBottomColor: 'rgba(26,17,37,0.1)',
-                        borderBottomWidth: isLast ? 0 : 1,
-                      },
-                    ]}
-                    onPress={() => setActiveConvo(item)}
-                    activeOpacity={0.8}>
-                    <View
-                      style={[
-                        styles.threadAvatar,
-                        {
-                          borderColor: 'rgba(101,84,209,0.38)',
-                          backgroundColor: 'rgba(101,84,209,0.22)',
-                        },
-                      ]}>
-                      <Text
-                        style={[
-                          styles.threadAvatarText,
-                          {
-                            color: theme.colors.textPrimary,
-                            fontFamily: theme.typography.brand,
-                          },
-                        ]}>
-                        {initials(recipientName)}
-                      </Text>
-                    </View>
-
-                    <View style={styles.threadBody}>
-                      <Text
-                        style={[
-                          styles.threadTitle,
-                          {color: theme.colors.textPrimary},
-                        ]}>
-                        {recipientName}
-                      </Text>
-
-                      <View style={styles.threadMetaRow}>
-                        <Text
-                          style={[
-                            styles.threadMeta,
-                            {
-                              color: theme.colors.textSecondary,
-                              fontFamily: theme.typography.brand,
-                            },
-                          ]}>
-                          {formatShortDate(item.created_at)}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.threadDot,
-                            {color: theme.colors.textTertiary},
-                          ]}>
-                          •
-                        </Text>
-                        <Text
-                          style={[
-                            styles.threadId,
-                            {
-                              color: theme.colors.accent,
-                              fontFamily: theme.typography.brand,
-                            },
-                          ]}>
-                          {shortThreadId(item.id)}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.threadRight}>
-                      <Text
-                        style={[
-                          styles.threadAmount,
-                          {color: theme.colors.accent},
-                        ]}>
-                        {amount} {displayToken}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.threadChevron,
-                          {color: theme.colors.textTertiary},
-                        ]}>
-                        ›
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          )}
-        </SurfaceCard>
-      </View>
-    </View>
+    <ChatView
+      conversation={conversation}
+      walletAddress={walletAddress}
+      useMocks={useMocks}
+    />
   );
 }
+
+// ---------- Chat View ----------
 
 function ChatView({
   conversation,
   walletAddress,
-  onBack,
+  useMocks,
 }: {
   conversation: Conversation;
   walletAddress: string;
-  onBack: () => void;
+  useMocks: boolean;
 }) {
   const {theme} = useTheme();
-  const {messages, loading, error} = useChatMessages(conversation.id);
+  const realChat = useChatMessages(useMocks ? null : conversation.id);
+  const messages = useMocks ? MOCK_MESSAGES : realChat.messages;
+  const chatLoading = useMocks ? false : realChat.loading;
+  const chatError = useMocks ? null : realChat.error;
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -319,7 +205,6 @@ function ChatView({
 
   const recipientName = getRecipientLabel(conversation.recipient_id);
   const displayAmount = conversation.amount_usdc ?? 0;
-  const displayToken = 'USDC';
   const amount = Number(displayAmount).toFixed(2);
 
   const invertedMessages = React.useMemo(
@@ -432,19 +317,6 @@ function ChatView({
               borderColor: 'rgba(26,17,37,0.12)',
             },
           ]}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Text
-              style={[
-                styles.backText,
-                {
-                  color: theme.colors.accent,
-                  fontFamily: theme.typography.brand,
-                },
-              ]}>
-              ← Back
-            </Text>
-          </TouchableOpacity>
-
           <View style={styles.chatMetaWrap}>
             <Text
               style={[styles.chatRecipient, {color: theme.colors.textPrimary}]}>
@@ -458,19 +330,19 @@ function ChatView({
                   fontFamily: theme.typography.brand,
                 },
               ]}>
-              {amount} {displayToken} • {shortThreadId(conversation.id)}
+              {amount} USDC • {shortThreadId(conversation.id)}
             </Text>
           </View>
         </View>
 
-        {loading ? (
+        {chatLoading ? (
           <View style={styles.loaderWrap}>
             <ActivityIndicator size="large" color={theme.colors.accent} />
           </View>
-        ) : error ? (
+        ) : chatError ? (
           <View style={styles.chatErrorWrap}>
             <Text style={[styles.chatErrorText, {color: theme.colors.danger}]}>
-              {error}
+              {chatError}
             </Text>
           </View>
         ) : (
@@ -644,39 +516,16 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  contentWrap: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 100,
-  },
-  panel: {
-    flex: 1,
-    borderRadius: 16,
-    borderWidth: 2,
-    paddingTop: 0,
-    paddingHorizontal: 0,
-    paddingBottom: 0,
-    overflow: 'hidden',
-  },
-  panelHeader: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(26,17,37,0.12)',
-  },
-  panelLabel: {
-    fontSize: 10,
-    lineHeight: 12,
-    letterSpacing: 1,
-    fontWeight: '700',
-  },
   loaderWrap: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 36,
+  },
+  emptyWrap: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   stateCard: {
     borderRadius: 14,
@@ -693,86 +542,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 22,
-    paddingVertical: 28,
-  },
-  emptyStateText: {
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  threadListContent: {
-    paddingBottom: 8,
-  },
-  threadRow: {
-    minHeight: 74,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  threadAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  threadAvatarText: {
-    fontSize: 10,
-    lineHeight: 12,
-    fontWeight: '700',
-  },
-  threadBody: {
-    flex: 1,
-    marginRight: 8,
-  },
-  threadTitle: {
-    fontSize: 19,
-    lineHeight: 22,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  threadMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  threadMeta: {
-    fontSize: 10,
-    lineHeight: 12,
-  },
-  threadDot: {
-    marginHorizontal: 5,
-    fontSize: 10,
-    lineHeight: 12,
-  },
-  threadId: {
-    fontSize: 10,
-    lineHeight: 12,
-    fontWeight: '700',
-  },
-  threadRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  threadAmount: {
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: '700',
-    minWidth: 64,
-    textAlign: 'right',
-  },
-  threadChevron: {
-    fontSize: 14,
-    lineHeight: 15,
-    fontWeight: '700',
-  },
   chatBody: {
     flex: 1,
     paddingHorizontal: 14,
@@ -784,16 +553,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     marginBottom: 10,
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    marginBottom: 8,
-  },
-  backText: {
-    fontSize: 12,
-    lineHeight: 14,
-    fontWeight: '700',
-    letterSpacing: 0.6,
   },
   chatMetaWrap: {
     width: '100%',

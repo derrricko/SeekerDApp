@@ -175,12 +175,9 @@ All donations go to the matching pool wallet. Cause preferences help match donor
 
 ## Hold Status State Machine
 ```
-  pending ──(48h expires)──▶ locked ──(admin action)──▶ released
-     │
-     └──(donor requests)──▶ refunded
+  pending ──(processing)──▶ locked ──(admin action)──▶ released
 ```
-- Hold is custodial (manual refund via admin)
-- 48-hour window for refund requests
+- Hold is custodial (admin releases when donation is matched)
 - Done screen copy: "Your donation is being processed. We are connecting you to a need..."
 
 ## Wallet Auth Flow
