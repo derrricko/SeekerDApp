@@ -3,6 +3,8 @@
 
 import React, {useCallback, useEffect, useState} from 'react';
 import {
+  Animated,
+  Alert,
   View,
   Text,
   FlatList,
@@ -13,6 +15,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Easing,
+  PermissionsAndroid,
 } from 'react-native';
 import {useRoute} from '@react-navigation/native';
 import {
@@ -30,10 +34,16 @@ import {
   uploadChatMedia,
   useChatMessages,
 } from '../services/chat';
-import {getRecipientLabel} from '../data/donationConfig';
+import {
+  getRecipientGlimpseTag,
+  getRecipientLabel,
+} from '../data/donationConfig';
 import {ADMIN_WALLET} from '../config/env';
 import AppHeader from '../ui/AppHeader';
 import SurfaceCard from '../ui/SurfaceCard';
+
+const AnimatedTouchableOpacity =
+  Animated.createAnimatedComponent(TouchableOpacity);
 
 // ---------- DEV MOCK DATA ----------
 // Fake conversation + messages so you can design the UI without a real donation.
@@ -85,6 +95,132 @@ const MOCK_MESSAGES: Message[] = [
 
 function shortThreadId(id: string) {
   return `#${id.slice(0, 6).toUpperCase()}`;
+}
+
+function MessageBubble({
+  item,
+  fromAdmin,
+  adminBubbleBackground,
+  adminBubbleBorder,
+  donorBubbleBackground,
+  donorBubbleBorder,
+  adminTextColor,
+  donorTextColor,
+  adminTimeColor,
+  donorTimeColor,
+}: {
+  item: Message;
+  fromAdmin: boolean;
+  adminBubbleBackground: string;
+  adminBubbleBorder: string;
+  donorBubbleBackground: string;
+  donorBubbleBorder: string;
+  adminTextColor: string;
+  donorTextColor: string;
+  adminTimeColor: string;
+  donorTimeColor: string;
+}) {
+  const enterMotion = React.useRef(new Animated.Value(0)).current;
+  const translateXStart = fromAdmin ? -8 : 8;
+
+  useEffect(() => {
+    Animated.timing(enterMotion, {
+      toValue: 1,
+      duration: 210,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [enterMotion]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.bubble,
+        fromAdmin
+          ? [
+              styles.bubbleAdmin,
+              {
+                backgroundColor: adminBubbleBackground,
+                borderColor: adminBubbleBorder,
+              },
+            ]
+          : [
+              styles.bubbleDonor,
+              {
+                backgroundColor: donorBubbleBackground,
+                borderColor: donorBubbleBorder,
+              },
+            ],
+        {
+          opacity: enterMotion,
+          transform: [
+            {
+              translateY: enterMotion.interpolate({
+                inputRange: [0, 1],
+                outputRange: [6, 0],
+              }),
+            },
+            {
+              translateX: enterMotion.interpolate({
+                inputRange: [0, 1],
+                outputRange: [translateXStart, 0],
+              }),
+            },
+          ],
+        },
+      ]}>
+      {item.media_url && (
+        <Image
+          source={{uri: `${item.media_url}?width=300&height=300`}}
+          style={styles.mediaImage}
+          resizeMode="cover"
+        />
+      )}
+
+      {item.body ? (
+        <Text
+          style={[
+            styles.bubbleText,
+            {
+              color: fromAdmin ? adminTextColor : donorTextColor,
+            },
+          ]}>
+          {item.body}
+        </Text>
+      ) : null}
+
+      <Text
+        style={[
+          styles.bubbleTime,
+          {
+            color: fromAdmin ? adminTimeColor : donorTimeColor,
+          },
+        ]}>
+        {new Date(item.created_at).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        })}
+      </Text>
+    </Animated.View>
+  );
+}
+
+function GalleryGlyph({color}: {color: string}) {
+  return (
+    <View style={[styles.glyphFrame, {borderColor: color}]}>
+      <View style={[styles.glyphSun, {borderColor: color}]} />
+      <View style={[styles.glyphHill, {borderColor: color}]} />
+    </View>
+  );
+}
+
+function CameraGlyph({color}: {color: string}) {
+  return (
+    <View style={[styles.glyphCameraBody, {borderColor: color}]}>
+      <View style={[styles.glyphCameraTop, {borderColor: color}]} />
+      <View style={[styles.glyphCameraLens, {borderColor: color}]} />
+    </View>
+  );
 }
 
 // ---------- Main Screen ----------
@@ -202,8 +338,10 @@ function ChatView({
   const [sendError, setSendError] = useState<string | null>(null);
   const [pickedImage, setPickedImage] = useState<Asset | null>(null);
   const flatListRef = React.useRef<FlatList>(null);
+  const sendPulse = React.useRef(new Animated.Value(1)).current;
 
   const recipientName = getRecipientLabel(conversation.recipient_id);
+  const glimpseTag = getRecipientGlimpseTag(conversation.recipient_id);
   const displayAmount = conversation.amount_usdc ?? 0;
   const amount = Number(displayAmount).toFixed(2);
 
@@ -233,26 +371,68 @@ function ChatView({
     );
   }, []);
 
-  const takePhoto = useCallback(() => {
-    launchCamera(
+  const ensureCameraPermission = useCallback(async () => {
+    if (Platform.OS !== 'android') {
+      return true;
+    }
+    const current = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.CAMERA,
+    );
+    if (current) {
+      return true;
+    }
+    const result = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.CAMERA,
       {
-        mediaType: 'photo',
-        includeBase64: true,
-        maxWidth: 1200,
-        maxHeight: 1200,
-        quality: 0.8,
-      },
-      response => {
-        if (response.didCancel || response.errorCode) {
-          return;
-        }
-        const asset = response.assets?.[0];
-        if (asset) {
-          setPickedImage(asset);
-        }
+        title: 'Camera Permission',
+        message: 'Glimpse needs camera access to take and send photos.',
+        buttonPositive: 'Allow',
+        buttonNegative: 'Not now',
       },
     );
+    return result === PermissionsAndroid.RESULTS.GRANTED;
   }, []);
+
+  const takePhoto = useCallback(() => {
+    (async () => {
+      const allowed = await ensureCameraPermission();
+      if (!allowed) {
+        Alert.alert(
+          'Camera access needed',
+          'Please allow camera permission to capture photos.',
+        );
+        return;
+      }
+
+      launchCamera(
+        {
+          mediaType: 'photo',
+          includeBase64: true,
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.8,
+        },
+        response => {
+          if (response.didCancel) {
+            return;
+          }
+          if (response.errorCode) {
+            Alert.alert(
+              'Camera unavailable',
+              'Could not open camera on this device. Try gallery instead.',
+            );
+            return;
+          }
+          const asset = response.assets?.[0];
+          if (asset) {
+            setPickedImage(asset);
+          }
+        },
+      );
+    })().catch(() => {
+      Alert.alert('Camera error', 'Please try again.');
+    });
+  }, [ensureCameraPermission]);
 
   const handleSend = useCallback(async () => {
     if (!inputText.trim() && !pickedImage) {
@@ -287,6 +467,20 @@ function ChatView({
       );
       setInputText('');
       setPickedImage(null);
+      Animated.sequence([
+        Animated.timing(sendPulse, {
+          toValue: 1.06,
+          duration: 90,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sendPulse, {
+          toValue: 1,
+          duration: 130,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
     } catch (sendErrorReason) {
       const message =
         sendErrorReason instanceof Error
@@ -296,7 +490,7 @@ function ChatView({
     }
 
     setSending(false);
-  }, [inputText, pickedImage, conversation.id, walletAddress]);
+  }, [conversation.id, inputText, pickedImage, sendPulse, walletAddress]);
 
   const isAdmin = (senderWallet: string) =>
     senderWallet === ADMIN_WALLET || senderWallet === conversation.admin_wallet;
@@ -320,7 +514,7 @@ function ChatView({
           <View style={styles.chatMetaWrap}>
             <Text
               style={[styles.chatRecipient, {color: theme.colors.textPrimary}]}>
-              {recipientName}
+              GLIMPSE {glimpseTag}
             </Text>
             <Text
               style={[
@@ -330,7 +524,7 @@ function ChatView({
                   fontFamily: theme.typography.brand,
                 },
               ]}>
-              {amount} USDC • {shortThreadId(conversation.id)}
+              {amount} USDC • {shortThreadId(conversation.id)} • {recipientName}
             </Text>
           </View>
         </View>
@@ -357,64 +551,19 @@ function ChatView({
             windowSize={11}
             renderItem={({item}) => {
               const fromAdmin = isAdmin(item.sender_wallet);
-
               return (
-                <View
-                  style={[
-                    styles.bubble,
-                    fromAdmin
-                      ? [
-                          styles.bubbleAdmin,
-                          {
-                            backgroundColor: 'rgba(26,17,37,0.06)',
-                            borderColor: 'rgba(26,17,37,0.14)',
-                          },
-                        ]
-                      : [
-                          styles.bubbleDonor,
-                          {
-                            backgroundColor: theme.colors.accent,
-                            borderColor: theme.colors.accentPressed,
-                          },
-                        ],
-                  ]}>
-                  {item.media_url && (
-                    <Image
-                      source={{uri: `${item.media_url}?width=300&height=300`}}
-                      style={styles.mediaImage}
-                      resizeMode="cover"
-                    />
-                  )}
-
-                  {item.body ? (
-                    <Text
-                      style={[
-                        styles.bubbleText,
-                        {
-                          color: fromAdmin
-                            ? theme.colors.textPrimary
-                            : 'rgba(248,244,255,0.98)',
-                        },
-                      ]}>
-                      {item.body}
-                    </Text>
-                  ) : null}
-
-                  <Text
-                    style={[
-                      styles.bubbleTime,
-                      {
-                        color: fromAdmin
-                          ? theme.colors.textTertiary
-                          : 'rgba(244,240,255,0.74)',
-                      },
-                    ]}>
-                    {new Date(item.created_at).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </Text>
-                </View>
+                <MessageBubble
+                  item={item}
+                  fromAdmin={fromAdmin}
+                  adminBubbleBackground="rgba(26,17,37,0.06)"
+                  adminBubbleBorder="rgba(26,17,37,0.14)"
+                  donorBubbleBackground={theme.colors.accent}
+                  donorBubbleBorder={theme.colors.accentPressed}
+                  adminTextColor={theme.colors.textPrimary}
+                  donorTextColor="rgba(248,244,255,0.98)"
+                  adminTimeColor={theme.colors.textTertiary}
+                  donorTimeColor="rgba(244,240,255,0.74)"
+                />
               );
             }}
           />
@@ -439,37 +588,43 @@ function ChatView({
           style={[
             styles.inputBar,
             {
-              borderTopColor: 'rgba(26,17,37,0.12)',
-              backgroundColor: theme.colors.background,
+              borderTopColor: 'rgba(101,84,209,0.2)',
+              backgroundColor: 'rgba(101,84,209,0.1)',
             },
           ]}>
           <TouchableOpacity
-            style={styles.mediaButton}
+            style={[
+              styles.mediaButton,
+              {
+                borderColor: 'rgba(101,84,209,0.32)',
+                backgroundColor: '#F4F1FF',
+              },
+            ]}
             onPress={pickPhoto}
             activeOpacity={0.7}>
-            <Text
-              style={[styles.mediaButtonIcon, {color: theme.colors.accent}]}>
-              IMG
-            </Text>
+            <GalleryGlyph color={theme.colors.accent} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.mediaButton}
+            style={[
+              styles.mediaButton,
+              {
+                borderColor: 'rgba(101,84,209,0.32)',
+                backgroundColor: '#F4F1FF',
+              },
+            ]}
             onPress={takePhoto}
             activeOpacity={0.7}>
-            <Text
-              style={[styles.mediaButtonIcon, {color: theme.colors.accent}]}>
-              CAM
-            </Text>
+            <CameraGlyph color={theme.colors.accent} />
           </TouchableOpacity>
 
           <TextInput
             style={[
               styles.chatInput,
               {
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.textPrimary,
-                borderColor: 'rgba(26,17,37,0.16)',
+                backgroundColor: '#FFFFFF',
+                color: '#1A1125',
+                borderColor: 'rgba(141,125,199,0.45)',
               },
             ]}
             value={inputText}
@@ -480,13 +635,16 @@ function ChatView({
             maxLength={500}
           />
 
-          <TouchableOpacity
+          <AnimatedTouchableOpacity
             style={[
-              styles.sendChatButton,
-              {backgroundColor: theme.colors.accent},
+              styles.sendIconButton,
+              {
+                backgroundColor: '#6554D1',
+                transform: [{scale: sendPulse}],
+              },
               ((!inputText.trim() && !pickedImage) || sending) && {
-                backgroundColor: theme.colors.surfaceAlt,
-                borderColor: 'rgba(26,17,37,0.16)',
+                backgroundColor: '#BFB5ED',
+                borderColor: 'rgba(101,84,209,0.35)',
               },
             ]}
             onPress={handleSend}
@@ -494,12 +652,12 @@ function ChatView({
             disabled={(!inputText.trim() && !pickedImage) || sending}>
             <Text
               style={[
-                styles.sendChatButtonText,
+                styles.sendIconText,
                 {fontFamily: theme.typography.brand},
               ]}>
-              {sending ? '...' : 'Send'}
+              {sending ? '…' : '→'}
             </Text>
-          </TouchableOpacity>
+          </AnimatedTouchableOpacity>
         </View>
 
         {sendError ? (
@@ -617,46 +775,100 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   mediaButton: {
-    paddingHorizontal: 6,
-    paddingVertical: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginRight: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  mediaButtonIcon: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+  glyphFrame: {
+    width: 15,
+    height: 12,
+    borderWidth: 1.2,
+    borderRadius: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  glyphSun: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    borderWidth: 1,
+  },
+  glyphHill: {
+    position: 'absolute',
+    bottom: 1.5,
+    width: 8,
+    height: 4,
+    borderTopWidth: 1.2,
+    borderLeftWidth: 1.2,
+    transform: [{rotate: '-12deg'}],
+  },
+  glyphCameraBody: {
+    width: 15,
+    height: 11,
+    borderWidth: 1.2,
+    borderRadius: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glyphCameraTop: {
+    position: 'absolute',
+    top: -3,
+    left: 3,
+    width: 5,
+    height: 2.5,
+    borderWidth: 1.2,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+  },
+  glyphCameraLens: {
+    width: 4.5,
+    height: 4.5,
+    borderRadius: 3,
+    borderWidth: 1.2,
   },
   inputBar: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    marginHorizontal: -14,
+    paddingHorizontal: 14,
     paddingTop: 10,
     paddingBottom: 8,
     borderTopWidth: 1,
   },
   chatInput: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 9,
     fontSize: 14,
     maxHeight: 100,
     borderWidth: 1,
   },
-  sendChatButton: {
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+  sendIconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: 8,
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  sendChatButtonText: {
-    fontSize: 13,
-    lineHeight: 16,
+  sendIconText: {
+    fontSize: 18,
+    lineHeight: 20,
     fontWeight: '700',
     color: '#fff',
-    letterSpacing: 0.4,
+    letterSpacing: 0.6,
   },
   sendErrorText: {
     fontSize: 12,

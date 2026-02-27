@@ -1,5 +1,12 @@
-import React, {useCallback, useState} from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {
+  Animated,
+  Easing,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {
   createBottomTabNavigator,
   BottomTabBarProps,
@@ -39,6 +46,58 @@ interface GiveFlowContextValue {
   onOpenGiveFlow: () => void;
 }
 
+function GlimpsesIcon({active}: {active: boolean}) {
+  const iconColor = active ? TAB_BAR_THEME.textPrimary : '#55506A';
+
+  return (
+    <View style={[styles.glimpseIconFrame, {borderColor: iconColor}]}>
+      <View style={styles.glimpseIconRow}>
+        <View style={[styles.glimpseIconDot, {backgroundColor: iconColor}]} />
+        <View style={[styles.glimpseIconLine, {backgroundColor: iconColor}]} />
+      </View>
+      <View style={styles.glimpseIconRow}>
+        <View style={[styles.glimpseIconDot, {backgroundColor: iconColor}]} />
+        <View style={[styles.glimpseIconLine, {backgroundColor: iconColor}]} />
+      </View>
+      <View style={styles.glimpseIconRow}>
+        <View style={[styles.glimpseIconDot, {backgroundColor: iconColor}]} />
+        <View style={[styles.glimpseIconLine, {backgroundColor: iconColor}]} />
+      </View>
+    </View>
+  );
+}
+
+function RankIcon({active}: {active: boolean}) {
+  const iconColor = active ? TAB_BAR_THEME.textPrimary : '#55506A';
+
+  return (
+    <View style={styles.rankIconWrap}>
+      <View
+        style={[
+          styles.rankOutlineBar,
+          styles.rankOutlineBarShort,
+          {borderColor: iconColor},
+        ]}
+      />
+      <View
+        style={[
+          styles.rankOutlineBar,
+          styles.rankOutlineBarMid,
+          {borderColor: iconColor},
+        ]}
+      />
+      <View
+        style={[
+          styles.rankOutlineBar,
+          styles.rankOutlineBarTall,
+          {borderColor: iconColor},
+        ]}
+      />
+      <View style={[styles.rankBaseline, {backgroundColor: iconColor}]} />
+    </View>
+  );
+}
+
 function AppTabBar({
   state,
   navigation,
@@ -50,6 +109,48 @@ function AppTabBar({
   const isGlimpsesTab = activeRouteName === 'Glimpses';
   const isRankTab = activeRouteName === 'Rank';
   const isGiveTab = activeRouteName === 'Give';
+  const isMessagesTab = activeRouteName === 'Messages';
+  const glimpsesIndicator = useRef(
+    new Animated.Value(isGlimpsesTab ? 1 : 0),
+  ).current;
+  const rankIndicator = useRef(new Animated.Value(isRankTab ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(glimpsesIndicator, {
+      toValue: isGlimpsesTab ? 1 : 0,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [glimpsesIndicator, isGlimpsesTab]);
+
+  useEffect(() => {
+    Animated.timing(rankIndicator, {
+      toValue: isRankTab ? 1 : 0,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [rankIndicator, isRankTab]);
+
+  const buildIndicatorStyle = (progress: Animated.Value) => ({
+    opacity: progress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 1],
+    }),
+    transform: [
+      {
+        scaleX: progress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.35, 1],
+        }),
+      },
+    ],
+  });
+
+  if (isMessagesTab) {
+    return <View style={styles.messagesBarHidden} />;
+  }
 
   return (
     <View
@@ -57,35 +158,42 @@ function AppTabBar({
         styles.wrap,
         {
           backgroundColor: TAB_BAR_THEME.background,
-          borderTopColor: TAB_BAR_THEME.border,
         },
       ]}>
+      <View
+        style={[
+          styles.topFill,
+          {
+            backgroundColor: TAB_BAR_THEME.background,
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.topRail,
+          {
+            backgroundColor: TAB_BAR_THEME.border,
+          },
+        ]}
+      />
+
       <TouchableOpacity
         onPress={() => navigation.navigate('Glimpses')}
         style={styles.sideButton}
         activeOpacity={0.8}>
-        <View
-          style={[
-            styles.sideIconCircle,
-            {
-              borderColor: TAB_BAR_THEME.border,
-              backgroundColor: isGlimpsesTab
-                ? TAB_BAR_THEME.border
-                : TAB_BAR_THEME.background,
-            },
-          ]}>
-          <Text
+        <View style={styles.sideIconStack}>
+          <View style={styles.sideIconWrap}>
+            <GlimpsesIcon active={isGlimpsesTab} />
+          </View>
+          <Animated.View
             style={[
-              styles.sideIconText,
+              styles.sideActiveIndicator,
               {
-                color: isGlimpsesTab
-                  ? TAB_BAR_THEME.background
-                  : TAB_BAR_THEME.textPrimary,
-                fontFamily: TAB_BAR_THEME.brand,
+                backgroundColor: TAB_BAR_THEME.accent,
               },
-            ]}>
-            ✉
-          </Text>
+              buildIndicatorStyle(glimpsesIndicator),
+            ]}
+          />
         </View>
       </TouchableOpacity>
 
@@ -110,18 +218,20 @@ function AppTabBar({
         onPress={() => navigation.navigate('Rank')}
         style={styles.sideButton}
         activeOpacity={0.8}>
-        <Text
-          style={[
-            styles.sideText,
-            {
-              color: isRankTab
-                ? TAB_BAR_THEME.textPrimary
-                : TAB_BAR_THEME.textTertiary,
-              fontFamily: TAB_BAR_THEME.brand,
-            },
-          ]}>
-          RANK
-        </Text>
+        <View style={styles.sideIconStack}>
+          <View style={styles.sideIconWrap}>
+            <RankIcon active={isRankTab} />
+          </View>
+          <Animated.View
+            style={[
+              styles.sideActiveIndicator,
+              {
+                backgroundColor: TAB_BAR_THEME.accent,
+              },
+              buildIndicatorStyle(rankIndicator),
+            ]}
+          />
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -170,6 +280,12 @@ export default function AppNavigator() {
     setShowHowItWorks(true);
   }, []);
 
+  const openGiveTab = useCallback(() => {
+    if (navigationRef.isReady()) {
+      navigationRef.navigate('Give');
+    }
+  }, [navigationRef]);
+
   const closeGiveFlow = useCallback(() => {
     setShowHowItWorks(false);
   }, []);
@@ -194,7 +310,7 @@ export default function AppNavigator() {
 
   return (
     <View style={styles.root}>
-      <MainTabs onOpenGiveFlow={openGiveFlow} navigationRef={navigationRef} />
+      <MainTabs onOpenGiveFlow={openGiveTab} navigationRef={navigationRef} />
 
       <TouchableOpacity
         onPress={openGiveFlow}
@@ -240,42 +356,115 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 3,
-    height: 72,
+    height: 84,
     paddingHorizontal: 18,
-    paddingBottom: 8,
+    paddingBottom: 10,
     marginBottom: 18,
+    position: 'relative',
+    overflow: 'visible',
+  },
+  messagesBarHidden: {
+    height: 0,
+    marginBottom: 0,
+  },
+  topFill: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: -14,
+    height: 14,
+  },
+  topRail: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: -14,
+    height: 3,
   },
   sideButton: {
     minWidth: 92,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -10,
+    marginTop: 0,
   },
-  sideIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 3,
+  sideIconStack: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sideIconText: {
-    fontSize: 18,
-    lineHeight: 24,
-    fontWeight: '700',
+  sideIconWrap: {
+    width: 66,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  sideText: {
-    fontSize: 29,
-    letterSpacing: 1,
-    fontWeight: '700',
+  sideActiveIndicator: {
+    width: 18,
+    height: 3,
+    borderRadius: 3,
+    marginTop: -3,
+  },
+  glimpseIconFrame: {
+    width: 35,
+    height: 29,
+    borderRadius: 8,
+    borderWidth: 2.6,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+    justifyContent: 'space-between',
+  },
+  glimpseIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  glimpseIconDot: {
+    width: 4.5,
+    height: 4.5,
+    borderRadius: 3,
+    marginRight: 3.6,
+  },
+  glimpseIconLine: {
+    flex: 1,
+    height: 2.6,
+    borderRadius: 2,
+  },
+  rankIconWrap: {
+    width: 35,
+    height: 29,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    position: 'relative',
+    paddingBottom: 2.6,
+  },
+  rankOutlineBar: {
+    width: 6.2,
+    borderRadius: 2.6,
+    borderWidth: 2.6,
+    backgroundColor: 'transparent',
+  },
+  rankOutlineBarShort: {
+    height: 10.5,
+  },
+  rankOutlineBarMid: {
+    height: 15,
+  },
+  rankOutlineBarTall: {
+    height: 19.5,
+  },
+  rankBaseline: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 2.6,
+    borderRadius: 2,
   },
   centerButton: {
     width: 132,
     height: 132,
     borderRadius: 66,
     borderWidth: 3,
-    marginTop: -70,
+    marginTop: -62,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#1A1125',
