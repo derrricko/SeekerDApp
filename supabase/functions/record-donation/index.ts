@@ -38,8 +38,7 @@ const VALID_USDC_MINTS = new Set([USDC_MINT_DEVNET, USDC_MINT_MAINNET]);
 //   → ATA = GUGy7SPXbETj4E4mNFGXY4jurm1DUjWp5KDTK1J11kwa
 //   IMPORTANT: If wallet or mint changes, re-derive via spl-token on client.
 const MATCHING_POOL_WALLET = 'DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk';
-const MATCHING_POOL_USDC_ATA =
-  'GUGy7SPXbETj4E4mNFGXY4jurm1DUjWp5KDTK1J11kwa';
+const MATCHING_POOL_USDC_ATA = 'GUGy7SPXbETj4E4mNFGXY4jurm1DUjWp5KDTK1J11kwa';
 
 // 48-hour hold window (ms)
 const HOLD_DURATION_MS = 48 * 60 * 60 * 1000;
@@ -74,26 +73,18 @@ serve(async req => {
     const body = await req.json();
     const txSignature =
       typeof body?.txSignature === 'string' ? body.txSignature.trim() : '';
-    const recipientId =
-      typeof body?.recipientId === 'string'
-        ? body.recipientId.trim()
-        : 'matching-pool';
+    // All donations go to the matching pool — never trust client for this.
+    const recipientId = 'matching-pool';
     const causePreferences = Array.isArray(body?.causePreferences)
-      ? body.causePreferences.filter(
-          (c: unknown) => typeof c === 'string',
-        )
+      ? body.causePreferences.filter((c: unknown) => typeof c === 'string')
       : [];
-    const donationMode =
-      body?.donationMode === 'group' ? 'group' : 'solo';
+    const donationMode = body?.donationMode === 'group' ? 'group' : 'solo';
 
     if (!txSignature) {
       return json({error: 'txSignature is required'}, 400);
     }
 
-    const parsed = await fetchAndValidateUSDCTransaction(
-      txSignature,
-      wallet,
-    );
+    const parsed = await fetchAndValidateUSDCTransaction(txSignature, wallet);
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: {persistSession: false, autoRefreshToken: false},
@@ -219,14 +210,11 @@ async function fetchAndValidateUSDCTransaction(
   // Scanning inner instructions would allow an attacker to inject
   // a fake transferChecked via CPI while the real top-level ix
   // sends funds elsewhere.
-  const topInstructions: any[] =
-    tx.transaction?.message?.instructions || [];
+  const topInstructions: any[] = tx.transaction?.message?.instructions || [];
 
   // Find spl-token transferChecked instruction (top-level only)
   const transferIx = topInstructions.find(
-    ix =>
-      ix?.program === 'spl-token' &&
-      ix?.parsed?.type === 'transferChecked',
+    ix => ix?.program === 'spl-token' && ix?.parsed?.type === 'transferChecked',
   );
 
   if (!transferIx) {
@@ -258,7 +246,9 @@ async function fetchAndValidateUSDCTransaction(
 
   // Validate donor wallet matches JWT
   if (authority !== expectedDonorWallet) {
-    throw new Error('Transaction authority does not match authenticated wallet');
+    throw new Error(
+      'Transaction authority does not match authenticated wallet',
+    );
   }
 
   // Validate destination is the matching pool USDC ATA
@@ -289,8 +279,8 @@ async function fetchAndValidateUSDCTransaction(
     typeof memoIx.parsed === 'string'
       ? memoIx.parsed
       : typeof memoIx.parsed?.memo === 'string'
-        ? memoIx.parsed.memo
-        : null;
+      ? memoIx.parsed.memo
+      : null;
   if (!memoText) {
     throw new Error('Memo instruction payload is missing');
   }

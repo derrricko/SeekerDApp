@@ -80,6 +80,12 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'org.webkit:android-jsc:+'
 
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -102,10 +108,10 @@ android {
             keyPassword 'android'
         }
         release {
-            storeFile file(GLIMPSE_RELEASE_STORE_FILE)
-            storePassword GLIMPSE_RELEASE_STORE_PASSWORD
-            keyAlias GLIMPSE_RELEASE_KEY_ALIAS
-            keyPassword GLIMPSE_RELEASE_KEY_PASSWORD
+            storeFile file(keystoreProperties['GLIMPSE_RELEASE_STORE_FILE'] ?: 'glimpse-release.keystore')
+            storePassword keystoreProperties['GLIMPSE_RELEASE_STORE_PASSWORD'] ?: ''
+            keyAlias keystoreProperties['GLIMPSE_RELEASE_KEY_ALIAS'] ?: ''
+            keyPassword keystoreProperties['GLIMPSE_RELEASE_KEY_PASSWORD'] ?: ''
         }
     }
     buildTypes {
