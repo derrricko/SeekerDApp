@@ -31,10 +31,10 @@ describe('handleTransactionError — USDC errors', () => {
     expect(result.recoverable).toBe(false);
   });
 
-  it('maps "insufficient lamports" to INSUFFICIENT_SOL (tx fees)', () => {
+  it('maps "insufficient lamports" to INSUFFICIENT_SOL_FEES (tx fees)', () => {
     const error = new Error('insufficient lamports for rent');
     const result = handleTransactionError(error);
-    expect(result.code).toBe('INSUFFICIENT_SOL');
+    expect(result.code).toBe('INSUFFICIENT_SOL_FEES');
     expect(result.recoverable).toBe(true);
   });
 

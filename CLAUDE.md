@@ -163,7 +163,7 @@ All donations go to the matching pool wallet. Cause preferences help match donor
 
 ## Memo Format (On-Chain Receipt)
 ```json
-{"d":"HQ5C58Tu","r":"4vGRAMXy","a":5.00,"t":1709000000,"app":"glimpse","tok":"usdc","c":"one_time"}
+{"d":"HQ5C58Tu","r":"DdqT7Fek","a":5.00,"t":1709000000,"app":"glimpse","tok":"usdc","c":"one_time"}
 ```
 - `d`: donor wallet (first 8 chars)
 - `r`: pool wallet (first 8 chars)

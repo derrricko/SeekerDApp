@@ -96,8 +96,9 @@ export function handleTransactionError(error: unknown): AppError {
     message.includes('Insufficient')
   ) {
     return {
-      code: 'INSUFFICIENT_SOL',
-      message: 'Not enough SOL for transaction fees.',
+      code: 'INSUFFICIENT_SOL_FEES',
+      message:
+        'Not enough SOL in your wallet to cover transaction fees. Add a small amount of SOL.',
       recoverable: true,
     };
   }

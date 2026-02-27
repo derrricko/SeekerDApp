@@ -37,7 +37,10 @@ serve(async (req: Request) => {
     if (!JWT_SECRET || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       return new Response(
         JSON.stringify({error: 'Server auth config is missing'}),
-        {status: 500, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
+        {
+          status: 500,
+          headers: {...corsHeaders, 'Content-Type': 'application/json'},
+        },
       );
     }
 
@@ -47,7 +50,10 @@ serve(async (req: Request) => {
     if (!wallet || !signature || !message) {
       return new Response(
         JSON.stringify({error: 'Missing wallet, signature, or message'}),
-        {status: 400, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
+        {
+          status: 400,
+          headers: {...corsHeaders, 'Content-Type': 'application/json'},
+        },
       );
     }
 
@@ -59,7 +65,10 @@ serve(async (req: Request) => {
         JSON.stringify({
           error: 'Invalid message format. Expected: glimpse-auth:{timestamp}',
         }),
-        {status: 400, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
+        {
+          status: 400,
+          headers: {...corsHeaders, 'Content-Type': 'application/json'},
+        },
       );
     }
 
@@ -68,7 +77,10 @@ serve(async (req: Request) => {
     if (age > MAX_AGE_MS || age < -MAX_AGE_MS) {
       return new Response(
         JSON.stringify({error: 'Message expired. Please try again.'}),
-        {status: 401, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
+        {
+          status: 401,
+          headers: {...corsHeaders, 'Content-Type': 'application/json'},
+        },
       );
     }
 
@@ -83,10 +95,10 @@ serve(async (req: Request) => {
       publicKeyBytes,
     );
     if (!valid) {
-      return new Response(
-        JSON.stringify({error: 'Invalid signature'}),
-        {status: 401, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
-      );
+      return new Response(JSON.stringify({error: 'Invalid signature'}), {
+        status: 401,
+        headers: {...corsHeaders, 'Content-Type': 'application/json'},
+      });
     }
 
     // --- Replay guard ---
@@ -119,7 +131,10 @@ serve(async (req: Request) => {
 
     return new Response(
       JSON.stringify({token, wallet, expires_at: now + TOKEN_TTL_S}),
-      {status: 200, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
+      {
+        status: 200,
+        headers: {...corsHeaders, 'Content-Type': 'application/json'},
+      },
     );
   } catch (err) {
     console.error('wallet-auth error:', err);
@@ -131,14 +146,17 @@ serve(async (req: Request) => {
       });
     }
 
-    return new Response(
-      JSON.stringify({error: 'Internal error'}),
-      {status: 500, headers: {...corsHeaders, 'Content-Type': 'application/json'}},
-    );
+    return new Response(JSON.stringify({error: 'Internal error'}), {
+      status: 500,
+      headers: {...corsHeaders, 'Content-Type': 'application/json'},
+    });
   }
 });
 
-async function markChallengeAsUsed(wallet: string, message: string): Promise<void> {
+async function markChallengeAsUsed(
+  wallet: string,
+  message: string,
+): Promise<void> {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: {persistSession: false, autoRefreshToken: false},
   });

@@ -39,7 +39,7 @@ describe('DonationMemo contract', () => {
   it('memo includes tok:"usdc" field', () => {
     const memo = {
       d: 'HQ5C58Tu',
-      r: '4vGRAMXy',
+      r: 'DdqT7Fek',
       a: 5.0,
       t: Math.floor(Date.now() / 1000),
       app: 'glimpse',
@@ -67,7 +67,7 @@ describe('DonationMemo contract', () => {
   it('memo serializes under 566 bytes', () => {
     const memo = {
       d: 'HQ5C58Tu',
-      r: '4vGRAMXy',
+      r: 'DdqT7Fek',
       a: 10000.0,
       t: 1709000000,
       app: 'glimpse',
@@ -84,11 +84,11 @@ describe('safety cap', () => {
   const MAX_USDC = 10_000;
 
   it('rejects amounts above 10,000 USDC', () => {
-    expect(10_001 > MAX_USDC).toBe(true);
+    expect(MAX_USDC < 10_001).toBe(true);
   });
 
   it('accepts exactly 10,000 USDC', () => {
-    expect(10_000 > MAX_USDC).toBe(false);
+    expect(MAX_USDC < 10_000).toBe(false);
   });
 
   it('rejects zero amount', () => {
