@@ -1,5 +1,5 @@
-// Hardcoded recipient list for v2 hackathon demo
-// Move to Supabase table post-hackathon
+// Backward-compat recipient mapping.
+// Keep only matching pool while donation routing is centralized.
 
 export interface Recipient {
   id: string;
@@ -11,33 +11,11 @@ export interface Recipient {
 
 export const RECIPIENTS: Recipient[] = [
   {
-    id: 'maria-car',
-    name: 'Maria',
-    wallet: '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T',
-    description: 'Single mom needs tires replaced to get to work safely.',
-    category: 'Transportation',
-  },
-  {
-    id: 'evan-beheard',
-    name: 'BeHeard Movement',
+    id: 'matching-pool',
+    name: 'Glimpse Matching Pool',
     wallet: '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T',
     description:
-      'Youth mentorship program in Tulsa. Every dollar goes to the kids.',
-    category: 'Youth',
-  },
-  {
-    id: 'jasmine-brakes',
-    name: 'Jasmine',
-    wallet: '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T',
-    description:
-      'Needs brake repair — currently unsafe to drive her children to school.',
-    category: 'Transportation',
-  },
-  {
-    id: 'open-fund',
-    name: 'Glimpse Open Fund',
-    wallet: '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T',
-    description: 'General fund — we direct your SOL to the most urgent need.',
+      'Your USDC is routed into the matching pool, then assigned to the right need.',
     category: 'General',
   },
 ];

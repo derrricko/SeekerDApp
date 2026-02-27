@@ -4,14 +4,26 @@ import {
   createBottomTabNavigator,
   BottomTabBarProps,
 } from '@react-navigation/bottom-tabs';
-import {NavigationContainer} from '@react-navigation/native';
+import {
+  NavigationContainer,
+  createNavigationContainerRef,
+} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import CampaignsScreen from '../screens/CampaignsScreen';
+import GiveScreen from '../screens/GiveScreen';
 import HomeScreen from '../screens/HomeScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import HowItWorksCarousel from '../screens/HowItWorksCarousel';
+import MessagesScreen from '../screens/MessagesScreen';
 
-const Tab = createBottomTabNavigator();
+export type RootTabParamList = {
+  Glimpses: undefined;
+  Give: undefined;
+  Messages: {conversationId?: string} | undefined;
+  Rank: undefined;
+};
+
+const Tab = createBottomTabNavigator<RootTabParamList>();
 
 const TAB_BAR_THEME = {
   background: '#F3EFFF',
@@ -19,6 +31,7 @@ const TAB_BAR_THEME = {
   textPrimary: '#1A1125',
   textTertiary: '#6E6787',
   accent: '#6554D1',
+  accentPressed: '#5646C4',
   brand: 'CourierPrime-Regular',
 };
 
@@ -31,7 +44,12 @@ function AppTabBar({
   navigation,
   onOpenGiveFlow,
 }: BottomTabBarProps & GiveFlowContextValue) {
-  const isGlimpsesTab = state.index === 0;
+  const activeRouteName = state.routes[state.index]?.name as
+    | keyof RootTabParamList
+    | undefined;
+  const isGlimpsesTab = activeRouteName === 'Glimpses';
+  const isRankTab = activeRouteName === 'Rank';
+  const isGiveTab = activeRouteName === 'Give';
 
   return (
     <View
@@ -76,7 +94,9 @@ function AppTabBar({
         style={[
           styles.centerButton,
           {
-            backgroundColor: TAB_BAR_THEME.accent,
+            backgroundColor: isGiveTab
+              ? TAB_BAR_THEME.accentPressed
+              : TAB_BAR_THEME.accent,
             borderColor: TAB_BAR_THEME.border,
           },
         ]}
@@ -94,10 +114,9 @@ function AppTabBar({
           style={[
             styles.sideText,
             {
-              color:
-                state.index === 1
-                  ? TAB_BAR_THEME.textPrimary
-                  : TAB_BAR_THEME.textTertiary,
+              color: isRankTab
+                ? TAB_BAR_THEME.textPrimary
+                : TAB_BAR_THEME.textTertiary,
               fontFamily: TAB_BAR_THEME.brand,
             },
           ]}>
@@ -108,7 +127,14 @@ function AppTabBar({
   );
 }
 
-function MainTabs({onOpenGiveFlow}: GiveFlowContextValue) {
+function MainTabs({
+  onOpenGiveFlow,
+  navigationRef,
+}: GiveFlowContextValue & {
+  navigationRef: ReturnType<
+    typeof createNavigationContainerRef<RootTabParamList>
+  >;
+}) {
   const renderTabBar = useCallback(
     (props: BottomTabBarProps) => (
       <AppTabBar {...props} onOpenGiveFlow={onOpenGiveFlow} />
@@ -117,12 +143,14 @@ function MainTabs({onOpenGiveFlow}: GiveFlowContextValue) {
   );
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Tab.Navigator
         initialRouteName="Glimpses"
         tabBar={renderTabBar}
         screenOptions={{headerShown: false}}>
         <Tab.Screen name="Glimpses" component={CampaignsScreen} />
+        <Tab.Screen name="Give" component={GiveScreen} />
+        <Tab.Screen name="Messages" component={MessagesScreen} />
         <Tab.Screen name="Rank" component={LeaderboardScreen} />
       </Tab.Navigator>
     </NavigationContainer>
@@ -133,6 +161,10 @@ export default function AppNavigator() {
   const [entered, setEntered] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const insets = useSafeAreaInsets();
+  const navigationRef = React.useMemo(
+    () => createNavigationContainerRef<RootTabParamList>(),
+    [],
+  );
 
   const openGiveFlow = useCallback(() => {
     setShowHowItWorks(true);
@@ -141,6 +173,13 @@ export default function AppNavigator() {
   const closeGiveFlow = useCallback(() => {
     setShowHowItWorks(false);
   }, []);
+
+  const completeGiveFlow = useCallback(() => {
+    setShowHowItWorks(false);
+    if (navigationRef.isReady()) {
+      navigationRef.navigate('Give');
+    }
+  }, [navigationRef]);
 
   if (!entered) {
     return (
@@ -155,7 +194,7 @@ export default function AppNavigator() {
 
   return (
     <View style={styles.root}>
-      <MainTabs onOpenGiveFlow={openGiveFlow} />
+      <MainTabs onOpenGiveFlow={openGiveFlow} navigationRef={navigationRef} />
 
       <TouchableOpacity
         onPress={openGiveFlow}
@@ -184,7 +223,11 @@ export default function AppNavigator() {
         </Text>
       </TouchableOpacity>
 
-      <HowItWorksCarousel visible={showHowItWorks} onClose={closeGiveFlow} />
+      <HowItWorksCarousel
+        visible={showHowItWorks}
+        onClose={closeGiveFlow}
+        onComplete={completeGiveFlow}
+      />
     </View>
   );
 }

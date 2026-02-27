@@ -1,4 +1,4 @@
-// v2 environment config — SOL donations only, no USDC/escrow
+// v2 environment config — USDC-only donation flow
 export type SolanaCluster = 'devnet' | 'testnet' | 'mainnet-beta';
 
 export const SOLANA_CLUSTER: SolanaCluster = 'devnet';
@@ -20,3 +20,17 @@ export const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 
 // Admin wallet (giveglimpse.skr)
 export const ADMIN_WALLET = 'HQ5C58Tu11cy8Q8Lfjpj8sRTW25wY7VnwgoW61cfMsY5';
+
+// Single destination pool wallet (fund matching/distribution happens off-chain).
+export const MATCHING_POOL_WALLET =
+  '4vGRAMXyq5jWEahxewLCJrpumx8q1Sxbwer6MhTmoR2T';
+
+// USDC mint by cluster.
+const USDC_MINTS: Record<SolanaCluster, string> = {
+  devnet: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+  testnet: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+  'mainnet-beta': 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+};
+
+export const USDC_MINT = USDC_MINTS[SOLANA_CLUSTER];
+export const USDC_DECIMALS = 6;
