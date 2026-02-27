@@ -14,20 +14,21 @@ Rule: any touched code path should be checked against the Solana dev playbook be
 
 ## What Changed (v1 → v2)
 
-Glimpse pivoted from a complex USDC escrow/vault system to a simple, direct SOL donation app with on-chain receipts and donor-recipient messaging. Built for the Monolith hackathon by a solo founder.
+Glimpse pivoted from a complex USDC escrow/vault system to a direct USDC donation app with on-chain receipts, cause-preference matching, 48-hour custodial hold, and donor-recipient messaging. Built for the Monolith hackathon by a solo founder.
 
 **v1 (archived on `feat/visual-skeleton-rework`):** USDC SPL transfers, Anchor escrow program, vault PDAs, campaigns, activity-weighted giving, glassmorphism design system, SIWS auth.
 
-**v2 (this branch `v2/give-portal`):** SOL transfers with Memo receipts, Supabase Realtime chat, 3-tab app (Give, Messages, Leaderboard placeholder). Zero escrow, zero USDC, zero vaults.
+**v2 (this branch `v2/give-portal`):** USDC SPL transfers with Memo receipts, cause-preference matching, Solo/Group metadata, 48-hour custodial hold, Supabase Realtime chat, 4-tab app (Glimpses, Give, Messages, Rank placeholder).
 
 ## App Architecture
 
 ### Navigation Flow
 ```
-App.tsx → AppNavigator (3 bottom tabs)
-           ├── Give tab (default) — wallet connect, recipient picker, SOL transfer
+App.tsx → AppNavigator (4 bottom tabs)
+           ├── Glimpses tab — campaign overview
+           ├── Give tab — wallet connect, cause selection, USDC transfer
            ├── Messages tab — conversation list → chat room
-           └── Leaderboard tab — "Coming soon" placeholder
+           └── Rank tab — leaderboard placeholder
 ```
 
 ### Key Files
@@ -36,35 +37,39 @@ App.tsx                                — Root: Connection → Wallet → Navig
 index.js                               — Polyfills + app registration
 globals.js                             — Buffer, process, btoa/atob polyfills
 metro.config.js                        — Metro bundler with Node.js module stubs
-config/env.ts                          — Cluster, RPC, Supabase creds, Memo program ID
-data/recipients.ts                     — Hardcoded recipient list
+config/env.ts                          — Cluster, RPC, Supabase creds, USDC mint, Memo program ID
+data/donationConfig.ts                 — CAUSE_OPTIONS, MATCHING_POOL, DonationCadence, DonationMode
 
-screens/GiveScreen.tsx                 — Single scrollable donation flow
+screens/GiveScreen.tsx                 — Cause multi-select, USDC amount, Solo/Group, cadence
 screens/MessagesScreen.tsx             — Conversation list + chat view
-screens/LeaderboardScreen.tsx          — "Coming soon" placeholder
+screens/CampaignsScreen.tsx            — Campaign overview (Glimpses tab)
+screens/HowItWorksCarousel.tsx         — Onboarding carousel
 
 components/providers/ConnectionProvider.tsx — Solana RPC connection
 components/providers/WalletProvider.tsx     — MWA wallet + wallet-signed Supabase auth
+components/providers/AppStateProvider.tsx   — Local app state (leaderboard, feed, glimpses)
 
 services/auth.ts                       — createWalletAuthMessage, authenticateWalletSignature
 services/supabase.ts                   — Supabase client + JWT token management
-services/donations.ts                  — executeDonation() orchestrator
+services/donations.ts                  — executeDonation() orchestrator (USDC)
 services/chat.ts                       — Chat CRUD + useChatMessages hook
 
-utils/transfer.ts                      — SOL transfer + Memo instruction builder
-utils/errors.ts                        — Result<T> type, MWA/tx error handling
+utils/transfer.ts                      — USDC SPL transferChecked + Memo instruction builder
+utils/errors.ts                        — Result<T> type, MWA/tx error handling (USDC errors)
 utils/explorer.ts                      — Solana Explorer URL builder
 utils/retry.ts                         — AsyncStorage retry queue for orphaned donations
 utils/base64.ts                        — Base64 encode/decode (MWA address parsing)
 utils/utf8.ts                          — UTF-8 encoding wrapper
 
 supabase/functions/wallet-auth/index.ts     — Ed25519 verify → JWT issuance
-supabase/functions/record-donation/index.ts — On-chain tx verify → upsert donation + conversation
+supabase/functions/record-donation/index.ts — SPL transferChecked validation → upsert donation
 supabase/migrations/001_v2_tables.sql       — Schema (donations, conversations, messages)
 supabase/migrations/002_v2_hardening.sql    — RLS policies + current_wallet()
 supabase/migrations/003_v2_auth_replay_guard.sql — Auth challenge replay guard
+supabase/migrations/004_v2_donation_cadence_and_stage.sql — cadence + impact stage metadata
+supabase/migrations/005_v2_usdc_hold_tracking.sql — USDC amount, hold tracking, cause preferences
 
-navigation/AppNavigator.tsx            — Bottom tab navigator
+navigation/AppNavigator.tsx            — Bottom tab navigator (exports RootTabParamList)
 
 docs/SOUL.md                           — Founder voice & narrative
 docs/glimpse-stats.md                  — Market research & statistics
@@ -75,18 +80,26 @@ TODOS.md                               — Deferred work with full context
 
 ### Data Flow
 ```
-  ┌─────────────┐     ┌──────────────┐     ┌──────────────────┐
-  │  GIVE SCREEN │────▶│  SOLANA TX   │────▶│  ON-CHAIN MEMO   │
-  │  Pick recip  │     │  SOL + Memo  │     │  {d,r,a,t,app}   │
-  │  Enter amount│     │  via MWA     │     │                  │
-  └─────────────┘     └──────┬───────┘     └──────────────────┘
-                             │ tx confirmed
-                             ▼
-                    ┌────────────────┐     ┌──────────────────┐
-                    │  SUPABASE      │────▶│  MESSAGE PORTAL  │
-                    │  Record tx     │     │  donor ↔ admin   │
-                    │  Create room   │     │  photos/receipts │
-                    └────────────────┘     └──────────────────┘
+  GiveScreen                    transfer.ts                  On-Chain
+  ┌──────────────┐             ┌───────────────────┐        ┌──────────────────┐
+  │ Select causes │            │ Derive donor ATA   │        │ SPL transferCheck│
+  │ (multi, ≤3)  │            │ Derive pool ATA    │        │ USDC mint valid  │
+  │ Enter USDC   │───────────▶│ Check USDC balance │───────▶│ Memo: {tok:usdc} │
+  │ Pick cadence │            │ Build SPL tx + Memo│        │                  │
+  │ Solo/Group   │            └───────────────────┘        └────────┬─────────┘
+  └──────────────┘                                                   │ confirmed
+                                                                     ▼
+                              record-donation edge fn         Supabase
+                              ┌───────────────────────┐      ┌──────────────────┐
+                              │ Fetch jsonParsed tx    │      │ donations        │
+                              │ Find transferChecked ix│      │  amount_usdc     │
+                              │ Validate USDC mint     │─────▶│  donation_mode   │
+                              │ Validate pool ATA      │      │  hold_status     │
+                              │ Validate memo.tok=usdc │      │  hold_expires_at │
+                              │ Store cause_preferences│      │  cause_preferences│
+                              └───────────────────────┘      │ conversations    │
+                                                              │ messages         │
+                                                              └──────────────────┘
 ```
 
 ## Founder Voice & Product Soul
@@ -104,30 +117,46 @@ TODOS.md                               — Deferred work with full context
 - Frontend: React Native 0.76.5 + TypeScript ~5.3
 - Target Device: Solana Seeker (Android)
 - Wallet: Mobile Wallet Adapter (MWA) 2.0
-- Tokens: Native SOL (NOT USDC — v2 simplification)
+- Tokens: USDC (SPL Token) — 6 decimals
 - Chain: Solana devnet
 - Backend: Supabase (PostgreSQL + Realtime + Storage)
 - Auth: Wallet-sign verification (NOT SIWS)
-- Solana SDK: @solana/web3.js v1
+- Solana SDK: @solana/web3.js v1 + @solana/spl-token v0.3.x
 
-## SOL Donation Flow
+## USDC Donation Flow
 1. User connects wallet via MWA
-2. Picks a recipient from hardcoded list
-3. Enters SOL amount (or taps preset)
-4. App builds tx: SystemProgram.transfer + Memo instruction (atomic)
-5. MWA signAndSendTransactions
-6. On confirm: record in Supabase + create chat conversation
-7. If Supabase fails: queue in AsyncStorage, retry on next open
+2. Selects up to 3 causes (cause-preference matching)
+3. Chooses Solo or Group donation mode (metadata only)
+4. Enters USDC amount (max 10,000 USDC)
+5. Picks cadence (one-time or daily)
+6. App builds tx: SPL transferChecked + Memo instruction (atomic)
+7. MWA signAndSendTransactions
+8. On confirm: record in Supabase + create chat conversation + 48h hold
+9. If Supabase fails: queue in AsyncStorage, retry on next open
+
+All donations go to the matching pool wallet. Cause preferences help match donors to needs.
 
 ## Memo Format (On-Chain Receipt)
 ```json
-{"d":"HQ5C58Tu","r":"4vGRAMXy","a":0.5,"t":1709000000,"app":"glimpse"}
+{"d":"HQ5C58Tu","r":"4vGRAMXy","a":5.00,"t":1709000000,"app":"glimpse","tok":"usdc","c":"one_time"}
 ```
 - `d`: donor wallet (first 8 chars)
-- `r`: recipient wallet (first 8 chars)
-- `a`: amount in SOL
+- `r`: pool wallet (first 8 chars)
+- `a`: amount in USDC
 - `t`: unix timestamp (seconds)
 - `app`: "glimpse" (identifies Glimpse transactions)
+- `tok`: "usdc" (token identifier)
+- `c`: cadence ("one_time" or "daily")
+
+## Hold Status State Machine
+```
+  pending ──(48h expires)──▶ locked ──(admin action)──▶ released
+     │
+     └──(donor requests)──▶ refunded
+```
+- Hold is custodial (manual refund via admin)
+- 48-hour window for refund requests
+- Done screen copy: "Your donation is being processed. We are connecting you to a need..."
 
 ## Wallet Auth Flow
 ```
@@ -156,18 +185,20 @@ TODOS.md                               — Deferred work with full context
   After confirmTransaction() on-chain:
        │
        ▼
-  POST /functions/v1/record-donation  { txSignature, recipientId }
+  POST /functions/v1/record-donation  { txSignature, recipientId, causePreferences, donationMode }
        │  (Bearer JWT from wallet-auth)
        ▼
   Edge fn:
     1. Verify JWT → extract wallet
     2. Fetch tx from Solana RPC (jsonParsed, 6 retries)
-    3. Validate: transfer source = JWT wallet
-    4. Validate: transfer dest = RECIPIENT_WALLETS[recipientId]
-    5. Validate: memo has app="glimpse", amounts match
-    6. Upsert donation row (idempotent by tx_signature)
-    7. Upsert conversation + welcome message
-    8. Return { conversationId }
+    3. Find spl-token transferChecked instruction
+    4. Validate: info.mint ∈ VALID_USDC_MINTS
+    5. Validate: info.authority = JWT wallet (donor)
+    6. Validate: info.destination = MATCHING_POOL_USDC_ATA
+    7. Validate: memo has tok="usdc", app="glimpse", amounts match
+    8. Upsert donation row (amount_usdc, hold_status, cause_preferences, donation_mode)
+    9. Upsert conversation + welcome message (48h hold copy)
+   10. Return { conversationId }
 ```
 
 If recording fails, the tx is on-chain but orphaned. `addPendingConversation()` queues it in AsyncStorage. `retryPendingConversations()` runs on next wallet connect.
@@ -185,10 +216,12 @@ if (result.success) {
 }
 ```
 
+Key USDC error codes: `INSUFFICIENT_USDC`, `USDC_ACCOUNT_NOT_FOUND`, `INSUFFICIENT_SOL` (for tx fees).
+
 ## Supabase Backend
 
-### Tables (migration 001)
-- `donations` — tx_signature (unique), donor_wallet, recipient_wallet, recipient_id, amount_sol
+### Tables (migration 001 + 004 + 005)
+- `donations` — tx_signature (unique), donor_wallet, recipient_wallet, recipient_id, amount_sol (legacy), amount_usdc, cadence, donation_mode, hold_status, hold_expires_at, cause_preferences
 - `conversations` — donation_id (FK), donor_wallet, admin_wallet
 - `messages` — conversation_id (FK), sender_wallet, body, media_url, media_type
 
@@ -201,16 +234,19 @@ if (result.success) {
 
 ### Edge Functions
 - `wallet-auth` — ed25519 signature verify → JWT issuance (24h TTL)
-- `record-donation` — on-chain tx validation → upsert donation + conversation
+- `record-donation` — SPL transferChecked validation → upsert donation + conversation
+  - Validates USDC mint, pool ATA, memo tok="usdc"
+  - Stores cause_preferences, donation_mode, hold_status, hold_expires_at
 
 ### Chat Architecture
 - **Realtime:** Supabase postgres_changes on `messages` table
 - **Media:** Supabase Storage (`chat-media` bucket), image transforms via URL params
 - **Hook:** `useChatMessages(conversationId)` — subscribe before fetch, insertSorted, dedup by id
 
-## Key Packages (v2 — stripped down)
+## Key Packages
 ```
-@solana/web3.js                    — Solana core (Connection, Transaction, SystemProgram)
+@solana/web3.js                    — Solana core (Connection, Transaction, PublicKey)
+@solana/spl-token                  — SPL token (ATA derivation, transferChecked, getAccount)
 @solana-mobile/mobile-wallet-adapter-protocol-web3js — MWA
 @solana-mobile/wallet-standard-mobile — Wallet standard
 @supabase/supabase-js              — Chat, donations, auth
@@ -221,13 +257,12 @@ react-native-safe-area-context     — Safe area
 @react-native-async-storage/async-storage — Retry queue, auth tokens
 ```
 
-**Removed from v1:** `@coral-xyz/borsh`, `@solana/spl-token`, `bn.js`, `@react-native-community/blur`, `react-native-haptic-feedback`
-
 ## Testing
+- Unit tests: `npx jest` (transfer, errors, base64, auth)
 - Emulator: Android Studio AVD (Pixel_6 API 35)
 - Device: Solana Seeker with USB debugging
 - Build: `npx react-native run-android`
-- Bundle check: `npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output /tmp/test.bundle`
+- Bundle check: `node node_modules/react-native/cli.js bundle --platform android --dev false --entry-file index.js --bundle-output /tmp/test.bundle`
 
 ## Known Polyfill Requirements
 - `globals.js` MUST be first import in `index.js` (Buffer, process)

@@ -24,13 +24,16 @@ This is the default process unless explicitly overridden.
 - **Retry queue** — orphaned donations (on-chain but Supabase failed) retried on next connect
 - **Theme system** — light/dark, glassmorphism cards, typography scale
 - **Android debug build compiles** — bundle check passes
+- **Guided donate loop** — center `DONATE` opens how-it-works modal; final action routes into Give flow
+- **Donate → message handoff** — successful donation can deep-link directly into the created conversation thread
+- **Message freshness** — Messages tab now refreshes on screen focus so new donation threads appear immediately
 
 ## What's Blocking Ship
 
 | # | Blocker | Owner | Status |
 |---|---------|-------|--------|
 | 1 | Commit all untracked work to git | Claude Code | Completed |
-| 2 | Deploy Supabase migrations (001-003) | Derrick | Pending |
+| 2 | Deploy Supabase migrations (001-004) | Derrick | Pending |
 | 3 | Deploy edge functions (wallet-auth, record-donation) | Derrick | Pending |
 | 4 | E2E test: connect → donate → see conversation | Either | After deploy |
 | 5 | Build release APK with signing | Either | After E2E |
@@ -95,6 +98,7 @@ supabase/functions/record-donation/index.ts — fetch tx, validate, upsert donat
 supabase/migrations/001_v2_tables.sql       — schema (donations, conversations, messages)
 supabase/migrations/002_v2_hardening.sql    — RLS policies + current_wallet()
 supabase/migrations/003_v2_auth_replay_guard.sql — auth_challenges table
+supabase/migrations/004_v2_donation_cadence_and_stage.sql — cadence + impact stage metadata
 ```
 
 ### 4. Chat / Messaging
