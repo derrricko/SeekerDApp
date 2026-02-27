@@ -7,6 +7,7 @@ Anyone — human or AI — writing copy, content, pitches, social posts, or in-a
 For the brand design system (colors, typography, logos), see `docs/brand-guide.md`.
 For the pitch deck, demo script, and Q&A prep, see `docs/derrick-working-doc.md`.
 For the condensed always-on version, see the "Founder Voice" section in `CLAUDE.md`.
+For current build execution priorities and mainnet launch gating, see `STATUS.md`.
 
 ---
 

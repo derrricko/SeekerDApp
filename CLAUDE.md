@@ -1,5 +1,30 @@
 # Glimpse v2 — Solana Mobile DApp
 
+## Mainnet Filter (Locked)
+
+Keep in mind the main goal is getting this app to mainnet ASAP. Number 1 priority filter everything through that. Things like leaderboard are not a priority. The giving flow must be airtight. We must get to mainnet so we can start taking in donations, even if it is only one donation. We must deploy the app to the Solana dApp Store.
+
+### North Star
+
+Ship one path that works end-to-end on mainnet:
+
+`connect wallet -> donate USDC -> confirm on-chain -> record in backend -> open message thread`
+
+If that works reliably, we can launch and take donations.
+
+### Execution Rules
+
+1. Freeze scope on anything not required for the North Star path.
+2. Hardening beats new features.
+3. dApp Store prep runs in parallel, but never blocks transaction reliability work.
+
+### Explicitly Deprioritized (Until First Mainnet Donation)
+
+1. Leaderboard implementation.
+2. Group pooling mechanics beyond metadata capture.
+3. Non-essential polish unrelated to conversion/reliability.
+4. Legacy cleanup that does not affect launch path stability.
+
 ## Default Collaboration Profile (Locked)
 
 Use this skill stack by default for all implementation and review work:

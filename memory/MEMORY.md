@@ -1,49 +1,54 @@
-# Project Memory — Glimpse v2
+# Project Memory — Mainnet Readiness
 
-Last updated: 2026-02-26
-Branch: `v2/give-portal`
+Last updated: 2026-02-27  
+Branch: `codex/mainnet-readiness`
 
-## Current State
+## Launch Directive (Do Not Drift)
 
-- App is in v2 architecture: direct SOL donations + messaging.
-- Latest hardening commit: `cff284ac`.
-- Working tree is clean except investor one-pager docs (`docs/`), which are intentionally untracked.
+Mainnet is the only filter right now. Ship one donation path that works reliably end-to-end, then launch and take real USDC donations.
 
-## Core Security Decisions
+North Star flow:
 
-- Wallet auth is signature-based (`glimpse-auth:{timestamp}`) via `wallet-auth` edge function.
-- Supabase access is JWT-scoped per wallet (`wallet` claim), not anonymous.
-- Donation recording is server-verified in `record-donation` edge function:
-  - fetches tx from Solana RPC
-  - validates sender wallet = JWT wallet
-  - validates recipient wallet = selected recipient map
-  - validates memo markers and amount
-  - upserts donation/conversation idempotently
-- RLS policies are participant-scoped and service-role insert-only for donations/conversations.
-- Auth replay protection added with `auth_challenges` table.
+`connect wallet -> donate USDC -> confirm on-chain -> record in backend -> open message thread`
 
-## Critical Files
+## What Matters Right Now
 
-- Wallet/auth: `components/providers/WalletProvider.tsx`, `services/auth.ts`, `services/supabase.ts`
-- Donation flow: `services/donations.ts`, `utils/transfer.ts`, `utils/retry.ts`
-- Chat flow: `services/chat.ts`, `screens/MessagesScreen.tsx`
-- Edge functions: `supabase/functions/wallet-auth/index.ts`, `supabase/functions/record-donation/index.ts`
-- Migrations: `supabase/migrations/001_v2_tables.sql`, `supabase/migrations/002_v2_hardening.sql`, `supabase/migrations/003_v2_auth_replay_guard.sql`
+1. Donation success and backend recording reliability.
+2. Messaging thread creation and send/reply reliability.
+3. Mainnet configuration correctness (pool wallet, USDC mint, ATA validation).
+4. Release readiness for Solana dApp Store submission.
 
-## Verification Baseline
+## Not Priority Until First Donation
 
-- `npm run lint` passes.
-- `npx tsc --noEmit` passes.
-- `npm test -- --watch=false --watchman=false` passes.
-- Android production bundle check passes.
+1. Leaderboard.
+2. Advanced group pooling behavior.
+3. Non-essential polish unrelated to conversion or reliability.
 
-## Remaining Backend Steps
+## Current Mainnet Blockers
 
-1. `supabase db push`
-2. Deploy edge functions:
-   - `wallet-auth`
-   - `record-donation`
-3. Run E2E on device:
-   - connect wallet
-   - make donation
-   - verify chat conversation appears
+1. Enforce 2-3 cause selection in Give flow.
+2. Keep app/edge function pool config synchronized.
+3. Normalize server-side recipient metadata for consistency.
+4. Remove donor-facing SOL fallback text in USDC flow.
+5. Restore fully green lint/type/test gates.
+
+## Core Files for Launch Path
+
+1. `/Users/derrickwoepking/Desktop/SeekerDApp/screens/GiveScreen.tsx`
+2. `/Users/derrickwoepking/Desktop/SeekerDApp/services/donations.ts`
+3. `/Users/derrickwoepking/Desktop/SeekerDApp/utils/transfer.ts`
+4. `/Users/derrickwoepking/Desktop/SeekerDApp/supabase/functions/record-donation/index.ts`
+5. `/Users/derrickwoepking/Desktop/SeekerDApp/screens/MessagesScreen.tsx`
+6. `/Users/derrickwoepking/Desktop/SeekerDApp/services/chat.ts`
+7. `/Users/derrickwoepking/Desktop/SeekerDApp/config/env.ts`
+
+## Go/No-Go Checklist
+
+1. One real USDC mainnet donation succeeds on device.
+2. Supabase donation row + conversation row are created correctly.
+3. Success screen deep-links to the right thread.
+4. No SOL wording in donor-facing donation/messaging path.
+5. `npm run lint -- --max-warnings=0` passes.
+6. `npx tsc --noEmit` passes.
+7. `npm test -- --watch=false --watchman=false` passes.
+8. Signed release build installs and runs.
