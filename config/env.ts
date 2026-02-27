@@ -2,7 +2,8 @@
 export type SolanaCluster = 'devnet' | 'testnet' | 'mainnet-beta';
 
 export const SOLANA_CLUSTER: SolanaCluster = 'mainnet-beta';
-export const RPC_URL = 'https://api.mainnet-beta.solana.com';
+export const RPC_URL =
+  'https://mainnet.helius-rpc.com/?api-key=595f9a7c-9775-4e7b-b1f7-eb69cd88558f';
 
 export const APP_IDENTITY = {
   name: 'Glimpse',
