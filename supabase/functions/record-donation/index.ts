@@ -1,0 +1,539 @@
+// v2 USDC donation recording — validates SPL transferChecked on-chain
+//
+// VALIDATION FLOW:
+//   1. Verify JWT → extract wallet
+//   2. Fetch tx from Solana RPC (jsonParsed, 6 retries)
+//   3. Find spl-token transferChecked instruction
+//   4. Validate: info.mint === USDC_MINT
+//   5. Validate: info.authority === JWT wallet (donor)
+//   6. Validate: info.destination === MATCHING_POOL_USDC_ATA
+//   7. Validate: memo has tok="usdc", app="glimpse"
+//   8. Upsert donation (amount_usdc, cause_preferences, donation_mode, hold tracking)
+//   9. Upsert conversation + welcome message (48h hold copy)
+
+import {serve} from 'https://deno.land/std@0.177.0/http/server.ts';
+import {verify} from 'https://deno.land/x/djwt@v3.0.1/mod.ts';
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.48.1';
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const JWT_SECRET =
+  Deno.env.get('JWT_SECRET') || Deno.env.get('SUPABASE_JWT_SECRET')!;
+const SOLANA_RPC_URL =
+  Deno.env.get('SOLANA_RPC_URL') || 'https://api.mainnet-beta.solana.com';
+const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
+const ADMIN_WALLET =
+  Deno.env.get('ADMIN_WALLET') ||
+  'DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk';
+
+// USDC mint addresses (devnet + mainnet)
+const USDC_MINT_DEVNET = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU';
+const USDC_MINT_MAINNET = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const VALID_USDC_MINTS = new Set([USDC_MINT_DEVNET, USDC_MINT_MAINNET]);
+
+// Matching pool wallet + pre-computed USDC ATA (mainnet)
+//   Derivation: getAssociatedTokenAddress(USDC_MINT_MAINNET, MATCHING_POOL_WALLET)
+//   USDC_MINT_MAINNET = EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+//   MATCHING_POOL_WALLET = DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk
+//   → ATA = GUGy7SPXbETj4E4mNFGXY4jurm1DUjWp5KDTK1J11kwa
+//   IMPORTANT: If wallet or mint changes, re-derive via spl-token on client.
+const MATCHING_POOL_WALLET = 'DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk';
+const MATCHING_POOL_USDC_ATA = 'GUGy7SPXbETj4E4mNFGXY4jurm1DUjWp5KDTK1J11kwa';
+
+// 48-hour hold window (ms)
+const HOLD_DURATION_MS = 48 * 60 * 60 * 1000;
+
+const ALLOWED_ORIGIN =
+  Deno.env.get('ALLOWED_ORIGIN') || 'https://giveglimpse.com';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async req => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {headers: corsHeaders});
+  }
+
+  if (req.method !== 'POST') {
+    return json({error: 'Method not allowed'}, 405);
+  }
+
+  try {
+    const authHeader = req.headers.get('authorization') || '';
+    const token = extractBearerToken(authHeader);
+    if (!token) {
+      return json({error: 'Missing bearer token'}, 401);
+    }
+
+    const wallet = await verifyWalletFromJwt(token);
+
+    const body = await req.json();
+    const txSignature =
+      typeof body?.txSignature === 'string' ? body.txSignature.trim() : '';
+    // All donations go to the matching pool — never trust client for this.
+    const recipientId = 'matching-pool';
+    const causePreferences = Array.isArray(body?.causePreferences)
+      ? body.causePreferences.filter((c: unknown) => typeof c === 'string')
+      : [];
+    const donationMode = body?.donationMode === 'group' ? 'group' : 'solo';
+
+    if (!txSignature) {
+      return json({error: 'txSignature is required'}, 400);
+    }
+
+    if (causePreferences.length < 2 || causePreferences.length > 3) {
+      return json(
+        {error: 'Between 2 and 3 cause preferences are required.'},
+        400,
+      );
+    }
+
+    const parsed = await fetchAndValidateUSDCTransaction(txSignature, wallet);
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {persistSession: false, autoRefreshToken: false},
+    });
+
+    const donationId = await upsertDonation({
+      supabase,
+      txSignature,
+      donorWallet: parsed.authority,
+      recipientWallet: MATCHING_POOL_WALLET,
+      recipientId,
+      amountUSDC: parsed.amountUSDC,
+      cadence: parsed.cadence,
+      causePreferences,
+      donationMode,
+    });
+
+    const conversationId = await upsertConversation({
+      supabase,
+      donationId,
+      donorWallet: parsed.authority,
+      amountUSDC: parsed.amountUSDC,
+    });
+
+    return json(
+      {
+        txSignature,
+        donationId,
+        conversationId,
+        donorWallet: parsed.authority,
+        recipientWallet: MATCHING_POOL_WALLET,
+        amountUSDC: parsed.amountUSDC,
+      },
+      200,
+    );
+  } catch (error) {
+    console.error('[record-donation] error:', error);
+    const message = error instanceof Error ? error.message : 'Internal error';
+    return json({error: message}, 500);
+  }
+});
+
+// ---------- Auth ----------
+
+function extractBearerToken(header: string): string | null {
+  const prefix = 'Bearer ';
+  if (!header.startsWith(prefix)) {
+    return null;
+  }
+  return header.slice(prefix.length).trim() || null;
+}
+
+async function verifyWalletFromJwt(token: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(JWT_SECRET),
+    {name: 'HMAC', hash: 'SHA-256'},
+    false,
+    ['verify', 'sign'],
+  );
+
+  const payload = await verify(token, key, 'HS256');
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Invalid auth token payload');
+  }
+
+  const wallet = (payload as Record<string, unknown>).wallet;
+  const role = (payload as Record<string, unknown>).role;
+  const exp = (payload as Record<string, unknown>).exp;
+  if (typeof wallet !== 'string' || wallet.length < 32) {
+    throw new Error('Token missing wallet claim');
+  }
+  if (role !== 'authenticated') {
+    throw new Error('Invalid auth role');
+  }
+  if (typeof exp !== 'number' || exp <= Math.floor(Date.now() / 1000)) {
+    throw new Error('Auth token expired');
+  }
+
+  return wallet;
+}
+
+// ---------- Transaction Validation (USDC SPL transferChecked) ----------
+//
+//   jsonParsed output for spl-token transferChecked:
+//   {
+//     program: "spl-token",
+//     parsed: {
+//       type: "transferChecked",
+//       info: {
+//         source: "<donor ATA>",
+//         mint: "<USDC mint>",
+//         destination: "<pool ATA>",
+//         authority: "<donor wallet>",
+//         tokenAmount: { amount: "5000000", decimals: 6, uiAmount: 5.0 }
+//       }
+//     }
+//   }
+
+interface ParsedUSDCTransaction {
+  authority: string;
+  destination: string;
+  mint: string;
+  amountUSDC: number;
+  cadence: 'one_time' | 'daily';
+}
+
+async function fetchAndValidateUSDCTransaction(
+  txSignature: string,
+  expectedDonorWallet: string,
+): Promise<ParsedUSDCTransaction> {
+  const tx = await getTransactionWithRetry(txSignature);
+
+  if (!tx) {
+    throw new Error('Transaction not found');
+  }
+  if (tx.meta?.err) {
+    throw new Error('Transaction failed on-chain');
+  }
+
+  // Only search top-level instructions for the transferChecked.
+  // Glimpse always places transferChecked at the top level.
+  // Scanning inner instructions would allow an attacker to inject
+  // a fake transferChecked via CPI while the real top-level ix
+  // sends funds elsewhere.
+  const topInstructions: any[] = tx.transaction?.message?.instructions || [];
+
+  // Find spl-token transferChecked instruction (top-level only)
+  const transferIx = topInstructions.find(
+    ix => ix?.program === 'spl-token' && ix?.parsed?.type === 'transferChecked',
+  );
+
+  if (!transferIx) {
+    throw new Error(
+      'No SPL token transferChecked instruction found in transaction',
+    );
+  }
+
+  const info = transferIx.parsed?.info;
+  if (!info) {
+    throw new Error('Invalid transferChecked instruction shape');
+  }
+
+  const authority = info.authority as string;
+  const destination = info.destination as string;
+  const mint = info.mint as string;
+  const tokenAmount = info.tokenAmount;
+
+  if (!authority || !destination || !mint) {
+    throw new Error('Missing fields in transferChecked instruction');
+  }
+
+  // Validate USDC mint
+  if (!VALID_USDC_MINTS.has(mint)) {
+    throw new Error(
+      `Invalid token mint: ${mint}. Only USDC transfers are accepted.`,
+    );
+  }
+
+  // Validate donor wallet matches JWT
+  if (authority !== expectedDonorWallet) {
+    throw new Error(
+      'Transaction authority does not match authenticated wallet',
+    );
+  }
+
+  // Validate destination is the matching pool USDC ATA
+  if (destination !== MATCHING_POOL_USDC_ATA) {
+    throw new Error(
+      'Transaction destination does not match matching pool USDC account',
+    );
+  }
+
+  // Extract amount (tokenAmount.uiAmount is the human-readable USDC amount)
+  const amountUSDC = Number(tokenAmount?.uiAmount);
+  if (!Number.isFinite(amountUSDC) || amountUSDC <= 0) {
+    throw new Error('Invalid transfer amount');
+  }
+
+  // Validate memo
+  const memoIx = topInstructions.find(
+    ix =>
+      ix?.programId === MEMO_PROGRAM_ID ||
+      ix?.program === 'spl-memo' ||
+      ix?.program === 'memo',
+  );
+  if (!memoIx) {
+    throw new Error('Transaction is missing memo instruction');
+  }
+
+  const memoText =
+    typeof memoIx.parsed === 'string'
+      ? memoIx.parsed
+      : typeof memoIx.parsed?.memo === 'string'
+      ? memoIx.parsed.memo
+      : null;
+  if (!memoText) {
+    throw new Error('Memo instruction payload is missing');
+  }
+
+  let memo: any;
+  try {
+    memo = JSON.parse(memoText);
+  } catch {
+    throw new Error('Memo payload is not valid JSON');
+  }
+
+  if (memo?.app !== 'glimpse') {
+    throw new Error('Memo app marker is invalid');
+  }
+  if (memo?.tok !== 'usdc') {
+    throw new Error('Memo token marker must be "usdc"');
+  }
+
+  // Validate memo amount matches transfer (within rounding tolerance)
+  const memoAmount = Number(memo?.a);
+  if (
+    !Number.isFinite(memoAmount) ||
+    Math.abs(memoAmount - amountUSDC) > 0.000001
+  ) {
+    throw new Error('Memo amount does not match transfer amount');
+  }
+
+  const cadence =
+    memo?.c === 'daily' || memo?.c === 'one_time' ? memo.c : 'one_time';
+
+  return {
+    authority,
+    destination,
+    mint,
+    amountUSDC,
+    cadence,
+  };
+}
+
+// ---------- RPC helpers ----------
+
+async function getTransactionWithRetry(txSignature: string): Promise<any> {
+  // Finalized commitment takes ~12-15s on mainnet. Retry with backoff
+  // to allow enough time: 2s, 4s, 6s, 8s, 10s, 12s, 14s = 56s total.
+  const maxAttempts = 8;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const tx = await rpc('getTransaction', [
+      txSignature,
+      {
+        encoding: 'jsonParsed',
+        commitment: 'finalized',
+        maxSupportedTransactionVersion: 0,
+      },
+    ]);
+    if (tx) {
+      return tx;
+    }
+
+    if (attempt < maxAttempts) {
+      await sleep(2000 * attempt);
+    }
+  }
+
+  throw new Error('Transaction not found');
+}
+
+async function rpc(method: string, params: unknown[]): Promise<any> {
+  const response = await fetch(SOLANA_RPC_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: `record-donation-${Date.now()}`,
+      method,
+      params,
+    }),
+  });
+
+  const payload = await response.json();
+  if (!response.ok || payload?.error) {
+    throw new Error(
+      payload?.error?.message ||
+        `RPC ${method} failed with status ${response.status}`,
+    );
+  }
+  return payload.result;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ---------- Database upserts ----------
+
+async function upsertDonation(params: {
+  supabase: ReturnType<typeof createClient>;
+  txSignature: string;
+  donorWallet: string;
+  recipientWallet: string;
+  recipientId: string;
+  amountUSDC: number;
+  cadence: 'one_time' | 'daily';
+  causePreferences: string[];
+  donationMode: string;
+}): Promise<string> {
+  const {
+    supabase,
+    txSignature,
+    donorWallet,
+    recipientWallet,
+    recipientId,
+    amountUSDC,
+    cadence,
+    causePreferences,
+    donationMode,
+  } = params;
+
+  const {data: existing, error: existingError} = await supabase
+    .from('donations')
+    .select('id, donor_wallet, recipient_wallet')
+    .eq('tx_signature', txSignature)
+    .maybeSingle();
+
+  if (existingError) {
+    throw existingError;
+  }
+
+  if (existing) {
+    if (
+      existing.donor_wallet !== donorWallet ||
+      existing.recipient_wallet !== recipientWallet
+    ) {
+      throw new Error('Existing donation record does not match tx details');
+    }
+    return existing.id;
+  }
+
+  const holdExpiresAt = new Date(Date.now() + HOLD_DURATION_MS).toISOString();
+
+  let insertResult = await supabase
+    .from('donations')
+    .insert({
+      tx_signature: txSignature,
+      donor_wallet: donorWallet,
+      recipient_wallet: recipientWallet,
+      recipient_id: recipientId,
+      amount_usdc: amountUSDC,
+      cadence,
+      donation_mode: donationMode,
+      cause_preferences: causePreferences,
+      hold_status: 'pending',
+      hold_expires_at: holdExpiresAt,
+    })
+    .select('id')
+    .single();
+
+  // Backward compatibility: if new columns don't exist yet (migration not applied),
+  // retry with minimal columns.
+  if (insertResult.error) {
+    const code = insertResult.error.code || '';
+    const msg = (insertResult.error.message || '').toLowerCase();
+    const missingColumn =
+      code === '42703' ||
+      msg.includes('amount_usdc') ||
+      msg.includes('donation_mode') ||
+      msg.includes('hold_status') ||
+      msg.includes('cause_preferences');
+
+    if (missingColumn) {
+      insertResult = await supabase
+        .from('donations')
+        .insert({
+          tx_signature: txSignature,
+          donor_wallet: donorWallet,
+          recipient_wallet: recipientWallet,
+          recipient_id: recipientId,
+          amount_sol: amountUSDC, // fallback: store in amount_sol
+        })
+        .select('id')
+        .single();
+    }
+  }
+
+  if (insertResult.error) {
+    throw insertResult.error;
+  }
+
+  return insertResult.data.id;
+}
+
+async function upsertConversation(params: {
+  supabase: ReturnType<typeof createClient>;
+  donationId: string;
+  donorWallet: string;
+  amountUSDC: number;
+}): Promise<string> {
+  const {supabase, donationId, donorWallet, amountUSDC} = params;
+
+  const {data: existing, error: existingError} = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('donation_id', donationId)
+    .maybeSingle();
+
+  if (existingError) {
+    throw existingError;
+  }
+
+  if (existing) {
+    return existing.id;
+  }
+
+  const {data: inserted, error: insertError} = await supabase
+    .from('conversations')
+    .insert({
+      donation_id: donationId,
+      donor_wallet: donorWallet,
+      admin_wallet: ADMIN_WALLET,
+    })
+    .select('id')
+    .single();
+
+  if (insertError) {
+    throw insertError;
+  }
+
+  // Welcome message with 48-hour hold copy
+  const {error: messageError} = await supabase.from('messages').insert({
+    conversation_id: inserted.id,
+    sender_wallet: ADMIN_WALLET,
+    body: `Your donation of ${amountUSDC} USDC is being processed. We are connecting you to a need based on the data and information you provided us. We will be reaching out with updates in this message thread. Remember you have 48 hours to request a refund.`,
+  });
+
+  if (messageError) {
+    console.warn(
+      '[record-donation] welcome message insert failed:',
+      messageError,
+    );
+  }
+
+  return inserted.id;
+}
+
+function json(payload: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {...corsHeaders, 'Content-Type': 'application/json'},
+  });
+}

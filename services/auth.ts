@@ -1,74 +1,54 @@
-/**
- * SIWS (Sign-In With Solana) auth helpers.
- * Communicates with the nonce and siws-verify Edge Functions.
- */
+import {SUPABASE_ANON_KEY, SUPABASE_URL} from '../config/env';
 
-import {getSupabase} from './supabase';
-import {SUPABASE_URL, SUPABASE_ANON_KEY} from '../config/env';
+export interface WalletAuthResponse {
+  token: string;
+  wallet: string;
+  expires_at: number;
+}
 
-/**
- * Fetch a fresh nonce from the nonce Edge Function.
- */
-export async function fetchNonce(): Promise<string> {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error('Supabase not configured');
-  }
+export function createWalletAuthMessage(now = Date.now()): string {
+  return `glimpse-auth:${now}`;
+}
 
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/nonce`, {
+export async function authenticateWalletSignature(params: {
+  wallet: string;
+  signature: string;
+  message: string;
+}): Promise<WalletAuthResponse> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/wallet-auth`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     },
+    body: JSON.stringify(params),
   });
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch nonce');
+  const payload = await safeParseJson(response);
+  if (!response.ok) {
+    const message =
+      typeof payload?.error === 'string'
+        ? payload.error
+        : 'Wallet authentication failed';
+    throw new Error(message);
   }
 
-  const {nonce} = await res.json();
-  return nonce;
+  if (
+    typeof payload?.token !== 'string' ||
+    typeof payload?.wallet !== 'string' ||
+    typeof payload?.expires_at !== 'number'
+  ) {
+    throw new Error('Wallet authentication returned an invalid response');
+  }
+
+  return payload as WalletAuthResponse;
 }
 
-/**
- * Verify a SIWS signature and obtain a Supabase JWT.
- */
-export async function verifySIWS(
-  message: string,
-  signature: string,
-  publicKey: string,
-): Promise<{token: string; profile: any}> {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error('Supabase not configured');
+async function safeParseJson(response: Response): Promise<any> {
+  try {
+    return await response.json();
+  } catch {
+    return null;
   }
-
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/siws-verify`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: SUPABASE_ANON_KEY,
-    },
-    body: JSON.stringify({message, signature, publicKey}),
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || 'SIWS verification failed');
-  }
-
-  return res.json();
-}
-
-/**
- * Set a custom JWT on the Supabase client (from SIWS verification).
- */
-export async function setSupabaseSession(token: string) {
-  const supabase = getSupabase();
-  if (!supabase) {
-    return;
-  }
-  await supabase.auth.setSession({
-    access_token: token,
-    refresh_token: '',
-  });
 }

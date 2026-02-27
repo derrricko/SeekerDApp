@@ -1,230 +1,182 @@
-/**
- * WalletProvider — wallet-standard wrapper for Solana Mobile.
- *
- * Wraps LocalSolanaMobileWalletAdapterWallet in a React context with
- * session persistence via createDefaultAuthorizationCache().
- */
+// v2 WalletProvider — MWA wallet connection + wallet-signed Supabase auth
+//
+// INTERFACE:
+//   useWallet() → { connected, publicKey, connect, disconnect, signAndSendTransaction }
 
 import React, {
   createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
   useCallback,
-  ReactNode,
+  useContext,
+  useMemo,
+  useState,
 } from 'react';
-import {PublicKey} from '@solana/web3.js';
-import {
-  LocalSolanaMobileWalletAdapterWallet,
-  createDefaultAuthorizationCache,
-  createDefaultChainSelector,
-  createDefaultWalletNotFoundHandler,
-} from '@solana-mobile/wallet-standard-mobile';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {PublicKey, Transaction} from '@solana/web3.js';
+import {transact} from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import {APP_IDENTITY, SOLANA_CLUSTER} from '../../config/env';
+import {
+  createWalletAuthMessage,
+  authenticateWalletSignature,
+} from '../../services/auth';
+import {retryPendingConversations} from '../../services/donations';
+import {
+  hydrateSupabaseAccessToken,
+  setSupabaseAccessToken,
+} from '../../services/supabase';
+import {decodeBase64, encodeBase64} from '../../utils/base64';
+import {utf8Encode} from '../../utils/utf8';
 
-import type {WalletAccount} from '@wallet-standard/base';
-import type {
-  SolanaSignInInput,
-  SolanaSignInOutput,
-} from '@solana/wallet-standard-features';
-
-// ─── Chain identifier ───────────────────────────────────────────────────────
-
-const CHAIN =
-  SOLANA_CLUSTER === 'mainnet-beta' ? 'solana:mainnet' : 'solana:devnet';
-
-// ─── Context types ──────────────────────────────────────────────────────────
-
-export interface WalletContextState {
-  /** The current wallet account, or null if not connected */
-  account: WalletAccount | null;
-  /** Convenience: PublicKey derived from account address */
-  publicKey: PublicKey | null;
-  /** Whether the wallet is connected */
+interface WalletContextType {
   connected: boolean;
-  /** Connect (authorize) the wallet */
+  publicKey: PublicKey | null;
+  connecting: boolean;
   connect: () => Promise<void>;
-  /** Disconnect (deauthorize) the wallet */
-  disconnect: () => Promise<void>;
-  /**
-   * Sign In With Solana — returns signed message + signature for SIWS auth.
-   * Connects if not already connected.
-   */
-  signIn: (input?: SolanaSignInInput) => Promise<SolanaSignInOutput | null>;
-  /**
-   * Sign and send a serialized transaction.
-   * Returns the raw signature bytes.
-   */
-  signAndSendTransaction: (transaction: Uint8Array) => Promise<Uint8Array>;
+  disconnect: () => void;
+  signAndSendTransaction: (transaction: Transaction) => Promise<string>;
 }
 
-const WalletContext = createContext<WalletContextState>({
-  account: null,
-  publicKey: null,
+const WalletContext = createContext<WalletContextType>({
   connected: false,
-  connect: async () => {
-    throw new Error('WalletProvider not initialized');
-  },
-  disconnect: async () => {
-    throw new Error('WalletProvider not initialized');
-  },
-  signIn: async () => {
-    throw new Error('WalletProvider not initialized');
-  },
-  signAndSendTransaction: async () => {
-    throw new Error('WalletProvider not initialized');
-  },
+  publicKey: null,
+  connecting: false,
+  connect: async () => {},
+  disconnect: () => {},
+  signAndSendTransaction: async () => '',
 });
 
-// ─── Provider ───────────────────────────────────────────────────────────────
+export function useWallet() {
+  return useContext(WalletContext);
+}
 
-export function WalletProvider({children}: {children: ReactNode}) {
-  const [accounts, setAccounts] = useState<readonly WalletAccount[]>([]);
+export function WalletProvider({children}: {children: React.ReactNode}) {
+  const [publicKey, setPublicKey] = useState<PublicKey | null>(null);
+  const [connecting, setConnecting] = useState(false);
 
-  // Create the wallet-standard wallet instance once
-  const walletRef = useRef<LocalSolanaMobileWalletAdapterWallet | null>(null);
-  if (walletRef.current === null) {
-    try {
-      walletRef.current = new LocalSolanaMobileWalletAdapterWallet({
-        appIdentity: APP_IDENTITY,
-        authorizationCache: createDefaultAuthorizationCache(),
-        chains: [CHAIN],
-        chainSelector: createDefaultChainSelector(),
-        onWalletNotFound: createDefaultWalletNotFoundHandler(),
-      });
-    } catch {
-      // Wallet adapter may fail on non-Android or misconfigured devices
-      console.warn('Failed to initialize wallet adapter');
-    }
-  }
-  const wallet = walletRef.current;
+  const connected = publicKey !== null;
 
-  // Listen for account changes via wallet-standard events
-  useEffect(() => {
-    if (!wallet) {
-      return;
-    }
-
-    const eventsFeature = wallet.features['standard:events'];
-    if (!eventsFeature) {
-      return;
-    }
-
-    const unsubscribe = eventsFeature.on(
-      'change',
-      ({accounts: newAccounts}) => {
-        if (newAccounts) {
-          setAccounts(newAccounts);
-        }
-      },
-    );
-
-    // Sync initial state
-    setAccounts(wallet.accounts);
-
-    return unsubscribe;
-  }, [wallet]);
-
-  const account = accounts.length > 0 ? accounts[0] : null;
-
-  const publicKey = useMemo(() => {
-    if (!account) {
-      return null;
-    }
-    try {
-      return new PublicKey(account.address);
-    } catch {
-      return null;
-    }
-  }, [account]);
-
-  const connected = wallet?.connected ?? false;
+  // Restore auth token (if present) so Supabase client headers are hydrated early.
+  React.useEffect(() => {
+    hydrateSupabaseAccessToken().catch(() => {});
+  }, []);
 
   const connect = useCallback(async () => {
-    if (!wallet) {
-      throw new Error('Wallet adapter not available');
+    setConnecting(true);
+    try {
+      await transact(async wallet => {
+        const auth = await wallet.authorize({
+          chain: `solana:${SOLANA_CLUSTER}`,
+          identity: APP_IDENTITY,
+        });
+
+        if (!auth.accounts?.length || !auth.accounts[0]?.address) {
+          throw new Error('Wallet authorize returned no accounts');
+        }
+
+        const base64Address = auth.accounts[0].address;
+        const pubkey = parseAuthorizedAccountAddress(base64Address);
+        const walletAddress = pubkey.toBase58();
+
+        // Wallet signs a short-lived auth challenge. Server verifies signature and
+        // returns a JWT used for Supabase RLS access scoped to this wallet.
+        const message = createWalletAuthMessage();
+        const payload = utf8Encode(message);
+        const signedPayloads = await wallet.signMessages({
+          addresses: [base64Address],
+          payloads: [payload],
+        });
+
+        if (!signedPayloads[0]) {
+          throw new Error('Wallet did not return a signed auth payload');
+        }
+
+        const signature = encodeBase64(signedPayloads[0]);
+        const authResult = await authenticateWalletSignature({
+          wallet: walletAddress,
+          signature,
+          message,
+        });
+
+        await setSupabaseAccessToken(authResult.token);
+        setPublicKey(pubkey);
+        await AsyncStorage.setItem('@glimpse_wallet_address', walletAddress);
+
+        // Best-effort replay for orphaned DB writes where on-chain tx succeeded.
+        retryPendingConversations().catch(() => {});
+      });
+    } catch (error) {
+      setPublicKey(null);
+      await AsyncStorage.removeItem('@glimpse_wallet_address');
+      await setSupabaseAccessToken(null);
+      throw error;
+    } finally {
+      setConnecting(false);
     }
-    const connectFeature = wallet.features['standard:connect'];
-    const result = await connectFeature.connect();
-    setAccounts(result.accounts);
-  }, [wallet]);
+  }, []);
 
-  const disconnect = useCallback(async () => {
-    if (!wallet) {
-      return;
-    }
-    const disconnectFeature = wallet.features['standard:disconnect'];
-    await disconnectFeature.disconnect();
-    setAccounts([]);
-  }, [wallet]);
-
-  const signIn = useCallback(
-    async (input?: SolanaSignInInput): Promise<SolanaSignInOutput | null> => {
-      if (!wallet) {
-        return null;
-      }
-      const signInFeature = wallet.features['solana:signIn'];
-      if (!signInFeature) {
-        return null;
-      }
-
-      const results = await signInFeature.signIn(input ?? {});
-      if (results.length > 0) {
-        // signIn also connects the wallet
-        setAccounts(wallet.accounts);
-        return results[0];
-      }
-      return null;
-    },
-    [wallet],
-  );
+  const disconnect = useCallback(() => {
+    setPublicKey(null);
+    AsyncStorage.removeItem('@glimpse_wallet_address').catch(() => {});
+    setSupabaseAccessToken(null).catch(() => {});
+  }, []);
 
   const signAndSendTransaction = useCallback(
-    async (transaction: Uint8Array): Promise<Uint8Array> => {
-      if (!account) {
+    async (transaction: Transaction): Promise<string> => {
+      if (!publicKey) {
         throw new Error('Wallet not connected');
       }
-      if (!wallet) {
-        throw new Error('Wallet adapter not available');
-      }
 
-      const features = wallet.features;
-      if (!('solana:signAndSendTransaction' in features)) {
-        throw new Error('signAndSendTransaction not supported by wallet');
-      }
+      let signature = '';
+      await transact(async wallet => {
+        // Re-authorize in each transact session
+        const reauth = await wallet.authorize({
+          chain: `solana:${SOLANA_CLUSTER}`,
+          identity: APP_IDENTITY,
+        });
 
-      const results = await features[
-        'solana:signAndSendTransaction'
-      ].signAndSendTransaction({
-        account,
-        transaction,
-        chain: CHAIN,
+        // Verify the re-authorized wallet matches the connected wallet
+        if (!reauth.accounts?.length || !reauth.accounts[0]?.address) {
+          throw new Error('Wallet re-authorization returned no accounts');
+        }
+        const reauthPubkey = parseAuthorizedAccountAddress(
+          reauth.accounts[0].address,
+        );
+        if (!reauthPubkey.equals(publicKey)) {
+          throw new Error(
+            'Wallet mismatch: re-authorized wallet differs from connected wallet. Please reconnect.',
+          );
+        }
+
+        const signatures = await wallet.signAndSendTransactions({
+          transactions: [transaction],
+        });
+
+        const sig = signatures[0];
+        if (!sig) {
+          throw new Error('Wallet returned an empty signature');
+        }
+        signature = sig;
       });
 
-      return results[0].signature;
+      return signature;
     },
-    [wallet, account],
+    [publicKey],
   );
 
-  const value = useMemo<WalletContextState>(
+  const value = useMemo(
     () => ({
-      account,
-      publicKey,
       connected,
+      publicKey,
+      connecting,
       connect,
       disconnect,
-      signIn,
       signAndSendTransaction,
     }),
     [
-      account,
-      publicKey,
       connected,
+      publicKey,
+      connecting,
       connect,
       disconnect,
-      signIn,
       signAndSendTransaction,
     ],
   );
@@ -234,6 +186,16 @@ export function WalletProvider({children}: {children: ReactNode}) {
   );
 }
 
-export function useWallet(): WalletContextState {
-  return useContext(WalletContext);
+function parseAuthorizedAccountAddress(address: string): PublicKey {
+  try {
+    const accountBytes = decodeBase64(address);
+    if (accountBytes.length === 32) {
+      return new PublicKey(accountBytes);
+    }
+  } catch {
+    // Fall through to base58 parse.
+  }
+
+  // Compatibility fallback for wallets that return base58 addresses.
+  return new PublicKey(address);
 }
