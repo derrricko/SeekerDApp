@@ -52,44 +52,88 @@ const AnimatedTouchableOpacity =
 const MOCK_WALLET = 'DEVmock1111111111111111111111111111111111111';
 
 const MOCK_CONVERSATION: Conversation = {
-  id: 'aaaa1111-2222-3333-4444-555566667777',
+  id: 'mock-0001',
   donation_id: 'don-001',
   donor_wallet: MOCK_WALLET,
   admin_wallet: ADMIN_WALLET,
   created_at: new Date(Date.now() - 3600_000).toISOString(),
-  amount_usdc: 25.0,
-  recipient_id: 'single-moms-crisis',
+  amount_usdc: 150.0,
+  recipient_id: 'teacher-supplies',
 };
 
-const MOCK_MESSAGES: Message[] = [
-  {
-    id: 'msg-a1',
-    conversation_id: 'aaaa1111-2222-3333-4444-555566667777',
-    sender_wallet: ADMIN_WALLET,
-    body: "Thank you for your $25 donation to support single moms in crisis. We're reviewing needs now and will update you here within 48 hours.",
-    media_url: null,
-    media_type: null,
-    created_at: new Date(Date.now() - 3500_000).toISOString(),
-  },
-  {
-    id: 'msg-a2',
-    conversation_id: 'aaaa1111-2222-3333-4444-555566667777',
-    sender_wallet: MOCK_WALLET,
-    body: 'Thank you, excited to help!',
-    media_url: null,
-    media_type: null,
-    created_at: new Date(Date.now() - 3000_000).toISOString(),
-  },
-  {
-    id: 'msg-a3',
-    conversation_id: 'aaaa1111-2222-3333-4444-555566667777',
-    sender_wallet: ADMIN_WALLET,
-    body: "Your donation went to Maria — a single mom in Muscatine who needed help covering groceries and gas this week. Here's her thank-you note.",
-    media_url: null,
-    media_type: null,
-    created_at: new Date(Date.now() - 1800_000).toISOString(),
-  },
-];
+function buildMockConversationFromParams(params: any): Conversation {
+  const parsedAmount = Number(params?.demoAmountUSDC);
+  const safeAmount =
+    Number.isFinite(parsedAmount) && parsedAmount > 0
+      ? parsedAmount
+      : MOCK_CONVERSATION.amount_usdc;
+  const safeRecipientId =
+    typeof params?.demoRecipientId === 'string' && params.demoRecipientId
+      ? params.demoRecipientId
+      : MOCK_CONVERSATION.recipient_id;
+
+  return {
+    ...MOCK_CONVERSATION,
+    id:
+      typeof params?.conversationId === 'string' && params.conversationId
+        ? params.conversationId
+        : `mock-${safeRecipientId || 'thread'}`,
+    amount_usdc: safeAmount,
+    recipient_id: safeRecipientId,
+  };
+}
+
+function buildMockMessages(conversation: Conversation): Message[] {
+  const amount = Number(conversation.amount_usdc ?? 25).toFixed(2);
+  const recipientName = getRecipientLabel(conversation.recipient_id);
+  const glimpseTag = getRecipientGlimpseTag(conversation.recipient_id);
+  const now = Date.now();
+  const beneficiaryNote =
+    conversation.recipient_id === 'teacher-supplies'
+      ? 'Rebecca (2nd grade teacher): Thank you for this support. I purchased 12 phonics workbooks, dry-erase marker sets, and two classroom reading games. We are using them for daily small-group reading and writing stations this month.'
+      : conversation.recipient_id === 'single-moms-crisis'
+      ? 'Maria: Thank you for helping my family this week. We were able to cover groceries and gas, and I can get to work tomorrow.'
+      : 'Jasmine (foster program coordinator): Thank you. We bought diapers, formula, and two after-school activity kits for kids entering care this week.';
+
+  return [
+    {
+      id: `mock-a1-${conversation.id}`,
+      conversation_id: conversation.id,
+      sender_wallet: ADMIN_WALLET,
+      body: `Thank you for your ${amount} USDC donation to ${recipientName} (${glimpseTag}). We will send your first update within 24-48 hours.`,
+      media_url: null,
+      media_type: null,
+      created_at: new Date(now - 42 * 60 * 1000).toISOString(),
+    },
+    {
+      id: `mock-a2-${conversation.id}`,
+      conversation_id: conversation.id,
+      sender_wallet: MOCK_WALLET,
+      body: 'Thank you. I appreciate the clear updates.',
+      media_url: null,
+      media_type: null,
+      created_at: new Date(now - 36 * 60 * 1000).toISOString(),
+    },
+    {
+      id: `mock-a3-${conversation.id}`,
+      conversation_id: conversation.id,
+      sender_wallet: ADMIN_WALLET,
+      body: `Allocation update: your ${amount} USDC is now assigned inside ${recipientName} (${glimpseTag}).`,
+      media_url: null,
+      media_type: null,
+      created_at: new Date(now - 28 * 60 * 1000).toISOString(),
+    },
+    {
+      id: `mock-a4-${conversation.id}`,
+      conversation_id: conversation.id,
+      sender_wallet: ADMIN_WALLET,
+      body: beneficiaryNote,
+      media_url: null,
+      media_type: null,
+      created_at: new Date(now - 20 * 60 * 1000).toISOString(),
+    },
+  ];
+}
 
 // ---------- Helpers ----------
 
@@ -132,6 +176,23 @@ function MessageBubble({
     }).start();
   }, [enterMotion]);
 
+  const mediaSource = React.useMemo(() => {
+    if (!item.media_url) {
+      return null;
+    }
+
+    // Supabase storage supports transform query params. External URLs are passed through.
+    if (item.media_url.includes('supabase')) {
+      return {
+        uri: item.media_url.includes('?')
+          ? `${item.media_url}&width=900&height=900`
+          : `${item.media_url}?width=900&height=900`,
+      };
+    }
+
+    return {uri: item.media_url};
+  }, [item.media_url]);
+
   return (
     <Animated.View
       style={[
@@ -169,13 +230,21 @@ function MessageBubble({
           ],
         },
       ]}>
-      {item.media_url && (
+      {mediaSource && (
         <Image
-          source={{uri: `${item.media_url}?width=300&height=300`}}
+          source={mediaSource}
           style={styles.mediaImage}
           resizeMode="cover"
         />
       )}
+
+      {item.media_type ? (
+        <View style={styles.mediaTagWrap}>
+          <Text style={styles.mediaTagText}>
+            {item.media_type === 'receipt' ? 'RECEIPT' : 'PHOTO'}
+          </Text>
+        </View>
+      ) : null}
 
       {item.body ? (
         <Text
@@ -234,12 +303,24 @@ export default function MessagesScreen() {
   const useMocks = __DEV__;
 
   const conversationId: string | undefined = route.params?.conversationId;
+  const mockConversation = React.useMemo(
+    () => buildMockConversationFromParams(route.params),
+    [route.params],
+  );
 
   // In dev mode, use mock conversation. In prod, look up by conversationId.
   const [conversation, setConversation] = useState<Conversation | null>(
-    useMocks ? MOCK_CONVERSATION : null,
+    useMocks ? mockConversation : null,
   );
   const [loading, setLoading] = useState(!useMocks);
+
+  useEffect(() => {
+    if (!useMocks) {
+      return;
+    }
+    setConversation(mockConversation);
+    setLoading(false);
+  }, [mockConversation, useMocks]);
 
   // Fetch the conversation from Supabase when we have an ID (prod only)
   useEffect(() => {
@@ -330,7 +411,11 @@ function ChatView({
 }) {
   const {theme} = useTheme();
   const realChat = useChatMessages(useMocks ? null : conversation.id);
-  const messages = useMocks ? MOCK_MESSAGES : realChat.messages;
+  const mockMessages = React.useMemo(
+    () => buildMockMessages(conversation),
+    [conversation],
+  );
+  const messages = useMocks ? mockMessages : realChat.messages;
   const chatLoading = useMocks ? false : realChat.loading;
   const chatError = useMocks ? null : realChat.error;
   const [inputText, setInputText] = useState('');
@@ -754,9 +839,25 @@ const styles = StyleSheet.create({
   },
   mediaImage: {
     width: '100%',
-    height: 180,
+    height: 210,
     borderRadius: 8,
     marginBottom: 8,
+  },
+  mediaTagWrap: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(101,84,209,0.35)',
+    backgroundColor: 'rgba(101,84,209,0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 6,
+  },
+  mediaTagText: {
+    fontSize: 9,
+    letterSpacing: 0.7,
+    fontWeight: '700',
+    color: '#4D41A8',
   },
   previewRow: {
     flexDirection: 'row',

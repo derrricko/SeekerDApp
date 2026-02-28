@@ -2,6 +2,7 @@ import React, {useMemo, useRef, useState} from 'react';
 import {
   Animated,
   Easing,
+  Keyboard,
   Pressable,
   StyleSheet,
   Text,
@@ -53,6 +54,7 @@ export default function GiveScreen() {
   const stepMotion = useRef(new Animated.Value(1)).current;
   const campaignMenuMotion = useRef(new Animated.Value(0)).current;
   const [campaignMenuVisible, setCampaignMenuVisible] = useState(false);
+  const donationInFlight = useRef(false);
   const amountFocusMotion = useRef(new Animated.Value(0)).current;
   const campaignFocusMotion = useRef(new Animated.Value(0)).current;
   const matchFocusMotion = useRef(new Animated.Value(0)).current;
@@ -158,6 +160,11 @@ export default function GiveScreen() {
       return;
     }
 
+    // Clear error when going back to form so stale messages don't persist
+    if (nextStep === 'form') {
+      setError('');
+    }
+
     if (nextStep === 'confirm') {
       animateFieldFocus(amountFocusMotion, 0);
       animateFieldFocus(campaignFocusMotion, 0);
@@ -227,12 +234,13 @@ export default function GiveScreen() {
     if (!validateForm()) {
       return;
     }
+    Keyboard.dismiss();
     closeCampaignMenu();
     transitionToStep('confirm');
   };
 
   const runDonation = async () => {
-    if (loading) {
+    if (donationInFlight.current || loading) {
       return;
     }
     if (!validateForm() || !selectedCampaign) {
@@ -240,6 +248,7 @@ export default function GiveScreen() {
       return;
     }
 
+    donationInFlight.current = true;
     setLoading(true);
     setError('');
 
@@ -288,6 +297,7 @@ export default function GiveScreen() {
     } catch {
       setError('Donation failed unexpectedly. Please try again.');
     } finally {
+      donationInFlight.current = false;
       setLoading(false);
     }
   };

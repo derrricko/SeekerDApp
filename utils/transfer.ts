@@ -74,6 +74,9 @@ export async function buildDonationTransaction(
   const mint = new PublicKey(USDC_MINT);
 
   // Amount validation (USDC has 6 decimals)
+  if (!Number.isFinite(amountUSDC) || amountUSDC <= 0) {
+    throw new Error('Donation amount must be a positive number');
+  }
   const rawAmount = Math.round(amountUSDC * 10 ** USDC_DECIMALS);
 
   if (rawAmount <= 0) {
@@ -120,9 +123,9 @@ export async function buildDonationTransaction(
           mint, // token mint
         ),
       );
+    } else {
+      throw e; // Network errors should surface, not be swallowed
     }
-    // Other errors (e.g. network) are swallowed here —
-    // the transferChecked instruction will fail if ATA truly doesn't exist.
   }
 
   // SPL token transfer (transferChecked validates mint + decimals on-chain)

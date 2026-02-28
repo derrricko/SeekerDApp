@@ -26,10 +26,10 @@ const ADMIN_WALLET =
   Deno.env.get('ADMIN_WALLET') ||
   'DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk';
 
-// USDC mint addresses (devnet + mainnet)
-const USDC_MINT_DEVNET = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU';
+// USDC mint — mainnet only. Devnet mint removed for mainnet launch.
+// If testing on devnet, set VALID_USDC_MINTS via env or re-add temporarily.
 const USDC_MINT_MAINNET = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-const VALID_USDC_MINTS = new Set([USDC_MINT_DEVNET, USDC_MINT_MAINNET]);
+const VALID_USDC_MINTS = new Set([USDC_MINT_MAINNET]);
 
 // Matching pool wallet + pre-computed USDC ATA (mainnet)
 //   Derivation: getAssociatedTokenAddress(USDC_MINT_MAINNET, MATCHING_POOL_WALLET)
@@ -43,11 +43,10 @@ const MATCHING_POOL_USDC_ATA = 'GUGy7SPXbETj4E4mNFGXY4jurm1DUjWp5KDTK1J11kwa';
 // 48-hour hold window (ms)
 const HOLD_DURATION_MS = 48 * 60 * 60 * 1000;
 
-const ALLOWED_ORIGIN =
-  Deno.env.get('ALLOWED_ORIGIN') || 'https://giveglimpse.com';
-
+// CORS: use * for mobile client (React Native fetch does not send web Origin).
+// Auth is enforced via JWT bearer token, not CORS origin.
 const corsHeaders = {
-  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
 };
@@ -130,6 +129,27 @@ serve(async req => {
   } catch (error) {
     console.error('[record-donation] error:', error);
     const message = error instanceof Error ? error.message : 'Internal error';
+    const lc = message.toLowerCase();
+    // Auth errors → 401 (client should re-auth, not retry with same token)
+    if (
+      lc.includes('bearer token') ||
+      lc.includes('expired') ||
+      lc.includes('invalid auth') ||
+      lc.includes('missing wallet claim')
+    ) {
+      return json({error: message}, 401);
+    }
+    // Validation errors → 422 (permanent failure, do not retry)
+    if (
+      lc.includes('does not match') ||
+      lc.includes('invalid token mint') ||
+      lc.includes('missing fields') ||
+      lc.includes('memo') ||
+      lc.includes('cause preferences') ||
+      lc.includes('txsignature is required')
+    ) {
+      return json({error: message}, 422);
+    }
     return json({error: message}, 500);
   }
 });
@@ -150,7 +170,7 @@ async function verifyWalletFromJwt(token: string): Promise<string> {
     new TextEncoder().encode(JWT_SECRET),
     {name: 'HMAC', hash: 'SHA-256'},
     false,
-    ['verify', 'sign'],
+    ['verify'],
   );
 
   const payload = await verify(token, key, 'HS256');
@@ -443,33 +463,6 @@ async function upsertDonation(params: {
     })
     .select('id')
     .single();
-
-  // Backward compatibility: if new columns don't exist yet (migration not applied),
-  // retry with minimal columns.
-  if (insertResult.error) {
-    const code = insertResult.error.code || '';
-    const msg = (insertResult.error.message || '').toLowerCase();
-    const missingColumn =
-      code === '42703' ||
-      msg.includes('amount_usdc') ||
-      msg.includes('donation_mode') ||
-      msg.includes('hold_status') ||
-      msg.includes('cause_preferences');
-
-    if (missingColumn) {
-      insertResult = await supabase
-        .from('donations')
-        .insert({
-          tx_signature: txSignature,
-          donor_wallet: donorWallet,
-          recipient_wallet: recipientWallet,
-          recipient_id: recipientId,
-          amount_sol: amountUSDC, // fallback: store in amount_sol
-        })
-        .select('id')
-        .single();
-    }
-  }
 
   if (insertResult.error) {
     throw insertResult.error;
