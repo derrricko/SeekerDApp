@@ -9,7 +9,7 @@
 //   6. Validate: info.destination === MATCHING_POOL_USDC_ATA
 //   7. Validate: memo has tok="usdc", app="glimpse"
 //   8. Upsert donation (amount_usdc, cause_preferences, donation_mode, hold tracking)
-//   9. Upsert conversation + welcome message (48h hold copy)
+//   9. Upsert conversation + welcome message timeline copy
 
 import {serve} from 'https://deno.land/std@0.177.0/http/server.ts';
 import {verify} from 'https://deno.land/x/djwt@v3.0.1/mod.ts';
@@ -514,11 +514,11 @@ async function upsertConversation(params: {
     throw insertError;
   }
 
-  // Welcome message with 48-hour hold copy
+  // Welcome message with timeline + next-steps copy
   const {error: messageError} = await supabase.from('messages').insert({
     conversation_id: inserted.id,
     sender_wallet: ADMIN_WALLET,
-    body: `Your donation of ${amountUSDC} USDC is being processed. We are connecting you to a need based on the data and information you provided us. We will be reaching out with updates in this message thread. Remember you have 48 hours to request a refund.`,
+    body: `Next steps: Your donation of ${amountUSDC} USDC is confirmed on-chain. In 24-48 hours we will message you with the specific need your donation is supporting. In 5-7 days, this thread will include receipts, photos, and progress updates.`,
   });
 
   if (messageError) {

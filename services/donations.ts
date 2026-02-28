@@ -30,6 +30,7 @@ export interface DonationResult {
   txSignature: string;
   memo: DonationMemo;
   conversationId: string | null;
+  donorWallet: string;
 }
 
 /**
@@ -148,7 +149,137 @@ export async function executeDonation(
     });
   }
 
-  return ok({txSignature, memo, conversationId});
+  return ok({
+    txSignature,
+    memo,
+    conversationId,
+    donorWallet: donorPubkey.toBase58(),
+  });
+}
+
+/**
+ * Execute donation in one wallet session:
+ * authorize + wallet-auth signature + tx signature happen in a single MWA flow.
+ */
+export async function executeDonationSeamless(
+  connection: Connection,
+  recipientWallet: string,
+  recipientId: string,
+  amountUSDC: number,
+  cadence: DonationCadence,
+  authorizeAndSignAndSend: (
+    buildTransaction: (donorPubkey: PublicKey) => Promise<Transaction>,
+  ) => Promise<{publicKey: PublicKey; signature: string}>,
+  causePreferences: string[] = [],
+  donationMode: DonationMode = 'solo',
+): Promise<Result<DonationResult>> {
+  if (!Number.isFinite(amountUSDC) || amountUSDC <= 0) {
+    return fail('INVALID_AMOUNT', 'Donation amount must be greater than 0');
+  }
+
+  let memo: DonationMemo | null = null;
+  let blockhash = '';
+  let lastValidBlockHeight = 0;
+  let donorPubkey: PublicKey | null = null;
+  let txSignature = '';
+
+  try {
+    const signed = await authorizeAndSignAndSend(async donor => {
+      donorPubkey = donor;
+      const built = await buildDonationTransaction(
+        connection,
+        donor,
+        recipientWallet,
+        amountUSDC,
+        cadence,
+      );
+      memo = built.memo;
+      blockhash = built.blockhash;
+      lastValidBlockHeight = built.lastValidBlockHeight;
+      return built.transaction;
+    });
+
+    donorPubkey = signed.publicKey;
+    txSignature = signed.signature;
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    if (
+      msg.includes('Insufficient') ||
+      msg.includes('token account not found') ||
+      msg.includes('exceeds maximum') ||
+      msg.includes('Could not build transaction') ||
+      msg.includes('Donation amount')
+    ) {
+      return fail('BUILD_FAILED', msg);
+    }
+
+    const txError = handleTransactionError(error);
+    if (txError.code !== 'TX_UNKNOWN') {
+      return {success: false, error: txError};
+    }
+
+    const mwaError = handleMWAError(error);
+    if (mwaError.code !== 'MWA_UNKNOWN') {
+      return {success: false, error: mwaError};
+    }
+
+    return fail('TX_SEND_FAILED', 'Could not complete wallet transaction.');
+  }
+
+  if (!donorPubkey || !memo) {
+    return fail(
+      'TX_SEND_FAILED',
+      'Could not complete wallet transaction. Please try again.',
+    );
+  }
+
+  try {
+    const confirmation = await connection.confirmTransaction(
+      {
+        signature: txSignature,
+        blockhash,
+        lastValidBlockHeight,
+      },
+      'confirmed',
+    );
+
+    if (confirmation.value.err) {
+      return fail(
+        'TX_CONFIRM_FAILED',
+        'Transaction failed during confirmation. No funds were settled.',
+      );
+    }
+  } catch (error) {
+    const txError = handleTransactionError(error);
+    return {success: false, error: txError};
+  }
+
+  let conversationId: string | null = null;
+  try {
+    conversationId = await recordAndCreateConversationSecure(
+      txSignature,
+      recipientId,
+      causePreferences,
+      donationMode,
+    );
+  } catch (error) {
+    await addPendingConversation({
+      txSignature,
+      donorWallet: donorPubkey.toBase58(),
+      recipientId,
+      amountUSDC,
+      causePreferences,
+      donationMode,
+      timestamp: Date.now(),
+    });
+  }
+
+  return ok({
+    txSignature,
+    memo,
+    conversationId,
+    donorWallet: donorPubkey.toBase58(),
+  });
 }
 
 export async function retryPendingConversations(): Promise<void> {
