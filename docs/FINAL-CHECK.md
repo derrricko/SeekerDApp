@@ -33,3 +33,10 @@
 
 - dApp Store docs currently recommend approximately `0.2 SOL` for submission wallet funding.
 - Ensure dApp Store docs and internal runbooks match this funding requirement.
+- Complete Solana Mobile Publisher Portal setup steps:
+  - Create publisher profile in portal.
+  - Complete required identity verification (KYC/KYB) in portal.
+  - Connect the publisher wallet in browser extension for signing.
+  - Select storage provider in portal flow (currently ArDrive).
+- If also publishing to Google Play with same package (`com.seekerdapp`), use a separate signing key for dApp Store builds.
+- Replace any placeholder dApp Store screenshots/assets with real release-build captures before final submit.
