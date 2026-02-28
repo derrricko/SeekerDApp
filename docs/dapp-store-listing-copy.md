@@ -4,26 +4,27 @@
 Glimpse
 
 ## Short Description (80 chars)
-Direct USDC donations with on-chain receipts and real impact updates.
+USDC donations, real updates.
 
 ## Long Description (4000 chars max)
-Glimpse connects donors directly to people in need — no middlemen, no platform fees, no guesswork.
+Glimpse is a USDC donation app on Solana built for transparent giving.
 
-Every donation is a USDC transfer on Solana with a permanent on-chain receipt. Within 48 hours, you're matched to a specific need based on your chosen causes. Then you get the part that's missing from every other platform: a direct message thread with photos, receipts, and real updates showing exactly what your money did.
-
-GoFundMe takes three percent. We take zero.
+Every donation is recorded on-chain and tied to a message thread so donors can follow what happened after they gave.
 
 How it works:
-1. Connect your Solana wallet
-2. Choose the causes you care about (housing, transportation, childcare, and more)
-3. Donate USDC — any amount from $0.01 to $10,000
-4. Get matched to a real need within 48 hours
-5. Follow the impact through your personal message thread
+1. Open Give
+2. Enter USDC amount and choose a campaign
+3. Add optional context and an optional note
+4. Review and confirm
+5. Sign in your wallet
+6. Track updates in Messages
 
-Built on Solana for speed, transparency, and near-zero transaction costs. Every donation is verifiable on-chain. Every dollar goes directly to the person who needs it.
+After donation, your message thread opens immediately. In 24-48 hours, Glimpse follows up with a specific need match. In 5-7 days, donors receive receipts, photos, and progress updates.
+
+Campaign minimums apply by campaign (currently 10-25 USDC). Built on Solana for fast settlement and verifiable on-chain records.
 
 ## What's New (v1.0)
-First release. Connect wallet, donate USDC, get matched to a need, follow the impact.
+First release. Donate USDC, sign in-wallet, and follow real impact updates in-app.
 
 ## Category
 Social Impact

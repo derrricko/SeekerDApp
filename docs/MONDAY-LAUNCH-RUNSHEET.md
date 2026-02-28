@@ -46,13 +46,12 @@ adb install android/app/build/outputs/apk/release/app-release.apk
 1. Open Glimpse on device
 2. Tap **Give** tab
 3. Select a campaign
-4. Enter a small USDC amount (e.g., $0.50)
-5. Tap **Continue** → review confirmation screen
-6. Tap **Confirm** → wallet prompt appears
+4. Enter a valid minimum USDC amount (recommended: **10.00 USDC** for teacher supplies)
+5. Tap **Review Donation** → review confirmation screen
+6. Tap **Confirm and Sign** → wallet prompt appears
 7. Approve in wallet app
 8. Wait for confirmation (should take ~5-15 seconds)
-9. Success screen should show with tx signature
-10. App should navigate to Messages tab
+9. App should navigate to Messages tab
 
 ### Verify backend:
 ```
@@ -122,14 +121,14 @@ The config.yaml uses `derrick@giveglimpse.com`. Update if needed.
 ### 4a. Install CLI
 ```
 cd /Users/derrickwoepking/Desktop/SeekerDApp
-npm install --save-dev @solana-mobile/dapp-store-cli
+npx @solana-mobile/dapp-store-cli --help
 ```
 
 ### 4b. Fund Publisher Keypair
 The publisher keypair is at `dapp-store/publisher-keypair.json`.
 ```
 # Address: E27rWm1vj46qjLReHVJNfesUqMLpHnD27EgoUp8torNY
-# Send ~0.05 SOL to this address for NFT minting fees
+# Send ~0.2 SOL to this address for NFT minting/submission fees
 solana balance dapp-store/publisher-keypair.json
 ```
 
@@ -192,7 +191,7 @@ npx dapp-store publish submit \
 | 8 | Privacy policy hosted at public URL | |
 | 9 | 512x512 icon created | |
 | 10 | 4 screenshots from release build on device | |
-| 11 | Publisher keypair funded (~0.05 SOL) | |
+| 11 | Publisher keypair funded (~0.2 SOL) | |
 | 12 | dapp-store CLI config validated | |
 | 13 | Publisher + App + Release NFTs minted | |
 | 14 | Submission sent with compliance flags | |
