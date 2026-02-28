@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glimpse — Privacy Policy</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      color: #1a1a1a;
+      line-height: 1.7;
+    }
+    h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.2rem; margin-top: 2rem; border-bottom: 1px solid #e0e0e0; padding-bottom: 0.5rem; }
+    .updated { color: #666; font-size: 0.9rem; margin-bottom: 2rem; }
+    ul { padding-left: 1.25rem; }
+    li { margin-bottom: 0.5rem; }
+    a { color: #5b5bd6; }
+  </style>
+</head>
+<body>
+  <h1>Glimpse Privacy Policy</h1>
+  <p class="updated">Last updated: March 3, 2025</p>
+
+  <p>Glimpse ("we", "us", "the app") is a USDC donation app built on Solana. We believe in radical transparency. Here is exactly what data we collect, why, and how it is stored.</p>
+
+  <h2>1. What We Collect</h2>
+  <ul>
+    <li><strong>Wallet address (public key).</strong> When you connect your wallet via Mobile Wallet Adapter, we receive your Solana public key. We never request, access, or store your seed phrase or private key.</li>
+    <li><strong>On-chain transaction data.</strong> Your USDC donation transactions are recorded on the Solana blockchain. This data is public by nature of the network and includes: transaction signature, sender address, recipient address, amount, and timestamp.</li>
+    <li><strong>Donation metadata.</strong> We store your selected cause preferences, donation mode (solo/group), cadence, and hold status in our backend database to facilitate matching.</li>
+    <li><strong>Chat messages.</strong> Messages you send in donor-recipient conversation threads are stored in our backend. This includes text messages and any media (photos, receipts) you choose to share.</li>
+  </ul>
+
+  <h2>2. What We Do NOT Collect</h2>
+  <ul>
+    <li>No email addresses or passwords (wallet-only authentication)</li>
+    <li>No personal identity information (name, phone, SSN)</li>
+    <li>No device identifiers or advertising IDs</li>
+    <li>No third-party analytics or tracking SDKs</li>
+    <li>No cookies or browser fingerprinting</li>
+    <li>No location data</li>
+  </ul>
+
+  <h2>3. How We Store Your Data</h2>
+  <ul>
+    <li><strong>Backend:</strong> Supabase (PostgreSQL), hosted on AWS infrastructure. Row-level security ensures you can only access your own donations, conversations, and messages.</li>
+    <li><strong>Chat media:</strong> Stored in a private Supabase Storage bucket. Files are accessible only via time-limited signed URLs (1-hour expiry) and only to conversation participants.</li>
+    <li><strong>Authentication tokens:</strong> A JSON Web Token (JWT) is stored locally on your device. It contains your wallet address and an expiration timestamp. Tokens expire after 24 hours.</li>
+  </ul>
+
+  <h2>4. On-Chain Transparency</h2>
+  <p>Every USDC donation creates an on-chain receipt via a Solana Memo instruction. This receipt includes a truncated donor address, recipient address, amount, and timestamp. This data is permanently public on the Solana blockchain and cannot be deleted by us or anyone.</p>
+
+  <h2>5. Data Retention</h2>
+  <ul>
+    <li><strong>On-chain data:</strong> Permanent and immutable (inherent to Solana).</li>
+    <li><strong>Donations and conversations:</strong> Retained indefinitely to provide ongoing donor transparency and impact updates.</li>
+    <li><strong>Authentication challenges:</strong> Stored temporarily for replay protection, then expire naturally.</li>
+  </ul>
+
+  <h2>6. Data Sharing</h2>
+  <p>We do not sell, rent, or share your data with third parties. Your donation and chat data is only accessible to you and the Glimpse admin team (for matching donations to needs and providing impact updates).</p>
+
+  <h2>7. Your Rights</h2>
+  <p>You can disconnect your wallet at any time, which removes your local authentication token. On-chain transaction data cannot be deleted due to the nature of blockchain technology. For questions about your off-chain data, contact us at the email below.</p>
+
+  <h2>8. Security</h2>
+  <p>We use row-level security policies, JWT-based authentication with Ed25519 signature verification, and server-side transaction validation. All donation recordings are verified against the Solana blockchain before being stored. We do not store any secrets or API keys in the client application.</p>
+
+  <h2>9. Children's Privacy</h2>
+  <p>Glimpse is not directed at children under 13. We do not knowingly collect data from children.</p>
+
+  <h2>10. Changes</h2>
+  <p>If we update this policy, we will update the "Last updated" date above. Continued use of the app after changes constitutes acceptance.</p>
+
+  <h2>11. Contact</h2>
+  <p>Derrick Woepking<br>
+  Glimpse / Seeker<br>
+  Email: <a href="mailto:derrick@giveglimpse.com">derrick@giveglimpse.com</a></p>
+</body>
+</html>

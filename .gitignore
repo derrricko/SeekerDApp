@@ -73,6 +73,7 @@ coverage/
 .anchor/
 target/
 test-ledger/
+dapp-store/publisher-keypair.json
 
 # Supabase
 .supabase/

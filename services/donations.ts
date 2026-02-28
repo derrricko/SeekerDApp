@@ -140,7 +140,7 @@ export async function executeDonation(
       if (confirmation.value.err) {
         return fail(
           'TX_CONFIRM_FAILED',
-          'Transaction failed during confirmation. No funds were settled.',
+          'Transaction was rejected on-chain. Your USDC was not transferred.',
         );
       }
     } catch (error) {
@@ -289,7 +289,7 @@ export async function executeDonationSeamless(
       if (confirmation.value.err) {
         return fail(
           'TX_CONFIRM_FAILED',
-          'Transaction failed during confirmation. No funds were settled.',
+          'Transaction was rejected on-chain. Your USDC was not transferred.',
         );
       }
     } catch (error) {
@@ -431,8 +431,13 @@ async function recordAndCreateConversationSecure(
       typeof payload?.error === 'string'
         ? payload.error
         : 'Could not record donation in backend';
-    // 4xx = permanent failure (auth expired, validation rejected) — do not retry
-    if (response.status >= 400 && response.status < 500) {
+    // 401 = auth expired — transient, user can re-auth and retry
+    // 400/422 = validation failure — permanent, will never succeed
+    if (
+      response.status >= 400 &&
+      response.status < 500 &&
+      response.status !== 401
+    ) {
       throw new PermanentRecordError(errorMessage);
     }
     throw new Error(errorMessage);

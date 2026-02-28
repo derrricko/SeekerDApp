@@ -1,0 +1,60 @@
+publisher:
+  name: "Glimpse"
+  website: "https://giveglimpse.com"
+  email: "derrick@giveglimpse.com"
+  media:
+    - purpose: "icon"
+      uri: "icon-512.png"
+      width: 512
+      height: 512
+  address: ""
+
+app:
+  name: "Glimpse"
+  android_package: "com.seekerdapp"
+  urls:
+    license_url: "https://giveglimpse.com/privacy"
+    privacy_policy_url: "https://giveglimpse.com/privacy"
+    copyright_url: "https://giveglimpse.com/privacy"
+    website: "https://giveglimpse.com"
+  media:
+    - purpose: "icon"
+      uri: "icon-512.png"
+      width: 512
+      height: 512
+  address: ""
+
+release:
+  media:
+    - purpose: "icon"
+      uri: "icon-512.png"
+      width: 512
+      height: 512
+    - purpose: "screenshot"
+      uri: "screenshots/01-campaigns.png"
+      width: 1080
+      height: 1920
+    - purpose: "screenshot"
+      uri: "screenshots/02-give-flow.png"
+      width: 1080
+      height: 1920
+    - purpose: "screenshot"
+      uri: "screenshots/03-confirmation.png"
+      width: 1080
+      height: 1920
+    - purpose: "screenshot"
+      uri: "screenshots/04-messages.png"
+      width: 1080
+      height: 1920
+  android_apk_path: "../android/app/build/outputs/apk/release/app-release.apk"
+  catalog:
+    en:
+      name: "Glimpse"
+      short_description: "Direct USDC donations with on-chain receipts and real impact updates."
+      long_description: "Glimpse connects donors directly to people in need — no middlemen, no platform fees, no guesswork.\n\nEvery donation is a USDC transfer on Solana with a permanent on-chain receipt. Within 48 hours, you're matched to a specific need based on your chosen causes. Then you get the part that's missing from every other platform: a direct message thread with photos, receipts, and real updates showing exactly what your money did.\n\nGoFundMe takes three percent. We take zero.\n\nHow it works:\n1. Connect your Solana wallet\n2. Choose the causes you care about\n3. Donate USDC — any amount\n4. Get matched to a real need within 48 hours\n5. Follow the impact through your personal message thread\n\nBuilt on Solana for speed, transparency, and near-zero transaction costs."
+      new_in_version: "First release. Connect wallet, donate USDC, get matched to a need, follow the impact."
+  address: ""
+
+solana_mobile_dapp_publisher_portal:
+  google_store_package: ""
+  testing_instructions: "1. Connect a Solana wallet with USDC balance (e.g., Phantom or Solflare).\n2. Tap the Give tab.\n3. Select a campaign and enter a USDC amount.\n4. Complete the donation via wallet approval.\n5. Verify the conversation thread appears in the Messages tab with a welcome message."
