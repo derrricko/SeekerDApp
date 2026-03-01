@@ -15,5 +15,8 @@ CREATE POLICY "No updates to conversations"
 CREATE POLICY "No deletes on conversations"
   ON public.conversations FOR DELETE USING (false);
 
+CREATE POLICY "No updates to messages"
+  ON public.messages FOR UPDATE USING (false);
+
 CREATE POLICY "No deletes on messages"
   ON public.messages FOR DELETE USING (false);

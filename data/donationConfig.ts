@@ -34,6 +34,7 @@ export const CAUSE_OPTIONS: CauseOption[] = [
   {id: 'education', label: 'Education'},
 ];
 
+// SYNC: campaign rules must match CAMPAIGN_RULES in supabase/functions/record-donation/index.ts
 export const CAMPAIGN_OPTIONS: CampaignOption[] = [
   {
     id: 'teacher-supplies',

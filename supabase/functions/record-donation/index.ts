@@ -52,6 +52,7 @@ interface CampaignRule {
   causePreferences: string[];
 }
 
+// SYNC: campaign rules must match CAMPAIGN_OPTIONS in data/donationConfig.ts
 const CAMPAIGN_RULES: CampaignRule[] = [
   {
     id: 'teacher-supplies',
