@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -13,12 +13,12 @@ import {useTheme} from '../theme/Theme';
 import AppHeader from '../ui/AppHeader';
 import ScreenContainer from '../ui/ScreenContainer';
 import SurfaceCard from '../ui/SurfaceCard';
-import {getRecipientLabel} from '../data/donationConfig';
+import {getRecipientLabel, type HoldStatus} from '../data/donationConfig';
 import {fetchDonationHistory, type DonationHistoryItem} from '../services/chat';
 
 type ViewMode = 'feed' | 'my_glimpses';
 
-const HOLD_STATUS_LABELS: Record<string, string> = {
+const HOLD_STATUS_LABELS: Record<HoldStatus, string> = {
   pending: 'PENDING',
   locked: 'LOCKED',
   released: 'RELEASED',
@@ -35,6 +35,7 @@ export default function CampaignsScreen() {
   );
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const lastFetchedAt = useRef(0);
 
   const walletAddress = publicKey?.toBase58() ?? null;
 
@@ -49,6 +50,15 @@ export default function CampaignsScreen() {
       return;
     }
 
+    // Skip re-fetch if data was loaded within the last 30 seconds
+    const STALE_MS = 30_000;
+    if (
+      donationHistory.length > 0 &&
+      Date.now() - lastFetchedAt.current < STALE_MS
+    ) {
+      return;
+    }
+
     let cancelled = false;
     setHistoryLoading(true);
     setHistoryError(null);
@@ -58,6 +68,7 @@ export default function CampaignsScreen() {
         if (!cancelled) {
           setDonationHistory(rows);
           setHistoryLoading(false);
+          lastFetchedAt.current = Date.now();
         }
       })
       .catch(error => {
@@ -74,6 +85,7 @@ export default function CampaignsScreen() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, walletAddress]);
 
   return (
@@ -356,13 +368,13 @@ function renderDonationHistory({
         <View style={styles.historyWrap}>
           {rows.map(item => {
             const recipient = getRecipientLabel(item.recipient_id);
+            const holdStatus = item.hold_status as HoldStatus;
             const statusLabel =
-              HOLD_STATUS_LABELS[item.hold_status] ??
-              item.hold_status.toUpperCase();
+              HOLD_STATUS_LABELS[holdStatus] ?? item.hold_status.toUpperCase();
             const statusColor =
-              item.hold_status === 'released'
+              holdStatus === 'released'
                 ? theme.colors.success
-                : item.hold_status === 'locked'
+                : holdStatus === 'locked'
                 ? theme.colors.accent
                 : theme.colors.textSecondary;
             return (

@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useMemo} from 'react';
+import React, {createContext, useContext} from 'react';
 import {useWallet} from './WalletProvider';
 import {useUnreadCount} from '../../services/chat';
 
@@ -25,27 +25,10 @@ export function UnreadProvider({children}: {children: React.ReactNode}) {
   const walletAddress = publicKey?.toBase58() ?? null;
   const unreadState = useUnreadCount(walletAddress);
 
-  const value = useMemo(
-    () => ({
-      totalUnread: unreadState.totalUnread,
-      conversationUnreads: unreadState.conversationUnreads,
-      activeConversationId: unreadState.activeConversationId,
-      markRead: unreadState.markRead,
-      refresh: unreadState.refresh,
-      setActiveConversation: unreadState.setActiveConversation,
-    }),
-    [
-      unreadState.totalUnread,
-      unreadState.conversationUnreads,
-      unreadState.activeConversationId,
-      unreadState.markRead,
-      unreadState.refresh,
-      unreadState.setActiveConversation,
-    ],
-  );
-
   return (
-    <UnreadContext.Provider value={value}>{children}</UnreadContext.Provider>
+    <UnreadContext.Provider value={unreadState}>
+      {children}
+    </UnreadContext.Provider>
   );
 }
 

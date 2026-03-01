@@ -206,7 +206,14 @@ function AppTabBar({
           <View style={styles.sideIconWrap}>
             <MessagesIcon active={isMessagesTab} />
             {totalUnread > 0 ? (
-              <View style={styles.unreadBadge}>
+              <View
+                style={[
+                  styles.unreadBadge,
+                  {
+                    backgroundColor: TAB_BAR_THEME.accent,
+                    borderColor: TAB_BAR_THEME.background,
+                  },
+                ]}>
                 <Text style={styles.unreadBadgeText}>
                   {totalUnread > 99 ? '99+' : totalUnread}
                 </Text>
@@ -455,9 +462,7 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     paddingHorizontal: 4,
-    backgroundColor: '#6554D1',
     borderWidth: 1.5,
-    borderColor: '#F3EFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },

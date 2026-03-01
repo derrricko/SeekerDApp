@@ -2,6 +2,7 @@ import {MATCHING_POOL_WALLET} from '../config/env';
 
 export type DonationCadence = 'one_time' | 'daily';
 export type DonationMode = 'solo' | 'group';
+export type HoldStatus = 'pending' | 'locked' | 'released';
 
 export interface CauseOption {
   id: string;
