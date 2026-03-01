@@ -3,6 +3,7 @@ import {
   Animated,
   Easing,
   Keyboard,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -17,11 +18,12 @@ import {useWallet} from '../components/providers/WalletProvider';
 import {executeDonationSeamless} from '../services/donations';
 import {sendMessage} from '../services/chat';
 import {useTheme} from '../theme/Theme';
+import {getExplorerUrl} from '../utils/explorer';
 import AppHeader from '../ui/AppHeader';
 import PrimaryButton from '../ui/PrimaryButton';
 import ScreenContainer from '../ui/ScreenContainer';
 
-type Step = 'form' | 'confirm';
+type Step = 'form' | 'confirm' | 'processing';
 const DROPDOWN_ITEM_HEIGHT = 60;
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
@@ -51,6 +53,7 @@ export default function GiveScreen() {
   const [step, setStep] = useState<Step>('form');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [processingTxSig, setProcessingTxSig] = useState('');
   const stepMotion = useRef(new Animated.Value(1)).current;
   const campaignMenuMotion = useRef(new Animated.Value(0)).current;
   const [campaignMenuVisible, setCampaignMenuVisible] = useState(false);
@@ -129,6 +132,7 @@ export default function GiveScreen() {
     setRecipientNote('');
     setStep('form');
     setError('');
+    setProcessingTxSig('');
   };
 
   const validateForm = () => {
@@ -288,11 +292,13 @@ export default function GiveScreen() {
         }
       }
 
-      reset();
       if (conversationId) {
+        reset();
         navigation.navigate('Messages', {conversationId});
       } else {
-        navigation.navigate('Messages');
+        // Backend failed but tx is on-chain — show processing state
+        setProcessingTxSig(result.data.txSignature);
+        transitionToStep('processing');
       }
     } catch {
       setError('Donation failed unexpectedly. Please try again.');
@@ -560,7 +566,7 @@ export default function GiveScreen() {
                 style={styles.reviewButton}
               />
             </View>
-          ) : (
+          ) : step === 'confirm' ? (
             <View>
               <View style={styles.reviewRows}>
                 <View
@@ -752,7 +758,62 @@ export default function GiveScreen() {
                 </Text>
               </Pressable>
             </View>
-          )}
+          ) : step === 'processing' ? (
+            <View>
+              <Text
+                style={[
+                  styles.processingTitle,
+                  {
+                    color: theme.colors.textPrimary,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                DONATION CONFIRMED
+              </Text>
+              <Text
+                style={[
+                  styles.processingBody,
+                  {color: theme.colors.textSecondary},
+                ]}>
+                Your {formattedAmount} USDC donation is confirmed on-chain.
+                {'\n\n'}
+                We are processing your message thread. It will appear in your
+                Messages tab shortly.
+              </Text>
+
+              {!!processingTxSig && (
+                <TouchableOpacity
+                  onPress={() =>
+                    Linking.openURL(getExplorerUrl(processingTxSig))
+                  }
+                  activeOpacity={0.7}
+                  style={[
+                    styles.explorerLink,
+                    {borderColor: theme.colors.border},
+                  ]}>
+                  <Text
+                    style={[
+                      styles.explorerLinkText,
+                      {
+                        color: theme.colors.accent,
+                        fontFamily: theme.typography.brand,
+                      },
+                    ]}>
+                    View on Solana Explorer
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <PrimaryButton
+                label="Done"
+                onPress={() => {
+                  reset();
+                  navigation.navigate('Messages');
+                }}
+                style={styles.reviewButton}
+              />
+            </View>
+          ) : null}
         </Animated.View>
       </ScreenContainer>
     </View>
@@ -930,5 +991,29 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontWeight: '700',
     letterSpacing: 1.2,
+  },
+  processingTitle: {
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 12,
+  },
+  processingBody: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+  explorerLink: {
+    borderWidth: 2,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+  },
+  explorerLinkText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

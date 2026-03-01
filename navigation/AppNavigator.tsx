@@ -22,11 +22,12 @@ import HomeScreen from '../screens/HomeScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import HowItWorksCarousel from '../screens/HowItWorksCarousel';
 import MessagesScreen from '../screens/MessagesScreen';
+import {useUnread} from '../components/providers/UnreadProvider';
 
 export type RootTabParamList = {
   Glimpses: undefined;
   Give: undefined;
-  Messages: {conversationId?: string} | undefined;
+  Messages: {conversationId?: string; demoMode?: boolean} | undefined;
   Rank: undefined;
 };
 
@@ -67,33 +68,13 @@ function GlimpsesIcon({active}: {active: boolean}) {
   );
 }
 
-function RankIcon({active}: {active: boolean}) {
+function MessagesIcon({active}: {active: boolean}) {
   const iconColor = active ? TAB_BAR_THEME.textPrimary : '#55506A';
 
   return (
-    <View style={styles.rankIconWrap}>
-      <View
-        style={[
-          styles.rankOutlineBar,
-          styles.rankOutlineBarShort,
-          {borderColor: iconColor},
-        ]}
-      />
-      <View
-        style={[
-          styles.rankOutlineBar,
-          styles.rankOutlineBarMid,
-          {borderColor: iconColor},
-        ]}
-      />
-      <View
-        style={[
-          styles.rankOutlineBar,
-          styles.rankOutlineBarTall,
-          {borderColor: iconColor},
-        ]}
-      />
-      <View style={[styles.rankBaseline, {backgroundColor: iconColor}]} />
+    <View style={styles.messagesIconWrap}>
+      <View style={[styles.messagesBubble, {borderColor: iconColor}]} />
+      <View style={[styles.messagesTail, {borderColor: iconColor}]} />
     </View>
   );
 }
@@ -103,17 +84,20 @@ function AppTabBar({
   navigation,
   onOpenGiveFlow,
 }: BottomTabBarProps & GiveFlowContextValue) {
+  const {totalUnread, activeConversationId} = useUnread();
   const activeRouteName = state.routes[state.index]?.name as
     | keyof RootTabParamList
     | undefined;
   const isGlimpsesTab = activeRouteName === 'Glimpses';
-  const isRankTab = activeRouteName === 'Rank';
   const isGiveTab = activeRouteName === 'Give';
   const isMessagesTab = activeRouteName === 'Messages';
+  const isMessagesThreadOpen = isMessagesTab && Boolean(activeConversationId);
   const glimpsesIndicator = useRef(
     new Animated.Value(isGlimpsesTab ? 1 : 0),
   ).current;
-  const rankIndicator = useRef(new Animated.Value(isRankTab ? 1 : 0)).current;
+  const messagesIndicator = useRef(
+    new Animated.Value(isMessagesTab ? 1 : 0),
+  ).current;
 
   useEffect(() => {
     Animated.timing(glimpsesIndicator, {
@@ -125,13 +109,13 @@ function AppTabBar({
   }, [glimpsesIndicator, isGlimpsesTab]);
 
   useEffect(() => {
-    Animated.timing(rankIndicator, {
-      toValue: isRankTab ? 1 : 0,
+    Animated.timing(messagesIndicator, {
+      toValue: isMessagesTab ? 1 : 0,
       duration: 180,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
-  }, [rankIndicator, isRankTab]);
+  }, [messagesIndicator, isMessagesTab]);
 
   const buildIndicatorStyle = (progress: Animated.Value) => ({
     opacity: progress.interpolate({
@@ -148,7 +132,7 @@ function AppTabBar({
     ],
   });
 
-  if (isMessagesTab) {
+  if (isMessagesThreadOpen) {
     return <View style={styles.messagesBarHidden} />;
   }
 
@@ -215,12 +199,19 @@ function AppTabBar({
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => navigation.navigate('Rank')}
+        onPress={() => navigation.navigate('Messages')}
         style={styles.sideButton}
         activeOpacity={0.8}>
         <View style={styles.sideIconStack}>
           <View style={styles.sideIconWrap}>
-            <RankIcon active={isRankTab} />
+            <MessagesIcon active={isMessagesTab} />
+            {totalUnread > 0 ? (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadBadgeText}>
+                  {totalUnread > 99 ? '99+' : totalUnread}
+                </Text>
+              </View>
+            ) : null}
           </View>
           <Animated.View
             style={[
@@ -228,7 +219,7 @@ function AppTabBar({
               {
                 backgroundColor: TAB_BAR_THEME.accent,
               },
-              buildIndicatorStyle(rankIndicator),
+              buildIndicatorStyle(messagesIndicator),
             ]}
           />
         </View>
@@ -261,7 +252,11 @@ function MainTabs({
         <Tab.Screen name="Glimpses" component={CampaignsScreen} />
         <Tab.Screen name="Give" component={GiveScreen} />
         <Tab.Screen name="Messages" component={MessagesScreen} />
-        <Tab.Screen name="Rank" component={LeaderboardScreen} />
+        <Tab.Screen
+          name="Rank"
+          component={LeaderboardScreen}
+          options={{tabBarButton: () => null}}
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );
@@ -427,37 +422,50 @@ const styles = StyleSheet.create({
     height: 2.6,
     borderRadius: 2,
   },
-  rankIconWrap: {
-    width: 35,
-    height: 29,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
+  messagesIconWrap: {
+    width: 36,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'relative',
-    paddingBottom: 2.6,
   },
-  rankOutlineBar: {
-    width: 6.2,
-    borderRadius: 2.6,
+  messagesBubble: {
+    width: 27,
+    height: 19,
     borderWidth: 2.6,
+    borderRadius: 7,
     backgroundColor: 'transparent',
   },
-  rankOutlineBarShort: {
-    height: 10.5,
-  },
-  rankOutlineBarMid: {
-    height: 15,
-  },
-  rankOutlineBarTall: {
-    height: 19.5,
-  },
-  rankBaseline: {
+  messagesTail: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 2.6,
-    borderRadius: 2,
+    right: 4,
+    bottom: 2,
+    width: 8,
+    height: 8,
+    borderLeftWidth: 2.6,
+    borderBottomWidth: 2.6,
+    borderBottomLeftRadius: 3,
+    transform: [{rotate: '-28deg'}],
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -7,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: '#6554D1',
+    borderWidth: 1.5,
+    borderColor: '#F3EFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    lineHeight: 11,
+    fontWeight: '700',
   },
   centerButton: {
     width: 132,

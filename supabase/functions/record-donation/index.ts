@@ -194,7 +194,7 @@ serve(async req => {
     ) {
       return json({error: message}, 422);
     }
-    return json({error: message}, 500);
+    return json({error: 'Internal server error'}, 500);
   }
 });
 
@@ -441,9 +441,14 @@ async function fetchAndValidateUSDCTransaction(
     throw new Error('Memo token marker must be "usdc"');
   }
 
-  // Validate memo amount matches transfer (within rounding tolerance)
+  // Validate memo amount matches transfer (allow 1-microUSDC tolerance
+  // for IEEE 754 float rounding between client memo and on-chain raw amount)
   const memoAmountRaw = parseMemoAmountToRaw(memo?.a);
-  if (memoAmountRaw !== rawAmount) {
+  const amountDiff =
+    memoAmountRaw > rawAmount
+      ? memoAmountRaw - rawAmount
+      : rawAmount - memoAmountRaw;
+  if (amountDiff > 1n) {
     throw new Error('Memo amount does not match transfer amount');
   }
 
