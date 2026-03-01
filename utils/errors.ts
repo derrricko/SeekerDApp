@@ -129,17 +129,3 @@ export function handleTransactionError(error: unknown): AppError {
     recoverable: true,
   };
 }
-
-// ---------- Safe wrapper ----------
-
-export async function safeAsync<T>(
-  fn: () => Promise<T>,
-  errorHandler: (error: unknown) => AppError = handleTransactionError,
-): Promise<Result<T>> {
-  try {
-    const data = await fn();
-    return ok(data);
-  } catch (error) {
-    return {success: false, error: errorHandler(error)};
-  }
-}
