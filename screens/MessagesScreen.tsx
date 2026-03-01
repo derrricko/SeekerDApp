@@ -5,6 +5,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {
   Animated,
   Alert,
+  Linking,
   View,
   Text,
   FlatList,
@@ -18,7 +19,11 @@ import {
   Easing,
   PermissionsAndroid,
 } from 'react-native';
-import {useRoute} from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
 import {
   launchImageLibrary,
   launchCamera,
@@ -30,6 +35,7 @@ import {
   Conversation,
   Message,
   fetchConversations,
+  getMediaSignedUrl,
   sendMessage,
   uploadChatMedia,
   useChatMessages,
@@ -39,8 +45,11 @@ import {
   getRecipientLabel,
 } from '../data/donationConfig';
 import {ADMIN_WALLET} from '../config/env';
+import {getExplorerUrl} from '../utils/explorer';
 import AppHeader from '../ui/AppHeader';
 import SurfaceCard from '../ui/SurfaceCard';
+import type {RootTabParamList} from '../navigation/AppNavigator';
+import {useUnread} from '../components/providers/UnreadProvider';
 
 const AnimatedTouchableOpacity =
   Animated.createAnimatedComponent(TouchableOpacity);
@@ -176,22 +185,43 @@ function MessageBubble({
     }).start();
   }, [enterMotion]);
 
-  const mediaSource = React.useMemo(() => {
+  const [resolvedMediaUri, setResolvedMediaUri] = useState<string | null>(null);
+
+  useEffect(() => {
     if (!item.media_url) {
+      setResolvedMediaUri(null);
+      return;
+    }
+
+    // Never render absolute URLs from DB rows directly.
+    // Only internal storage paths are allowed and then resolved to signed URLs.
+    if (item.media_url.startsWith('http')) {
+      setResolvedMediaUri(null);
+      return;
+    }
+
+    // Storage path — resolve a fresh signed URL
+    let cancelled = false;
+    getMediaSignedUrl(item.media_url)
+      .then(url => {
+        if (!cancelled) {
+          setResolvedMediaUri(url);
+        }
+      })
+      .catch(() => {
+        // Silently fail — image won't render
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [item.media_url]);
+
+  const mediaSource = React.useMemo(() => {
+    if (!resolvedMediaUri) {
       return null;
     }
-
-    // Supabase storage supports transform query params. External URLs are passed through.
-    if (item.media_url.includes('supabase')) {
-      return {
-        uri: item.media_url.includes('?')
-          ? `${item.media_url}&width=900&height=900`
-          : `${item.media_url}?width=900&height=900`,
-      };
-    }
-
-    return {uri: item.media_url};
-  }, [item.media_url]);
+    return {uri: resolvedMediaUri};
+  }, [resolvedMediaUri]);
 
   return (
     <Animated.View
@@ -294,15 +324,18 @@ function CameraGlyph({color}: {color: string}) {
 
 // ---------- Main Screen ----------
 
+type MessagesRouteProp = RouteProp<RootTabParamList, 'Messages'>;
+
 export default function MessagesScreen() {
   const {theme} = useTheme();
-  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+  const route = useRoute<MessagesRouteProp>();
   const {connected, publicKey} = useWallet();
-
-  const walletAddress = publicKey?.toBase58() || (__DEV__ ? MOCK_WALLET : '');
-  const useMocks = __DEV__;
+  const {conversationUnreads, markRead, setActiveConversation} = useUnread();
 
   const conversationId: string | undefined = route.params?.conversationId;
+  const useMocks = __DEV__ && route.params?.demoMode === true;
+  const walletAddress = publicKey?.toBase58() || (useMocks ? MOCK_WALLET : '');
   const mockConversation = React.useMemo(
     () => buildMockConversationFromParams(route.params),
     [route.params],
@@ -312,19 +345,21 @@ export default function MessagesScreen() {
   const [conversation, setConversation] = useState<Conversation | null>(
     useMocks ? mockConversation : null,
   );
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(!useMocks);
 
   useEffect(() => {
     if (!useMocks) {
       return;
     }
+    setActiveConversation(null);
     setConversation(mockConversation);
     setLoading(false);
-  }, [mockConversation, useMocks]);
+  }, [mockConversation, setActiveConversation, useMocks]);
 
-  // Fetch the conversation from Supabase when we have an ID (prod only)
+  // Fetch conversations from Supabase (prod only)
   useEffect(() => {
-    if (useMocks || !conversationId || !connected || !walletAddress) {
+    if (useMocks || !connected || !walletAddress) {
       setLoading(false);
       return;
     }
@@ -337,8 +372,11 @@ export default function MessagesScreen() {
         if (cancelled) {
           return;
         }
-        const target = convos.find(c => c.id === conversationId);
-        setConversation(target || null);
+        setConversations(convos);
+        if (conversationId) {
+          const target = convos.find(c => c.id === conversationId);
+          setConversation(target || null);
+        }
         setLoading(false);
       })
       .catch(() => {
@@ -352,6 +390,12 @@ export default function MessagesScreen() {
     };
   }, [conversationId, connected, walletAddress, useMocks]);
 
+  useEffect(() => {
+    if (!conversation) {
+      setActiveConversation(null);
+    }
+  }, [conversation, setActiveConversation]);
+
   if (loading) {
     return (
       <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
@@ -363,7 +407,99 @@ export default function MessagesScreen() {
     );
   }
 
+  // No conversationId param — show conversation list
+  if (!conversationId && !useMocks && !conversation) {
+    if (conversations.length === 0) {
+      return (
+        <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+          <AppHeader title="Messages" />
+          <View style={styles.emptyWrap}>
+            <SurfaceCard style={styles.stateCard}>
+              <Text
+                style={[
+                  styles.stateTitle,
+                  {
+                    color: theme.colors.textPrimary,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                NO CONVERSATIONS
+              </Text>
+              <Text
+                style={[styles.stateBody, {color: theme.colors.textSecondary}]}>
+                Complete a donation to start a message thread.
+              </Text>
+            </SurfaceCard>
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+        <AppHeader title="Messages" />
+        <FlatList
+          data={conversations}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.conversationList}
+          renderItem={({item}) => {
+            const amount = Number(item.amount_usdc ?? 0).toFixed(2);
+            const date = new Date(item.created_at).toLocaleDateString();
+            const recipientName = getRecipientLabel(item.recipient_id);
+            const unreadCount =
+              conversationUnreads[item.id] ?? item.unread_count ?? 0;
+            return (
+              <TouchableOpacity
+                style={[
+                  styles.conversationRow,
+                  {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setActiveConversation(item.id);
+                  markRead(item.id).catch(() => {});
+                  setConversation(item);
+                }}>
+                <View style={styles.conversationTopRow}>
+                  <Text
+                    style={[
+                      styles.conversationTitle,
+                      {
+                        color: theme.colors.textPrimary,
+                        fontFamily: theme.typography.brand,
+                      },
+                    ]}>
+                    {amount} USDC
+                  </Text>
+                  {unreadCount > 0 ? (
+                    <View style={styles.conversationUnreadBadge}>
+                      <Text style={styles.conversationUnreadText}>
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text
+                  style={[
+                    styles.conversationMeta,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  {recipientName} {'\u00B7'} {date} {'\u00B7'}{' '}
+                  {shortThreadId(item.id)}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
+    );
+  }
+
   if (!conversation) {
+    const showBackToList = !!conversationId;
     return (
       <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
         <AppHeader title="Messages" />
@@ -377,12 +513,31 @@ export default function MessagesScreen() {
                   fontFamily: theme.typography.brand,
                 },
               ]}>
-              NO CONVERSATION
+              THREAD NOT FOUND
             </Text>
             <Text
               style={[styles.stateBody, {color: theme.colors.textSecondary}]}>
-              Complete a donation to start a message thread.
+              This conversation could not be loaded.
             </Text>
+            {showBackToList ? (
+              <TouchableOpacity
+                style={styles.backToThreadsButton}
+                activeOpacity={0.8}
+                onPress={() => {
+                  navigation.setParams({conversationId: undefined});
+                }}>
+                <Text
+                  style={[
+                    styles.backToThreadsText,
+                    {
+                      color: theme.colors.accent,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  Back to threads
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </SurfaceCard>
         </View>
       </View>
@@ -392,8 +547,18 @@ export default function MessagesScreen() {
   return (
     <ChatView
       conversation={conversation}
+      hasRouteConversationId={!!conversationId}
       walletAddress={walletAddress}
       useMocks={useMocks}
+      onMarkRead={markRead}
+      onSetActiveConversation={setActiveConversation}
+      onBackToThreads={() => {
+        setConversation(null);
+        setActiveConversation(null);
+        if (conversationId) {
+          navigation.setParams({conversationId: undefined});
+        }
+      }}
     />
   );
 }
@@ -402,12 +567,20 @@ export default function MessagesScreen() {
 
 function ChatView({
   conversation,
+  hasRouteConversationId,
   walletAddress,
   useMocks,
+  onMarkRead,
+  onSetActiveConversation,
+  onBackToThreads,
 }: {
   conversation: Conversation;
+  hasRouteConversationId: boolean;
   walletAddress: string;
   useMocks: boolean;
+  onMarkRead: (conversationId: string) => Promise<void>;
+  onSetActiveConversation: (conversationId: string | null) => void;
+  onBackToThreads: () => void;
 }) {
   const {theme} = useTheme();
   const realChat = useChatMessages(useMocks ? null : conversation.id);
@@ -434,6 +607,17 @@ function ChatView({
     () => [...messages].reverse(),
     [messages],
   );
+
+  useEffect(() => {
+    if (useMocks) {
+      return;
+    }
+    onSetActiveConversation(conversation.id);
+    onMarkRead(conversation.id).catch(() => {});
+    return () => {
+      onSetActiveConversation(null);
+    };
+  }, [conversation.id, onMarkRead, onSetActiveConversation, useMocks]);
 
   const pickPhoto = useCallback(() => {
     launchImageLibrary(
@@ -611,6 +795,39 @@ function ChatView({
               ]}>
               {amount} USDC • {shortThreadId(conversation.id)} • {recipientName}
             </Text>
+            <TouchableOpacity
+              onPress={onBackToThreads}
+              style={styles.backToThreadsButton}
+              activeOpacity={0.8}>
+              <Text
+                style={[
+                  styles.backToThreadsText,
+                  {
+                    color: theme.colors.accent,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                {hasRouteConversationId ? 'Go to inbox' : 'Back to threads'}
+              </Text>
+            </TouchableOpacity>
+            {conversation.tx_signature ? (
+              <TouchableOpacity
+                onPress={() =>
+                  Linking.openURL(getExplorerUrl(conversation.tx_signature!))
+                }
+                activeOpacity={0.7}>
+                <Text
+                  style={[
+                    styles.explorerLink,
+                    {
+                      color: theme.colors.accent,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  View on Explorer
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         </View>
 
@@ -986,5 +1203,63 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  explorerLink: {
+    fontSize: 11,
+    letterSpacing: 0.5,
+    marginTop: 6,
+  },
+  conversationList: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    gap: 10,
+  },
+  conversationRow: {
+    borderWidth: 2,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  conversationTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  conversationTitle: {
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: '700',
+  },
+  conversationUnreadBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6554D1',
+  },
+  conversationUnreadText: {
+    color: '#fff',
+    fontSize: 11,
+    lineHeight: 13,
+    fontWeight: '700',
+  },
+  conversationMeta: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  backToThreadsButton: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    marginBottom: 2,
+  },
+  backToThreadsText: {
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 0.4,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
 });

@@ -39,6 +39,40 @@ const VALID_USDC_MINTS = new Set([USDC_MINT_MAINNET]);
 //   IMPORTANT: If wallet or mint changes, re-derive via spl-token on client.
 const MATCHING_POOL_WALLET = 'DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk';
 const MATCHING_POOL_USDC_ATA = 'GUGy7SPXbETj4E4mNFGXY4jurm1DUjWp5KDTK1J11kwa';
+const USDC_DECIMALS = 6;
+
+type CampaignId =
+  | 'teacher-supplies'
+  | 'single-moms-crisis'
+  | 'foster-care-after-school';
+
+interface CampaignRule {
+  id: CampaignId;
+  minimumUSDC: number;
+  causePreferences: string[];
+}
+
+const CAMPAIGN_RULES: CampaignRule[] = [
+  {
+    id: 'teacher-supplies',
+    minimumUSDC: 10,
+    causePreferences: ['education', 'teacher-supplies'],
+  },
+  {
+    id: 'single-moms-crisis',
+    minimumUSDC: 25,
+    causePreferences: ['family-crisis', 'single-moms'],
+  },
+  {
+    id: 'foster-care-after-school',
+    minimumUSDC: 15,
+    causePreferences: ['foster-care', 'child-essentials', 'after-school'],
+  },
+];
+
+const ALLOWED_CAUSE_PREFERENCES = new Set(
+  CAMPAIGN_RULES.flatMap(rule => rule.causePreferences),
+);
 
 // 48-hour hold window (ms)
 const HOLD_DURATION_MS = 48 * 60 * 60 * 1000;
@@ -72,11 +106,7 @@ serve(async req => {
     const body = await req.json();
     const txSignature =
       typeof body?.txSignature === 'string' ? body.txSignature.trim() : '';
-    // All donations go to the matching pool — never trust client for this.
-    const recipientId = 'matching-pool';
-    const causePreferences = Array.isArray(body?.causePreferences)
-      ? body.causePreferences.filter((c: unknown) => typeof c === 'string')
-      : [];
+    const causePreferences = normalizeCausePreferences(body?.causePreferences);
     const donationMode = body?.donationMode === 'group' ? 'group' : 'solo';
 
     if (!txSignature) {
@@ -90,7 +120,18 @@ serve(async req => {
       );
     }
 
+    const selectedCampaign = resolveCampaignFromCauses(causePreferences);
     const parsed = await fetchAndValidateUSDCTransaction(txSignature, wallet);
+    if (parsed.amountUSDC < selectedCampaign.minimumUSDC) {
+      return json(
+        {
+          error: `Minimum for ${selectedCampaign.id} is ${selectedCampaign.minimumUSDC.toFixed(
+            2,
+          )} USDC.`,
+        },
+        400,
+      );
+    }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: {persistSession: false, autoRefreshToken: false},
@@ -101,7 +142,7 @@ serve(async req => {
       txSignature,
       donorWallet: parsed.authority,
       recipientWallet: MATCHING_POOL_WALLET,
-      recipientId,
+      recipientId: selectedCampaign.id,
       amountUSDC: parsed.amountUSDC,
       cadence: parsed.cadence,
       causePreferences,
@@ -123,6 +164,7 @@ serve(async req => {
         donorWallet: parsed.authority,
         recipientWallet: MATCHING_POOL_WALLET,
         amountUSDC: parsed.amountUSDC,
+        campaignId: selectedCampaign.id,
       },
       200,
     );
@@ -146,6 +188,8 @@ serve(async req => {
       lc.includes('missing fields') ||
       lc.includes('memo') ||
       lc.includes('cause preferences') ||
+      lc.includes('campaign') ||
+      lc.includes('minimum') ||
       lc.includes('txsignature is required')
     ) {
       return json({error: message}, 422);
@@ -219,6 +263,76 @@ interface ParsedUSDCTransaction {
   cadence: 'one_time' | 'daily';
 }
 
+function normalizeCausePreferences(raw: unknown): string[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+  for (const item of raw) {
+    if (typeof item !== 'string') {
+      continue;
+    }
+    const value = item.trim().toLowerCase();
+    if (!value || !ALLOWED_CAUSE_PREFERENCES.has(value) || seen.has(value)) {
+      continue;
+    }
+    seen.add(value);
+    normalized.push(value);
+  }
+  return normalized;
+}
+
+function toCauseKey(values: string[]): string {
+  return [...values].sort().join('|');
+}
+
+function resolveCampaignFromCauses(causePreferences: string[]): CampaignRule {
+  const key = toCauseKey(causePreferences);
+  const match = CAMPAIGN_RULES.find(
+    rule => toCauseKey(rule.causePreferences) === key,
+  );
+  if (!match) {
+    throw new Error('Cause preferences do not match a valid campaign');
+  }
+  return match;
+}
+
+function parseRawUSDCAmount(tokenAmount: any): bigint {
+  const raw = tokenAmount?.amount;
+  const decimals = Number(tokenAmount?.decimals);
+  if (typeof raw !== 'string' || !/^\d+$/.test(raw)) {
+    throw new Error('Invalid raw token amount');
+  }
+  if (!Number.isFinite(decimals) || decimals !== USDC_DECIMALS) {
+    throw new Error(`USDC decimals mismatch: expected ${USDC_DECIMALS}`);
+  }
+  const parsed = BigInt(raw);
+  if (parsed <= 0n) {
+    throw new Error('Invalid transfer amount');
+  }
+  return parsed;
+}
+
+function parseMemoAmountToRaw(memoAmount: unknown): bigint {
+  const numeric =
+    typeof memoAmount === 'number'
+      ? memoAmount
+      : typeof memoAmount === 'string'
+      ? Number(memoAmount)
+      : NaN;
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    throw new Error('Memo amount is invalid');
+  }
+
+  const scaled = Math.round(numeric * 10 ** USDC_DECIMALS);
+  if (!Number.isSafeInteger(scaled) || scaled <= 0) {
+    throw new Error('Memo amount is out of range');
+  }
+  return BigInt(scaled);
+}
+
 async function fetchAndValidateUSDCTransaction(
   txSignature: string,
   expectedDonorWallet: string,
@@ -285,8 +399,9 @@ async function fetchAndValidateUSDCTransaction(
     );
   }
 
-  // Extract amount (tokenAmount.uiAmount is the human-readable USDC amount)
-  const amountUSDC = Number(tokenAmount?.uiAmount);
+  // Extract amount from exact raw units, not uiAmount float.
+  const rawAmount = parseRawUSDCAmount(tokenAmount);
+  const amountUSDC = Number(rawAmount) / 10 ** USDC_DECIMALS;
   if (!Number.isFinite(amountUSDC) || amountUSDC <= 0) {
     throw new Error('Invalid transfer amount');
   }
@@ -327,11 +442,8 @@ async function fetchAndValidateUSDCTransaction(
   }
 
   // Validate memo amount matches transfer (within rounding tolerance)
-  const memoAmount = Number(memo?.a);
-  if (
-    !Number.isFinite(memoAmount) ||
-    Math.abs(memoAmount - amountUSDC) > 0.000001
-  ) {
+  const memoAmountRaw = parseMemoAmountToRaw(memo?.a);
+  if (memoAmountRaw !== rawAmount) {
     throw new Error('Memo amount does not match transfer amount');
   }
 
@@ -351,8 +463,9 @@ async function fetchAndValidateUSDCTransaction(
 
 async function getTransactionWithRetry(txSignature: string): Promise<any> {
   // Finalized commitment takes ~12-15s on mainnet. Retry with backoff
-  // to allow enough time: 2s, 4s, 6s, 8s, 10s, 12s, 14s = 56s total.
-  const maxAttempts = 8;
+  // to allow enough time: 2s, 4s, 6s, 8s, 10s = 30s total.
+  // Reduced from 8 to stay safely within Supabase edge function timeout (60s).
+  const maxAttempts = 5;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const tx = await rpc('getTransaction', [
       txSignature,
