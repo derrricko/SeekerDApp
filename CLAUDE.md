@@ -97,7 +97,11 @@ supabase/migrations/005_v2_usdc_hold_tracking.sql — USDC amount, hold tracking
 navigation/AppNavigator.tsx            — Bottom tab navigator (exports RootTabParamList)
 
 docs/SOUL.md                           — Founder voice & narrative
-docs/glimpse-stats.md                  — Market research & statistics
+docs/research/glimpse-stats.md         — Market research & statistics
+docs/handoffs/                         — AI agent handoff docs (archived)
+docs/launch/                           — Launch checklists, privacy policy, dApp Store copy
+docs/design/                           — Brand guide, wireframes, social assets, web mockups
+docs/pitch/                            — Pitch decks and investor materials
 STATUS.md                              — Living ship status (what works, what blocks)
 memory/MEMORY.md                       — Persistent cross-session memory and backend runbook
 TODOS.md                               — Deferred work with full context
