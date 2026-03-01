@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 
+# Audit artifacts
+.supply-chain-risk-auditor/
+static_analysis_semgrep_*/
+
 # React Native
 .metro-health-check*
 
@@ -73,6 +77,7 @@ coverage/
 .anchor/
 target/
 test-ledger/
+dapp-store/publisher-keypair.json
 
 # Supabase
 .supabase/

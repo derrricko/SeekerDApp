@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glimpse - Investor One-Pager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+<style>
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #f3f5f9;
+  --paper: #ffffff;
+  --ink: #111827;
+  --muted: #475467;
+  --line: #d7dce5;
+  --line-strong: #bcc5d3;
+  --brand: #1b365d;
+  --accent: #5856d6;
+  --accent-soft: #eef1ff;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Public Sans", "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+@page {
+  size: letter;
+  margin: 0;
+}
+
+@media print {
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+.page {
+  max-width: 1040px;
+  margin: 28px auto;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 34px 38px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand h1 {
+  margin: 0;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 19px;
+  line-height: 1;
+  color: var(--brand);
+}
+
+.brand p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.meta {
+  text-align: right;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: 1.35fr 0.65fr;
+  gap: 20px;
+}
+
+.thesis {
+  padding-left: 16px;
+  border-left: 2px solid var(--brand);
+}
+
+.kicker {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.thesis h2 {
+  margin: 0 0 10px;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 40px;
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+.thesis p {
+  margin: 0;
+  color: var(--muted);
+  max-width: 62ch;
+}
+
+.aside {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 13px 14px;
+}
+
+.aside h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.aside p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.stats {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stat {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 12px;
+}
+
+.stat strong {
+  display: block;
+  margin: 0;
+  font-size: 27px;
+  line-height: 1.08;
+  color: var(--brand);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-weight: 600;
+}
+
+.stat span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.grid {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 15px;
+}
+
+.card h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+}
+
+.card h4 {
+  margin: 0 0 8px;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 29px;
+  line-height: 1.12;
+  font-weight: 600;
+}
+
+.card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.list {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list li {
+  position: relative;
+  margin-top: 7px;
+  padding-left: 14px;
+  color: var(--muted);
+}
+
+.list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--accent);
+}
+
+.span-2 {
+  grid-column: 1 / -1;
+}
+
+.loop {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.step {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 10px;
+}
+
+.step b {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--brand);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.step p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.milestones {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mile {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.mile strong {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.mile span {
+  display: block;
+  margin-top: 4px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.ask {
+  margin-top: 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--accent-soft);
+  padding: 12px 14px;
+}
+
+.ask h3 {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.ask-grid {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ask-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 9px 10px;
+}
+
+.ask-item strong {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.ask-item span {
+  display: block;
+  margin-top: 4px;
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.footer {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.emphasis {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+@media (max-width: 920px) {
+  .page {
+    margin: 0;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    padding: 24px 20px;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .loop {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .milestones,
+  .ask-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="header">
+    <div class="brand">
+      <h1>GLIMPSE</h1>
+      <p>The trust layer for direct giving on Solana</p>
+    </div>
+    <div class="meta">
+      Investor Brief<br>
+      February 2026<br>
+      Pre-Seed
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="thesis">
+      <p class="kicker">Investment Thesis</p>
+      <h2>Glimpse turns one-time donors into repeat donors through proof.</h2>
+      <p>
+        Charitable giving is massive, but donor behavior is fragile. Glimpse closes the missing trust loop by pairing instant wallet-to-wallet donations with post-gift proof of impact.
+      </p>
+    </div>
+    <aside class="aside">
+      <h3>Core Insight</h3>
+      <p>
+        In giving, the second donation is the activation event. Products that increase second-gift conversion can outperform without needing larger donor acquisition budgets.
+      </p>
+    </aside>
+  </section>
+
+  <section class="stats">
+    <article class="stat">
+      <strong>$592.5B</strong>
+      <span>U.S. charitable giving (2024)</span>
+    </article>
+    <article class="stat">
+      <strong>$1B+</strong>
+      <span>Crypto donations (2024 record)</span>
+    </article>
+    <article class="stat">
+      <strong>73.7%</strong>
+      <span>First-time donors do not return</span>
+    </article>
+    <article class="stat">
+      <strong>0%</strong>
+      <span>Glimpse platform fee (today)</span>
+    </article>
+  </section>
+
+  <section class="grid">
+    <article class="card">
+      <h3>Problem</h3>
+      <h4>Giving is high volume but low visibility.</h4>
+      <ul class="list">
+        <li>Most donors never receive concrete evidence of what changed after giving.</li>
+        <li>Nonprofit reporting cycles are delayed and disconnected from gift events.</li>
+        <li>Trust decays when outcomes are unclear, even if intent is strong.</li>
+        <li>Acquisition spend rises when retention remains structurally low.</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h3>Product Strategy</h3>
+      <h4>Make every donation observable and repeatable.</h4>
+      <ul class="list">
+        <li>Direct campaign giving through Solana wallets.</li>
+        <li>On-chain receipts provide immutable transaction evidence.</li>
+        <li>Updates ("glimpses") show what happened after funds land.</li>
+        <li>A vault model supports one-time and recurring donor behavior.</li>
+      </ul>
+    </article>
+
+    <article class="card span-2">
+      <h3>Behavior Loop</h3>
+      <h4>Proof converts intent into habit.</h4>
+      <div class="loop">
+        <div class="step">
+          <b>1. Commit</b>
+          <p>Choose a campaign and donation cadence.</p>
+        </div>
+        <div class="step">
+          <b>2. Settle</b>
+          <p>Transfer executes instantly on Solana rails.</p>
+        </div>
+        <div class="step">
+          <b>3. Verify</b>
+          <p>Receipt is visible on-chain with clear attribution.</p>
+        </div>
+        <div class="step">
+          <b>4. Return</b>
+          <p>Impact updates trigger repeat gifts and streak behavior.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card">
+      <h3>Retention Wedge</h3>
+      <h4>The second gift compounds platform value.</h4>
+      <p>
+        Existing donor data supports the thesis: retention improves sharply as giving count increases. Glimpse is designed to move users from one gift to many.
+      </p>
+      <ul class="list">
+        <li>1 gift: 13.9% donor retention</li>
+        <li>2 gifts: 59.0% donor retention</li>
+        <li>7 gifts: 86.2% donor retention</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h3>Execution Status</h3>
+      <h4>Founder-led build with live product flow.</h4>
+      <ul class="list">
+        <li>React Native app running with campaign, vault, and updates tabs.</li>
+        <li>Solana wallet integration and donation memo flow implemented.</li>
+        <li>Initial campaign narrative focused on urgent family car repair.</li>
+        <li>Partner outreach active in Midwest and early expansion pipeline.</li>
+      </ul>
+    </article>
+
+    <article class="card span-2">
+      <h3>12-Month Plan</h3>
+      <h4>Reliability, recipient supply, repeat donor growth.</h4>
+      <div class="milestones">
+        <div class="mile">
+          <strong>H1 2026</strong>
+          <span>Mainnet hardening, compliance baseline, first public cohorts</span>
+        </div>
+        <div class="mile">
+          <strong>H2 2026</strong>
+          <span>50+ active recipients and measurable repeat-donor benchmark</span>
+        </div>
+        <div class="mile">
+          <strong>2027</strong>
+          <span>Multi-market campaigns and partner-led distribution channels</span>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="ask">
+    <h3>Raise Summary</h3>
+    <div class="ask-grid">
+      <article class="ask-item">
+        <strong>Round</strong>
+        <span>Pre-Seed</span>
+      </article>
+      <article class="ask-item">
+        <strong>Target</strong>
+        <span>TBD with lead</span>
+      </article>
+      <article class="ask-item">
+        <strong>Use of Funds</strong>
+        <span>Product reliability, recipient onboarding, growth experiments</span>
+      </article>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>Derrick Woepking · Founder · Muscatine, Iowa</div>
+    <div><span class="emphasis">Built on Solana.</span> Focus: transparent giving and measurable impact.</div>
+  </footer>
+</main>
+</body>
+</html>

@@ -40,8 +40,29 @@ export function getSupabaseAccessToken(): string | null {
 
 export async function hydrateSupabaseAccessToken(): Promise<void> {
   const storedToken = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
-  if (storedToken) {
+  if (storedToken && !isTokenExpired(storedToken)) {
     await setSupabaseAccessToken(storedToken);
+  } else if (storedToken) {
+    // Expired token — remove from storage so we don't try again
+    await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+  }
+}
+
+/** Decode JWT payload and check exp claim without crypto. */
+function isTokenExpired(token: string): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return true;
+    }
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = JSON.parse(atob(payload));
+    return (
+      typeof decoded.exp !== 'number' ||
+      decoded.exp <= Math.floor(Date.now() / 1000)
+    );
+  } catch {
+    return true;
   }
 }
 

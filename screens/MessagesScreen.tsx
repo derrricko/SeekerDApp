@@ -1,7 +1,11 @@
-// v2 Messages Screen — conversation list + chat view
+// v2 Messages Screen — direct chat view (no thread list)
+// Navigated to via conversationId param from the donation flow.
 
 import React, {useCallback, useEffect, useState} from 'react';
 import {
+  Animated,
+  Alert,
+  Linking,
   View,
   Text,
   FlatList,
@@ -12,11 +16,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Easing,
+  PermissionsAndroid,
 } from 'react-native';
 import {
-  useFocusEffect,
   useNavigation,
   useRoute,
+  type RouteProp,
 } from '@react-navigation/native';
 import {
   launchImageLibrary,
@@ -27,111 +33,477 @@ import {useTheme} from '../theme/Theme';
 import {useWallet} from '../components/providers/WalletProvider';
 import {
   Conversation,
+  Message,
   fetchConversations,
+  getMediaSignedUrl,
   sendMessage,
   uploadChatMedia,
   useChatMessages,
 } from '../services/chat';
-import {getRecipientLabel} from '../data/donationConfig';
+import {
+  getRecipientGlimpseTag,
+  getRecipientLabel,
+} from '../data/donationConfig';
 import {ADMIN_WALLET} from '../config/env';
+import {getExplorerUrl} from '../utils/explorer';
 import AppHeader from '../ui/AppHeader';
 import SurfaceCard from '../ui/SurfaceCard';
+import type {RootTabParamList} from '../navigation/AppNavigator';
+import {useUnread} from '../components/providers/UnreadProvider';
 
-function initials(label: string) {
-  const words = label
-    .replace(/[^a-zA-Z0-9\s]/g, ' ')
-    .split(' ')
-    .filter(Boolean);
+const AnimatedTouchableOpacity =
+  Animated.createAnimatedComponent(TouchableOpacity);
 
-  if (words.length === 0) {
-    return 'GL';
-  }
+// ---------- DEV MOCK DATA ----------
+// Fake conversation + messages so you can design the UI without a real donation.
+// Only used when __DEV__ is true. Delete this block before release.
 
-  if (words.length === 1) {
-    return words[0].slice(0, 2).toUpperCase();
-  }
+const MOCK_WALLET = 'DEVmock1111111111111111111111111111111111111';
 
-  return `${words[0][0]}${words[1][0]}`.toUpperCase();
+const MOCK_CONVERSATION: Conversation = {
+  id: 'mock-0001',
+  donation_id: 'don-001',
+  donor_wallet: MOCK_WALLET,
+  admin_wallet: ADMIN_WALLET,
+  created_at: new Date(Date.now() - 3600_000).toISOString(),
+  amount_usdc: 150.0,
+  recipient_id: 'teacher-supplies',
+};
+
+function buildMockConversationFromParams(params: any): Conversation {
+  const parsedAmount = Number(params?.demoAmountUSDC);
+  const safeAmount =
+    Number.isFinite(parsedAmount) && parsedAmount > 0
+      ? parsedAmount
+      : MOCK_CONVERSATION.amount_usdc;
+  const safeRecipientId =
+    typeof params?.demoRecipientId === 'string' && params.demoRecipientId
+      ? params.demoRecipientId
+      : MOCK_CONVERSATION.recipient_id;
+
+  return {
+    ...MOCK_CONVERSATION,
+    id:
+      typeof params?.conversationId === 'string' && params.conversationId
+        ? params.conversationId
+        : `mock-${safeRecipientId || 'thread'}`,
+    amount_usdc: safeAmount,
+    recipient_id: safeRecipientId,
+  };
 }
 
-function formatShortDate(value: string) {
-  return new Date(value).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-  });
+function buildMockMessages(conversation: Conversation): Message[] {
+  const amount = Number(conversation.amount_usdc ?? 25).toFixed(2);
+  const recipientName = getRecipientLabel(conversation.recipient_id);
+  const glimpseTag = getRecipientGlimpseTag(conversation.recipient_id);
+  const now = Date.now();
+  const beneficiaryNote =
+    conversation.recipient_id === 'teacher-supplies'
+      ? 'Rebecca (2nd grade teacher): Thank you for this support. I purchased 12 phonics workbooks, dry-erase marker sets, and two classroom reading games. We are using them for daily small-group reading and writing stations this month.'
+      : conversation.recipient_id === 'single-moms-crisis'
+      ? 'Maria: Thank you for helping my family this week. We were able to cover groceries and gas, and I can get to work tomorrow.'
+      : 'Jasmine (foster program coordinator): Thank you. We bought diapers, formula, and two after-school activity kits for kids entering care this week.';
+
+  return [
+    {
+      id: `mock-a1-${conversation.id}`,
+      conversation_id: conversation.id,
+      sender_wallet: ADMIN_WALLET,
+      body: `Thank you for your ${amount} USDC donation to ${recipientName} (${glimpseTag}). We will send your first update within 24-48 hours.`,
+      media_url: null,
+      media_type: null,
+      created_at: new Date(now - 42 * 60 * 1000).toISOString(),
+    },
+    {
+      id: `mock-a2-${conversation.id}`,
+      conversation_id: conversation.id,
+      sender_wallet: MOCK_WALLET,
+      body: 'Thank you. I appreciate the clear updates.',
+      media_url: null,
+      media_type: null,
+      created_at: new Date(now - 36 * 60 * 1000).toISOString(),
+    },
+    {
+      id: `mock-a3-${conversation.id}`,
+      conversation_id: conversation.id,
+      sender_wallet: ADMIN_WALLET,
+      body: `Allocation update: your ${amount} USDC is now assigned inside ${recipientName} (${glimpseTag}).`,
+      media_url: null,
+      media_type: null,
+      created_at: new Date(now - 28 * 60 * 1000).toISOString(),
+    },
+    {
+      id: `mock-a4-${conversation.id}`,
+      conversation_id: conversation.id,
+      sender_wallet: ADMIN_WALLET,
+      body: beneficiaryNote,
+      media_url: null,
+      media_type: null,
+      created_at: new Date(now - 20 * 60 * 1000).toISOString(),
+    },
+  ];
 }
+
+// ---------- Helpers ----------
 
 function shortThreadId(id: string) {
   return `#${id.slice(0, 6).toUpperCase()}`;
 }
 
+function MessageBubble({
+  item,
+  fromAdmin,
+  adminBubbleBackground,
+  adminBubbleBorder,
+  donorBubbleBackground,
+  donorBubbleBorder,
+  adminTextColor,
+  donorTextColor,
+  adminTimeColor,
+  donorTimeColor,
+}: {
+  item: Message;
+  fromAdmin: boolean;
+  adminBubbleBackground: string;
+  adminBubbleBorder: string;
+  donorBubbleBackground: string;
+  donorBubbleBorder: string;
+  adminTextColor: string;
+  donorTextColor: string;
+  adminTimeColor: string;
+  donorTimeColor: string;
+}) {
+  const enterMotion = React.useRef(new Animated.Value(0)).current;
+  const translateXStart = fromAdmin ? -8 : 8;
+
+  useEffect(() => {
+    Animated.timing(enterMotion, {
+      toValue: 1,
+      duration: 210,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [enterMotion]);
+
+  const [resolvedMediaUri, setResolvedMediaUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!item.media_url) {
+      setResolvedMediaUri(null);
+      return;
+    }
+
+    // Never render absolute URLs from DB rows directly.
+    // Only internal storage paths are allowed and then resolved to signed URLs.
+    if (item.media_url.startsWith('http')) {
+      setResolvedMediaUri(null);
+      return;
+    }
+
+    // Storage path — resolve a fresh signed URL
+    let cancelled = false;
+    getMediaSignedUrl(item.media_url)
+      .then(url => {
+        if (!cancelled) {
+          setResolvedMediaUri(url);
+        }
+      })
+      .catch(() => {
+        // Silently fail — image won't render
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [item.media_url]);
+
+  const mediaSource = React.useMemo(() => {
+    if (!resolvedMediaUri) {
+      return null;
+    }
+    return {uri: resolvedMediaUri};
+  }, [resolvedMediaUri]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.bubble,
+        fromAdmin
+          ? [
+              styles.bubbleAdmin,
+              {
+                backgroundColor: adminBubbleBackground,
+                borderColor: adminBubbleBorder,
+              },
+            ]
+          : [
+              styles.bubbleDonor,
+              {
+                backgroundColor: donorBubbleBackground,
+                borderColor: donorBubbleBorder,
+              },
+            ],
+        {
+          opacity: enterMotion,
+          transform: [
+            {
+              translateY: enterMotion.interpolate({
+                inputRange: [0, 1],
+                outputRange: [6, 0],
+              }),
+            },
+            {
+              translateX: enterMotion.interpolate({
+                inputRange: [0, 1],
+                outputRange: [translateXStart, 0],
+              }),
+            },
+          ],
+        },
+      ]}>
+      {mediaSource && (
+        <Image
+          source={mediaSource}
+          style={styles.mediaImage}
+          resizeMode="cover"
+        />
+      )}
+
+      {item.media_type ? (
+        <View style={styles.mediaTagWrap}>
+          <Text style={styles.mediaTagText}>
+            {item.media_type === 'receipt' ? 'RECEIPT' : 'PHOTO'}
+          </Text>
+        </View>
+      ) : null}
+
+      {item.body ? (
+        <Text
+          style={[
+            styles.bubbleText,
+            {
+              color: fromAdmin ? adminTextColor : donorTextColor,
+            },
+          ]}>
+          {item.body}
+        </Text>
+      ) : null}
+
+      <Text
+        style={[
+          styles.bubbleTime,
+          {
+            color: fromAdmin ? adminTimeColor : donorTimeColor,
+          },
+        ]}>
+        {new Date(item.created_at).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        })}
+      </Text>
+    </Animated.View>
+  );
+}
+
+function GalleryGlyph({color}: {color: string}) {
+  return (
+    <View style={[styles.glyphFrame, {borderColor: color}]}>
+      <View style={[styles.glyphSun, {borderColor: color}]} />
+      <View style={[styles.glyphHill, {borderColor: color}]} />
+    </View>
+  );
+}
+
+function CameraGlyph({color}: {color: string}) {
+  return (
+    <View style={[styles.glyphCameraBody, {borderColor: color}]}>
+      <View style={[styles.glyphCameraTop, {borderColor: color}]} />
+      <View style={[styles.glyphCameraLens, {borderColor: color}]} />
+    </View>
+  );
+}
+
+// ---------- Main Screen ----------
+
+type MessagesRouteProp = RouteProp<RootTabParamList, 'Messages'>;
+
 export default function MessagesScreen() {
   const {theme} = useTheme();
   const navigation = useNavigation<any>();
-  const route = useRoute<any>();
+  const route = useRoute<MessagesRouteProp>();
   const {connected, publicKey} = useWallet();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeConvo, setActiveConvo] = useState<Conversation | null>(null);
+  const {conversationUnreads, markRead, setActiveConversation} = useUnread();
 
-  const walletAddress = publicKey?.toBase58() || '';
-
-  const loadConversations = useCallback(async () => {
-    if (!connected || !walletAddress) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const convos = await fetchConversations(walletAddress);
-      setConversations(convos);
-    } finally {
-      setLoading(false);
-    }
-  }, [connected, walletAddress]);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadConversations().catch(() => setLoading(false));
-    }, [loadConversations]),
+  const conversationId: string | undefined = route.params?.conversationId;
+  const useMocks = __DEV__ && route.params?.demoMode === true;
+  const walletAddress = publicKey?.toBase58() || (useMocks ? MOCK_WALLET : '');
+  const mockConversation = React.useMemo(
+    () => buildMockConversationFromParams(route.params),
+    [route.params],
   );
 
+  // In dev mode, use mock conversation. In prod, look up by conversationId.
+  const [conversation, setConversation] = useState<Conversation | null>(
+    useMocks ? mockConversation : null,
+  );
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(!useMocks);
+
   useEffect(() => {
-    const targetConversationId =
-      typeof route.params?.conversationId === 'string'
-        ? route.params.conversationId
-        : null;
+    if (!useMocks) {
+      return;
+    }
+    setActiveConversation(null);
+    setConversation(mockConversation);
+    setLoading(false);
+  }, [mockConversation, setActiveConversation, useMocks]);
 
-    if (!targetConversationId || conversations.length === 0 || activeConvo) {
+  // Fetch conversations from Supabase (prod only)
+  useEffect(() => {
+    if (useMocks || !connected || !walletAddress) {
+      setLoading(false);
       return;
     }
 
-    const target = conversations.find(c => c.id === targetConversationId);
-    if (!target) {
-      return;
+    let cancelled = false;
+    setLoading(true);
+
+    fetchConversations(walletAddress)
+      .then(convos => {
+        if (cancelled) {
+          return;
+        }
+        setConversations(convos);
+        if (conversationId) {
+          const target = convos.find(c => c.id === conversationId);
+          setConversation(target || null);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId, connected, walletAddress, useMocks]);
+
+  useEffect(() => {
+    if (!conversation) {
+      setActiveConversation(null);
     }
+  }, [conversation, setActiveConversation]);
 
-    setActiveConvo(target);
-    navigation.setParams({conversationId: undefined});
-  }, [route.params, conversations, activeConvo, navigation]);
-
-  if (activeConvo) {
-    return (
-      <ChatView
-        conversation={activeConvo}
-        walletAddress={walletAddress}
-        onBack={() => setActiveConvo(null)}
-      />
-    );
-  }
-
-  if (!connected) {
+  if (loading) {
     return (
       <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
         <AppHeader title="Messages" />
+        <View style={styles.loaderWrap}>
+          <ActivityIndicator size="large" color={theme.colors.accent} />
+        </View>
+      </View>
+    );
+  }
 
-        <View style={styles.contentWrap}>
+  // No conversationId param — show conversation list
+  if (!conversationId && !useMocks && !conversation) {
+    if (conversations.length === 0) {
+      return (
+        <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+          <AppHeader title="Messages" />
+          <View style={styles.emptyWrap}>
+            <SurfaceCard style={styles.stateCard}>
+              <Text
+                style={[
+                  styles.stateTitle,
+                  {
+                    color: theme.colors.textPrimary,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                NO CONVERSATIONS
+              </Text>
+              <Text
+                style={[styles.stateBody, {color: theme.colors.textSecondary}]}>
+                Complete a donation to start a message thread.
+              </Text>
+            </SurfaceCard>
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+        <AppHeader title="Messages" />
+        <FlatList
+          data={conversations}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.conversationList}
+          renderItem={({item}) => {
+            const amount = Number(item.amount_usdc ?? 0).toFixed(2);
+            const date = new Date(item.created_at).toLocaleDateString();
+            const recipientName = getRecipientLabel(item.recipient_id);
+            const unreadCount =
+              conversationUnreads[item.id] ?? item.unread_count ?? 0;
+            return (
+              <TouchableOpacity
+                style={[
+                  styles.conversationRow,
+                  {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setActiveConversation(item.id);
+                  markRead(item.id).catch(() => {});
+                  setConversation(item);
+                }}>
+                <View style={styles.conversationTopRow}>
+                  <Text
+                    style={[
+                      styles.conversationTitle,
+                      {
+                        color: theme.colors.textPrimary,
+                        fontFamily: theme.typography.brand,
+                      },
+                    ]}>
+                    {amount} USDC
+                  </Text>
+                  {unreadCount > 0 ? (
+                    <View style={styles.conversationUnreadBadge}>
+                      <Text style={styles.conversationUnreadText}>
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text
+                  style={[
+                    styles.conversationMeta,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  {recipientName} {'\u00B7'} {date} {'\u00B7'}{' '}
+                  {shortThreadId(item.id)}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
+    );
+  }
+
+  if (!conversation) {
+    const showBackToList = !!conversationId;
+    return (
+      <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+        <AppHeader title="Messages" />
+        <View style={styles.emptyWrap}>
           <SurfaceCard style={styles.stateCard}>
             <Text
               style={[
@@ -141,12 +513,31 @@ export default function MessagesScreen() {
                   fontFamily: theme.typography.brand,
                 },
               ]}>
-              WALLET REQUIRED
+              THREAD NOT FOUND
             </Text>
             <Text
               style={[styles.stateBody, {color: theme.colors.textSecondary}]}>
-              Connect your wallet to view donation threads and impact replies.
+              This conversation could not be loaded.
             </Text>
+            {showBackToList ? (
+              <TouchableOpacity
+                style={styles.backToThreadsButton}
+                activeOpacity={0.8}
+                onPress={() => {
+                  navigation.setParams({conversationId: undefined});
+                }}>
+                <Text
+                  style={[
+                    styles.backToThreadsText,
+                    {
+                      color: theme.colors.accent,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  Back to threads
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </SurfaceCard>
         </View>
       </View>
@@ -154,178 +545,79 @@ export default function MessagesScreen() {
   }
 
   return (
-    <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
-      <AppHeader title="Messages" />
-
-      <View style={styles.contentWrap}>
-        <SurfaceCard style={styles.panel} padded={false}>
-          <View style={styles.panelHeader}>
-            <Text
-              style={[
-                styles.panelLabel,
-                {
-                  color: theme.colors.textTertiary,
-                  fontFamily: theme.typography.brand,
-                },
-              ]}>
-              RECENT THREADS
-            </Text>
-          </View>
-
-          {loading ? (
-            <View style={styles.loaderWrap}>
-              <ActivityIndicator size="large" color={theme.colors.accent} />
-            </View>
-          ) : conversations.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text
-                style={[
-                  styles.emptyStateText,
-                  {
-                    color: theme.colors.textSecondary,
-                    fontFamily: theme.typography.brand,
-                  },
-                ]}>
-                No threads yet. Start from the Donate flow to open your first
-                message thread.
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={conversations}
-              keyExtractor={item => item.id}
-              contentContainerStyle={styles.threadListContent}
-              renderItem={({item, index}) => {
-                const recipientName = getRecipientLabel(item.recipient_id);
-                const displayAmount = item.amount_usdc ?? 0;
-                const displayToken = 'USDC';
-                const amount = Number(displayAmount).toFixed(2);
-                const isLast = index === conversations.length - 1;
-
-                return (
-                  <TouchableOpacity
-                    style={[
-                      styles.threadRow,
-                      {
-                        borderBottomColor: 'rgba(26,17,37,0.1)',
-                        borderBottomWidth: isLast ? 0 : 1,
-                      },
-                    ]}
-                    onPress={() => setActiveConvo(item)}
-                    activeOpacity={0.8}>
-                    <View
-                      style={[
-                        styles.threadAvatar,
-                        {
-                          borderColor: 'rgba(101,84,209,0.38)',
-                          backgroundColor: 'rgba(101,84,209,0.22)',
-                        },
-                      ]}>
-                      <Text
-                        style={[
-                          styles.threadAvatarText,
-                          {
-                            color: theme.colors.textPrimary,
-                            fontFamily: theme.typography.brand,
-                          },
-                        ]}>
-                        {initials(recipientName)}
-                      </Text>
-                    </View>
-
-                    <View style={styles.threadBody}>
-                      <Text
-                        style={[
-                          styles.threadTitle,
-                          {color: theme.colors.textPrimary},
-                        ]}>
-                        {recipientName}
-                      </Text>
-
-                      <View style={styles.threadMetaRow}>
-                        <Text
-                          style={[
-                            styles.threadMeta,
-                            {
-                              color: theme.colors.textSecondary,
-                              fontFamily: theme.typography.brand,
-                            },
-                          ]}>
-                          {formatShortDate(item.created_at)}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.threadDot,
-                            {color: theme.colors.textTertiary},
-                          ]}>
-                          •
-                        </Text>
-                        <Text
-                          style={[
-                            styles.threadId,
-                            {
-                              color: theme.colors.accent,
-                              fontFamily: theme.typography.brand,
-                            },
-                          ]}>
-                          {shortThreadId(item.id)}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.threadRight}>
-                      <Text
-                        style={[
-                          styles.threadAmount,
-                          {color: theme.colors.accent},
-                        ]}>
-                        {amount} {displayToken}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.threadChevron,
-                          {color: theme.colors.textTertiary},
-                        ]}>
-                        ›
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          )}
-        </SurfaceCard>
-      </View>
-    </View>
+    <ChatView
+      conversation={conversation}
+      hasRouteConversationId={!!conversationId}
+      walletAddress={walletAddress}
+      useMocks={useMocks}
+      onMarkRead={markRead}
+      onSetActiveConversation={setActiveConversation}
+      onBackToThreads={() => {
+        setConversation(null);
+        setActiveConversation(null);
+        if (conversationId) {
+          navigation.setParams({conversationId: undefined});
+        }
+      }}
+    />
   );
 }
 
+// ---------- Chat View ----------
+
 function ChatView({
   conversation,
+  hasRouteConversationId,
   walletAddress,
-  onBack,
+  useMocks,
+  onMarkRead,
+  onSetActiveConversation,
+  onBackToThreads,
 }: {
   conversation: Conversation;
+  hasRouteConversationId: boolean;
   walletAddress: string;
-  onBack: () => void;
+  useMocks: boolean;
+  onMarkRead: (conversationId: string) => Promise<void>;
+  onSetActiveConversation: (conversationId: string | null) => void;
+  onBackToThreads: () => void;
 }) {
   const {theme} = useTheme();
-  const {messages, loading, error} = useChatMessages(conversation.id);
+  const realChat = useChatMessages(useMocks ? null : conversation.id);
+  const mockMessages = React.useMemo(
+    () => buildMockMessages(conversation),
+    [conversation],
+  );
+  const messages = useMocks ? mockMessages : realChat.messages;
+  const chatLoading = useMocks ? false : realChat.loading;
+  const chatError = useMocks ? null : realChat.error;
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [pickedImage, setPickedImage] = useState<Asset | null>(null);
   const flatListRef = React.useRef<FlatList>(null);
+  const sendPulse = React.useRef(new Animated.Value(1)).current;
 
   const recipientName = getRecipientLabel(conversation.recipient_id);
+  const glimpseTag = getRecipientGlimpseTag(conversation.recipient_id);
   const displayAmount = conversation.amount_usdc ?? 0;
-  const displayToken = 'USDC';
   const amount = Number(displayAmount).toFixed(2);
 
   const invertedMessages = React.useMemo(
     () => [...messages].reverse(),
     [messages],
   );
+
+  useEffect(() => {
+    if (useMocks) {
+      return;
+    }
+    onSetActiveConversation(conversation.id);
+    onMarkRead(conversation.id).catch(() => {});
+    return () => {
+      onSetActiveConversation(null);
+    };
+  }, [conversation.id, onMarkRead, onSetActiveConversation, useMocks]);
 
   const pickPhoto = useCallback(() => {
     launchImageLibrary(
@@ -348,26 +640,68 @@ function ChatView({
     );
   }, []);
 
-  const takePhoto = useCallback(() => {
-    launchCamera(
+  const ensureCameraPermission = useCallback(async () => {
+    if (Platform.OS !== 'android') {
+      return true;
+    }
+    const current = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.CAMERA,
+    );
+    if (current) {
+      return true;
+    }
+    const result = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.CAMERA,
       {
-        mediaType: 'photo',
-        includeBase64: true,
-        maxWidth: 1200,
-        maxHeight: 1200,
-        quality: 0.8,
-      },
-      response => {
-        if (response.didCancel || response.errorCode) {
-          return;
-        }
-        const asset = response.assets?.[0];
-        if (asset) {
-          setPickedImage(asset);
-        }
+        title: 'Camera Permission',
+        message: 'Glimpse needs camera access to take and send photos.',
+        buttonPositive: 'Allow',
+        buttonNegative: 'Not now',
       },
     );
+    return result === PermissionsAndroid.RESULTS.GRANTED;
   }, []);
+
+  const takePhoto = useCallback(() => {
+    (async () => {
+      const allowed = await ensureCameraPermission();
+      if (!allowed) {
+        Alert.alert(
+          'Camera access needed',
+          'Please allow camera permission to capture photos.',
+        );
+        return;
+      }
+
+      launchCamera(
+        {
+          mediaType: 'photo',
+          includeBase64: true,
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.8,
+        },
+        response => {
+          if (response.didCancel) {
+            return;
+          }
+          if (response.errorCode) {
+            Alert.alert(
+              'Camera unavailable',
+              'Could not open camera on this device. Try gallery instead.',
+            );
+            return;
+          }
+          const asset = response.assets?.[0];
+          if (asset) {
+            setPickedImage(asset);
+          }
+        },
+      );
+    })().catch(() => {
+      Alert.alert('Camera error', 'Please try again.');
+    });
+  }, [ensureCameraPermission]);
 
   const handleSend = useCallback(async () => {
     if (!inputText.trim() && !pickedImage) {
@@ -402,6 +736,20 @@ function ChatView({
       );
       setInputText('');
       setPickedImage(null);
+      Animated.sequence([
+        Animated.timing(sendPulse, {
+          toValue: 1.06,
+          duration: 90,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sendPulse, {
+          toValue: 1,
+          duration: 130,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
     } catch (sendErrorReason) {
       const message =
         sendErrorReason instanceof Error
@@ -411,7 +759,7 @@ function ChatView({
     }
 
     setSending(false);
-  }, [inputText, pickedImage, conversation.id, walletAddress]);
+  }, [conversation.id, inputText, pickedImage, sendPulse, walletAddress]);
 
   const isAdmin = (senderWallet: string) =>
     senderWallet === ADMIN_WALLET || senderWallet === conversation.admin_wallet;
@@ -432,23 +780,10 @@ function ChatView({
               borderColor: 'rgba(26,17,37,0.12)',
             },
           ]}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Text
-              style={[
-                styles.backText,
-                {
-                  color: theme.colors.accent,
-                  fontFamily: theme.typography.brand,
-                },
-              ]}>
-              ← Back
-            </Text>
-          </TouchableOpacity>
-
           <View style={styles.chatMetaWrap}>
             <Text
               style={[styles.chatRecipient, {color: theme.colors.textPrimary}]}>
-              {recipientName}
+              GLIMPSE {glimpseTag}
             </Text>
             <Text
               style={[
@@ -458,19 +793,52 @@ function ChatView({
                   fontFamily: theme.typography.brand,
                 },
               ]}>
-              {amount} {displayToken} • {shortThreadId(conversation.id)}
+              {amount} USDC • {shortThreadId(conversation.id)} • {recipientName}
             </Text>
+            <TouchableOpacity
+              onPress={onBackToThreads}
+              style={styles.backToThreadsButton}
+              activeOpacity={0.8}>
+              <Text
+                style={[
+                  styles.backToThreadsText,
+                  {
+                    color: theme.colors.accent,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                {hasRouteConversationId ? 'Go to inbox' : 'Back to threads'}
+              </Text>
+            </TouchableOpacity>
+            {conversation.tx_signature ? (
+              <TouchableOpacity
+                onPress={() =>
+                  Linking.openURL(getExplorerUrl(conversation.tx_signature!))
+                }
+                activeOpacity={0.7}>
+                <Text
+                  style={[
+                    styles.explorerLink,
+                    {
+                      color: theme.colors.accent,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  View on Explorer
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         </View>
 
-        {loading ? (
+        {chatLoading ? (
           <View style={styles.loaderWrap}>
             <ActivityIndicator size="large" color={theme.colors.accent} />
           </View>
-        ) : error ? (
+        ) : chatError ? (
           <View style={styles.chatErrorWrap}>
             <Text style={[styles.chatErrorText, {color: theme.colors.danger}]}>
-              {error}
+              {chatError}
             </Text>
           </View>
         ) : (
@@ -485,64 +853,19 @@ function ChatView({
             windowSize={11}
             renderItem={({item}) => {
               const fromAdmin = isAdmin(item.sender_wallet);
-
               return (
-                <View
-                  style={[
-                    styles.bubble,
-                    fromAdmin
-                      ? [
-                          styles.bubbleAdmin,
-                          {
-                            backgroundColor: 'rgba(26,17,37,0.06)',
-                            borderColor: 'rgba(26,17,37,0.14)',
-                          },
-                        ]
-                      : [
-                          styles.bubbleDonor,
-                          {
-                            backgroundColor: theme.colors.accent,
-                            borderColor: theme.colors.accentPressed,
-                          },
-                        ],
-                  ]}>
-                  {item.media_url && (
-                    <Image
-                      source={{uri: `${item.media_url}?width=300&height=300`}}
-                      style={styles.mediaImage}
-                      resizeMode="cover"
-                    />
-                  )}
-
-                  {item.body ? (
-                    <Text
-                      style={[
-                        styles.bubbleText,
-                        {
-                          color: fromAdmin
-                            ? theme.colors.textPrimary
-                            : 'rgba(248,244,255,0.98)',
-                        },
-                      ]}>
-                      {item.body}
-                    </Text>
-                  ) : null}
-
-                  <Text
-                    style={[
-                      styles.bubbleTime,
-                      {
-                        color: fromAdmin
-                          ? theme.colors.textTertiary
-                          : 'rgba(244,240,255,0.74)',
-                      },
-                    ]}>
-                    {new Date(item.created_at).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </Text>
-                </View>
+                <MessageBubble
+                  item={item}
+                  fromAdmin={fromAdmin}
+                  adminBubbleBackground="rgba(26,17,37,0.06)"
+                  adminBubbleBorder="rgba(26,17,37,0.14)"
+                  donorBubbleBackground={theme.colors.accent}
+                  donorBubbleBorder={theme.colors.accentPressed}
+                  adminTextColor={theme.colors.textPrimary}
+                  donorTextColor="rgba(248,244,255,0.98)"
+                  adminTimeColor={theme.colors.textTertiary}
+                  donorTimeColor="rgba(244,240,255,0.74)"
+                />
               );
             }}
           />
@@ -567,37 +890,43 @@ function ChatView({
           style={[
             styles.inputBar,
             {
-              borderTopColor: 'rgba(26,17,37,0.12)',
-              backgroundColor: theme.colors.background,
+              borderTopColor: 'rgba(101,84,209,0.2)',
+              backgroundColor: 'rgba(101,84,209,0.1)',
             },
           ]}>
           <TouchableOpacity
-            style={styles.mediaButton}
+            style={[
+              styles.mediaButton,
+              {
+                borderColor: 'rgba(101,84,209,0.32)',
+                backgroundColor: '#F4F1FF',
+              },
+            ]}
             onPress={pickPhoto}
             activeOpacity={0.7}>
-            <Text
-              style={[styles.mediaButtonIcon, {color: theme.colors.accent}]}>
-              IMG
-            </Text>
+            <GalleryGlyph color={theme.colors.accent} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.mediaButton}
+            style={[
+              styles.mediaButton,
+              {
+                borderColor: 'rgba(101,84,209,0.32)',
+                backgroundColor: '#F4F1FF',
+              },
+            ]}
             onPress={takePhoto}
             activeOpacity={0.7}>
-            <Text
-              style={[styles.mediaButtonIcon, {color: theme.colors.accent}]}>
-              CAM
-            </Text>
+            <CameraGlyph color={theme.colors.accent} />
           </TouchableOpacity>
 
           <TextInput
             style={[
               styles.chatInput,
               {
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.textPrimary,
-                borderColor: 'rgba(26,17,37,0.16)',
+                backgroundColor: '#FFFFFF',
+                color: '#1A1125',
+                borderColor: 'rgba(141,125,199,0.45)',
               },
             ]}
             value={inputText}
@@ -608,13 +937,16 @@ function ChatView({
             maxLength={500}
           />
 
-          <TouchableOpacity
+          <AnimatedTouchableOpacity
             style={[
-              styles.sendChatButton,
-              {backgroundColor: theme.colors.accent},
+              styles.sendIconButton,
+              {
+                backgroundColor: '#6554D1',
+                transform: [{scale: sendPulse}],
+              },
               ((!inputText.trim() && !pickedImage) || sending) && {
-                backgroundColor: theme.colors.surfaceAlt,
-                borderColor: 'rgba(26,17,37,0.16)',
+                backgroundColor: '#BFB5ED',
+                borderColor: 'rgba(101,84,209,0.35)',
               },
             ]}
             onPress={handleSend}
@@ -622,12 +954,12 @@ function ChatView({
             disabled={(!inputText.trim() && !pickedImage) || sending}>
             <Text
               style={[
-                styles.sendChatButtonText,
+                styles.sendIconText,
                 {fontFamily: theme.typography.brand},
               ]}>
-              {sending ? '...' : 'Send'}
+              {sending ? '…' : '→'}
             </Text>
-          </TouchableOpacity>
+          </AnimatedTouchableOpacity>
         </View>
 
         {sendError ? (
@@ -644,39 +976,16 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  contentWrap: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 100,
-  },
-  panel: {
-    flex: 1,
-    borderRadius: 16,
-    borderWidth: 2,
-    paddingTop: 0,
-    paddingHorizontal: 0,
-    paddingBottom: 0,
-    overflow: 'hidden',
-  },
-  panelHeader: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(26,17,37,0.12)',
-  },
-  panelLabel: {
-    fontSize: 10,
-    lineHeight: 12,
-    letterSpacing: 1,
-    fontWeight: '700',
-  },
   loaderWrap: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 36,
+  },
+  emptyWrap: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   stateCard: {
     borderRadius: 14,
@@ -693,86 +1002,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 22,
-    paddingVertical: 28,
-  },
-  emptyStateText: {
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  threadListContent: {
-    paddingBottom: 8,
-  },
-  threadRow: {
-    minHeight: 74,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  threadAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  threadAvatarText: {
-    fontSize: 10,
-    lineHeight: 12,
-    fontWeight: '700',
-  },
-  threadBody: {
-    flex: 1,
-    marginRight: 8,
-  },
-  threadTitle: {
-    fontSize: 19,
-    lineHeight: 22,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  threadMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  threadMeta: {
-    fontSize: 10,
-    lineHeight: 12,
-  },
-  threadDot: {
-    marginHorizontal: 5,
-    fontSize: 10,
-    lineHeight: 12,
-  },
-  threadId: {
-    fontSize: 10,
-    lineHeight: 12,
-    fontWeight: '700',
-  },
-  threadRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  threadAmount: {
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: '700',
-    minWidth: 64,
-    textAlign: 'right',
-  },
-  threadChevron: {
-    fontSize: 14,
-    lineHeight: 15,
-    fontWeight: '700',
-  },
   chatBody: {
     flex: 1,
     paddingHorizontal: 14,
@@ -784,16 +1013,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     marginBottom: 10,
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    marginBottom: 8,
-  },
-  backText: {
-    fontSize: 12,
-    lineHeight: 14,
-    fontWeight: '700',
-    letterSpacing: 0.6,
   },
   chatMetaWrap: {
     width: '100%',
@@ -837,9 +1056,25 @@ const styles = StyleSheet.create({
   },
   mediaImage: {
     width: '100%',
-    height: 180,
+    height: 210,
     borderRadius: 8,
     marginBottom: 8,
+  },
+  mediaTagWrap: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(101,84,209,0.35)',
+    backgroundColor: 'rgba(101,84,209,0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 6,
+  },
+  mediaTagText: {
+    fontSize: 9,
+    letterSpacing: 0.7,
+    fontWeight: '700',
+    color: '#4D41A8',
   },
   previewRow: {
     flexDirection: 'row',
@@ -858,46 +1093,100 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   mediaButton: {
-    paddingHorizontal: 6,
-    paddingVertical: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginRight: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  mediaButtonIcon: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+  glyphFrame: {
+    width: 15,
+    height: 12,
+    borderWidth: 1.2,
+    borderRadius: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  glyphSun: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    borderWidth: 1,
+  },
+  glyphHill: {
+    position: 'absolute',
+    bottom: 1.5,
+    width: 8,
+    height: 4,
+    borderTopWidth: 1.2,
+    borderLeftWidth: 1.2,
+    transform: [{rotate: '-12deg'}],
+  },
+  glyphCameraBody: {
+    width: 15,
+    height: 11,
+    borderWidth: 1.2,
+    borderRadius: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glyphCameraTop: {
+    position: 'absolute',
+    top: -3,
+    left: 3,
+    width: 5,
+    height: 2.5,
+    borderWidth: 1.2,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+  },
+  glyphCameraLens: {
+    width: 4.5,
+    height: 4.5,
+    borderRadius: 3,
+    borderWidth: 1.2,
   },
   inputBar: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    marginHorizontal: -14,
+    paddingHorizontal: 14,
     paddingTop: 10,
     paddingBottom: 8,
     borderTopWidth: 1,
   },
   chatInput: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 9,
     fontSize: 14,
     maxHeight: 100,
     borderWidth: 1,
   },
-  sendChatButton: {
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+  sendIconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: 8,
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  sendChatButtonText: {
-    fontSize: 13,
-    lineHeight: 16,
+  sendIconText: {
+    fontSize: 18,
+    lineHeight: 20,
     fontWeight: '700',
     color: '#fff',
-    letterSpacing: 0.4,
+    letterSpacing: 0.6,
   },
   sendErrorText: {
     fontSize: 12,
@@ -914,5 +1203,63 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  explorerLink: {
+    fontSize: 11,
+    letterSpacing: 0.5,
+    marginTop: 6,
+  },
+  conversationList: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    gap: 10,
+  },
+  conversationRow: {
+    borderWidth: 2,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  conversationTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  conversationTitle: {
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: '700',
+  },
+  conversationUnreadBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6554D1',
+  },
+  conversationUnreadText: {
+    color: '#fff',
+    fontSize: 11,
+    lineHeight: 13,
+    fontWeight: '700',
+  },
+  conversationMeta: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  backToThreadsButton: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    marginBottom: 2,
+  },
+  backToThreadsText: {
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 0.4,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
 });

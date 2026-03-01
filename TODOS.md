@@ -45,3 +45,19 @@
 **Context:** The fix involves: (1) wrapping `uploadChatMedia` in a try/catch with a user-visible error toast, (2) adding an upload progress callback using XMLHttpRequest instead of the Supabase client's fetch-based upload, (3) file size validation before upload (reject videos over 50MB), (4) a retry button if upload fails. The `ChatView` component in `screens/MessagesScreen.tsx` is where the UI lives. Estimated effort: 2-3 hours.
 
 **Depends on:** Chat functionality working end-to-end.
+
+---
+
+## 5. Resolve Remaining npm Vulnerability State
+
+**What:** Address the 10 remaining npm audit vulnerabilities (3 high, 7 low) that require breaking dependency changes.
+
+**Why:** Supply chain audit (2026-02-28) cleared 15 of 25 vulnerabilities. The remaining 10 are in transitive dependencies that cannot be updated without breaking changes. None affect runtime app security, but they should be resolved for a clean audit posture.
+
+**Context:**
+- `bigint-buffer` (3 high) — transitive via `@solana/buffer-layout-utils` → `@solana/spl-token`. Fix requires upgrading to `@solana/spl-token` 0.4.x which is a breaking API change. Monitor for a compatible release.
+- `fast-xml-parser` (7 low) — transitive via `@react-native-community/cli`. Build tool only, not bundled into the app. Fix requires upgrading to RN CLI 20.1.2+ which may require RN 0.77+.
+
+**Approach:** Upgrade `@solana/spl-token` when 0.4.x stabilizes and MWA compatibility is confirmed. For `fast-xml-parser`, wait for the next React Native upgrade cycle.
+
+**Depends on:** Mainnet launch stable, `@solana/spl-token` 0.4.x compatible with MWA and `@solana/web3.js` v1.

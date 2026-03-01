@@ -18,19 +18,16 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- 48-hour custodial hold tracking
+-- Hold tracking
 ALTER TABLE public.donations
   ADD COLUMN IF NOT EXISTS hold_status text NOT NULL DEFAULT 'pending';
 
 DO $$ BEGIN
   ALTER TABLE public.donations
     ADD CONSTRAINT chk_donations_hold_status
-    CHECK (hold_status IN ('pending', 'locked', 'released', 'refunded'));
+    CHECK (hold_status IN ('pending', 'locked', 'released'));
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
-ALTER TABLE public.donations
-  ADD COLUMN IF NOT EXISTS hold_expires_at timestamptz;
 
 -- Cause preferences (JSONB array of cause IDs, e.g. ["transportation","housing"])
 ALTER TABLE public.donations

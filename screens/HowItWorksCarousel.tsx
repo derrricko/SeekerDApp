@@ -1,5 +1,13 @@
-import React, {useEffect, useState} from 'react';
-import {Modal, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {
+  Animated,
+  Easing,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 const TOTAL_STEPS = 6;
 const TYPING_TARGET = '250.00';
@@ -14,9 +22,14 @@ export default function HowItWorksCarousel({
   onComplete?: () => void;
 }) {
   const [step, setStep] = useState(0);
-  const [poolType, setPoolType] = useState<'private' | 'public'>('private');
   const [typedAmount, setTypedAmount] = useState('');
   const [cursorVisible, setCursorVisible] = useState(true);
+  const stepMotion = useRef(new Animated.Value(1)).current;
+
+  const stepTranslateY = stepMotion.interpolate({
+    inputRange: [0, 1],
+    outputRange: [8, 0],
+  });
 
   useEffect(() => {
     if (!visible) {
@@ -70,7 +83,20 @@ export default function HowItWorksCarousel({
     };
   }, [step, visible]);
 
-  const handlePrimary = () => {
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    stepMotion.setValue(0);
+    Animated.timing(stepMotion, {
+      toValue: 1,
+      duration: 200,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [step, visible, stepMotion]);
+
+  const handleNext = () => {
     if (step === TOTAL_STEPS - 1) {
       if (onComplete) {
         onComplete();
@@ -81,6 +107,16 @@ export default function HowItWorksCarousel({
     }
     setStep(current => current + 1);
   };
+
+  const handlePrevious = () => {
+    if (step === 0) {
+      return;
+    }
+    setStep(current => current - 1);
+  };
+
+  const isFirstStep = step === 0;
+  const isLastStep = step === TOTAL_STEPS - 1;
 
   return (
     <Modal
@@ -111,37 +147,51 @@ export default function HowItWorksCarousel({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.content}>
-            {renderStep(
-              step,
-              poolType,
-              setPoolType,
-              typedAmount,
-              cursorVisible,
-            )}
-          </View>
+          <Animated.View
+            style={[
+              styles.content,
+              {
+                opacity: stepMotion,
+                transform: [{translateY: stepTranslateY}],
+              },
+            ]}>
+            {renderStep(step, typedAmount, cursorVisible)}
+          </Animated.View>
 
-          <TouchableOpacity
-            onPress={handlePrimary}
-            style={styles.primaryButton}
-            activeOpacity={0.9}>
-            <Text style={styles.primaryText}>
-              {step === TOTAL_STEPS - 1 ? 'Open App' : 'Continue →'}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.navRow}>
+            <TouchableOpacity
+              onPress={handlePrevious}
+              style={[
+                styles.navButton,
+                isFirstStep && styles.navButtonDisabled,
+              ]}
+              activeOpacity={0.85}
+              disabled={isFirstStep}>
+              <Text
+                style={[
+                  styles.navButtonText,
+                  isFirstStep && styles.navButtonTextDisabled,
+                ]}>
+                ←
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleNext}
+              style={[styles.navButton, styles.navButtonPrimary]}
+              activeOpacity={0.9}>
+              <Text style={[styles.navButtonText, styles.navButtonTextPrimary]}>
+                {isLastStep ? '✓' : '→'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
   );
 }
 
-function renderStep(
-  step: number,
-  poolType: 'private' | 'public',
-  setPoolType: (value: 'private' | 'public') => void,
-  typedAmount: string,
-  cursorVisible: boolean,
-) {
+function renderStep(step: number, typedAmount: string, cursorVisible: boolean) {
   if (step === 0) {
     return (
       <View style={styles.stepWrap}>
@@ -183,7 +233,7 @@ function renderStep(
     return (
       <View style={styles.stepWrap}>
         <Text style={[styles.title, styles.titleSentenceSmall]}>
-          choose 2-3 causes or organizations that are near to your heart.
+          choose the campaign you want to support.
         </Text>
         <CausesIcon />
       </View>
@@ -194,39 +244,9 @@ function renderStep(
     return (
       <View style={styles.stepWrap}>
         <Text style={[styles.title, styles.titleSentenceSmall]}>
-          donate as a group or privately.
+          add optional context and a note for the recipient.
         </Text>
-        <View style={styles.choiceRow}>
-          <TouchableOpacity
-            onPress={() => setPoolType('private')}
-            activeOpacity={0.85}
-            style={[
-              styles.choiceCard,
-              poolType === 'private'
-                ? styles.choiceCardActive
-                : styles.choiceCardInactive,
-            ]}>
-            <View style={styles.choiceInner}>
-              <PrivatePoolIcon />
-              <Text style={styles.choiceLabel}>Private</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => setPoolType('public')}
-            activeOpacity={0.85}
-            style={[
-              styles.choiceCard,
-              poolType === 'public'
-                ? styles.choiceCardActive
-                : styles.choiceCardInactive,
-            ]}>
-            <View style={styles.choiceInner}>
-              <PublicPoolIcon />
-              <Text style={styles.choiceLabel}>Group</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        <NoteIcon />
       </View>
     );
   }
@@ -245,11 +265,10 @@ function renderStep(
   if (step === 4) {
     return (
       <View style={styles.stepWrap}>
-        <Text style={styles.title}>Refundable</Text>
-        <Text style={styles.icon}>↩</Text>
+        <Text style={styles.title}>Confirmed</Text>
+        <Text style={styles.icon}>✓</Text>
         <Text style={styles.body}>
-          Your deposited money can be withdrawn within 48 hours if you change
-          your mind.
+          Once you confirm, your USDC donation is final and recorded on-chain.
         </Text>
       </View>
     );
@@ -306,23 +325,13 @@ function ConnectIcon() {
   );
 }
 
-function PrivatePoolIcon() {
+function NoteIcon() {
   return (
-    <View style={styles.optionIconWrap}>
-      <View style={styles.singleHead} />
-      <View style={styles.singleBody} />
-    </View>
-  );
-}
-
-function PublicPoolIcon() {
-  return (
-    <View style={styles.optionIconWrap}>
-      <View style={styles.publicHeads}>
-        <View style={styles.publicHead} />
-        <View style={styles.publicHead} />
-      </View>
-      <View style={styles.publicBase} />
+    <View style={styles.lineIconFrame}>
+      <View style={styles.noteLineWide} />
+      <View style={styles.noteLineMid} />
+      <View style={styles.noteLineWide} />
+      <View style={styles.noteDot} />
     </View>
   );
 }
@@ -345,15 +354,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4F2FA',
   },
   topRow: {
-    flexDirection: 'row',
+    minHeight: 24,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginBottom: 6,
   },
   progressRow: {
     flexDirection: 'row',
     gap: 5,
-    marginLeft: 8,
   },
   progressDot: {
     width: 5,
@@ -366,6 +374,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#6554D1',
   },
   closeButton: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -531,40 +542,26 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: '#6554D1',
   },
-  choiceRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    gap: 10,
+  noteLineWide: {
+    width: 24,
+    height: 2,
+    borderRadius: 2,
+    backgroundColor: '#6554D1',
+    marginVertical: 2,
   },
-  choiceCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    minHeight: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
+  noteLineMid: {
+    width: 18,
+    height: 2,
+    borderRadius: 2,
+    backgroundColor: '#6554D1',
+    marginVertical: 2,
   },
-  choiceCardActive: {
-    borderColor: '#6554D1',
-    backgroundColor: '#F5F2FF',
-  },
-  choiceCardInactive: {
-    borderColor: '#DDD6EE',
-    backgroundColor: '#F8F5FD',
-  },
-  choiceInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  choiceLabel: {
-    marginTop: 8,
-    color: '#17102A',
-    fontSize: 15,
-    fontWeight: '700',
-    fontFamily: 'CourierPrime-Regular',
+  noteDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 4,
+    backgroundColor: '#6554D1',
+    marginTop: 4,
   },
   connectTopRow: {
     flexDirection: 'row',
@@ -615,53 +612,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#6554D1',
   },
-  optionIconWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#CEC8E4',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 2,
-  },
-  singleHead: {
-    width: 7,
-    height: 7,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: '#6554D1',
-    marginBottom: 2,
-  },
-  singleBody: {
-    width: 12,
-    height: 6,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: '#6554D1',
-  },
-  publicHeads: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  publicHead: {
-    width: 6,
-    height: 6,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: '#6554D1',
-    backgroundColor: 'transparent',
-    marginHorizontal: 1,
-  },
-  publicBase: {
-    width: 15,
-    height: 5,
-    borderWidth: 1.5,
-    borderColor: '#6554D1',
-    borderRadius: 5,
-    marginTop: 2,
-    backgroundColor: 'transparent',
-  },
   icon: {
     color: '#6554D1',
     fontSize: 52,
@@ -698,17 +648,43 @@ const styles = StyleSheet.create({
     marginVertical: 2,
     borderRadius: 2,
   },
-  primaryButton: {
-    marginTop: 4,
-    minHeight: 52,
+  navRow: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 6,
+  },
+  navButton: {
+    width: 56,
+    height: 48,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D8D1EA',
+    backgroundColor: '#EEEBF7',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#6554D1',
   },
-  primaryText: {
+  navButtonDisabled: {
+    backgroundColor: '#F1EEF9',
+    borderColor: '#E5E1F0',
+  },
+  navButtonPrimary: {
+    backgroundColor: '#6554D1',
+    borderColor: '#5B49CB',
+  },
+  navButtonText: {
+    color: '#5E5878',
+    fontSize: 24,
+    lineHeight: 28,
+    fontWeight: '700',
+    fontFamily: 'CourierPrime-Regular',
+  },
+  navButtonTextDisabled: {
+    color: '#C0B9D8',
+  },
+  navButtonTextPrimary: {
     color: '#FFFFFF',
-    fontSize: 18,
     fontWeight: '700',
     fontFamily: 'CourierPrime-Regular',
   },

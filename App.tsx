@@ -10,6 +10,7 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {ConnectionProvider} from './components/providers/ConnectionProvider';
 import {WalletProvider} from './components/providers/WalletProvider';
 import {AppStateProvider} from './components/providers/AppStateProvider';
+import {UnreadProvider} from './components/providers/UnreadProvider';
 import AppNavigator from './navigation/AppNavigator';
 import {ThemeProvider} from './theme/Theme';
 
@@ -21,7 +22,9 @@ export default function App() {
         <ConnectionProvider>
           <WalletProvider>
             <AppStateProvider>
-              <AppNavigator />
+              <UnreadProvider>
+                <AppNavigator />
+              </UnreadProvider>
             </AppStateProvider>
           </WalletProvider>
         </ConnectionProvider>

@@ -69,6 +69,19 @@ export function handleMWAError(error: unknown): AppError {
 export function handleTransactionError(error: unknown): AppError {
   const message = error instanceof Error ? error.message : String(error);
 
+  // SOL-specific errors first (rent, lamports) before generic "Insufficient"
+  if (
+    message.includes('insufficient lamports') ||
+    message.includes('Insufficient funds for rent')
+  ) {
+    return {
+      code: 'INSUFFICIENT_SOL_FEES',
+      message:
+        'Not enough SOL in your wallet to cover transaction fees. Add a small amount of SOL.',
+      recoverable: true,
+    };
+  }
+
   if (
     message.includes('Insufficient USDC') ||
     message.includes('insufficient funds')
@@ -88,18 +101,6 @@ export function handleTransactionError(error: unknown): AppError {
       code: 'USDC_ACCOUNT_NOT_FOUND',
       message: 'No USDC found in your wallet. Add USDC to donate.',
       recoverable: false,
-    };
-  }
-
-  if (
-    message.includes('insufficient lamports') ||
-    message.includes('Insufficient')
-  ) {
-    return {
-      code: 'INSUFFICIENT_SOL_FEES',
-      message:
-        'Not enough SOL in your wallet to cover transaction fees. Add a small amount of SOL.',
-      recoverable: true,
     };
   }
 
@@ -127,18 +128,4 @@ export function handleTransactionError(error: unknown): AppError {
     message: `Transaction failed: ${message}`,
     recoverable: true,
   };
-}
-
-// ---------- Safe wrapper ----------
-
-export async function safeAsync<T>(
-  fn: () => Promise<T>,
-  errorHandler: (error: unknown) => AppError = handleTransactionError,
-): Promise<Result<T>> {
-  try {
-    const data = await fn();
-    return ok(data);
-  } catch (error) {
-    return {success: false, error: errorHandler(error)};
-  }
 }

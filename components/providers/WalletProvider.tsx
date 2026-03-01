@@ -1,7 +1,8 @@
 // v2 WalletProvider — MWA wallet connection + wallet-signed Supabase auth
 //
 // INTERFACE:
-//   useWallet() → { connected, publicKey, connect, disconnect, signAndSendTransaction }
+//   useWallet() → { connected, publicKey, connect, disconnect,
+//                   signAndSendTransaction, authorizeAndSignAndSendTransaction }
 
 import React, {
   createContext,
@@ -30,18 +31,26 @@ interface WalletContextType {
   connected: boolean;
   publicKey: PublicKey | null;
   connecting: boolean;
-  connect: () => Promise<void>;
+  connect: () => Promise<PublicKey>;
   disconnect: () => void;
   signAndSendTransaction: (transaction: Transaction) => Promise<string>;
+  authorizeAndSignAndSendTransaction: (
+    buildTransaction: (donorPubkey: PublicKey) => Promise<Transaction>,
+  ) => Promise<{publicKey: PublicKey; signature: string}>;
 }
 
 const WalletContext = createContext<WalletContextType>({
   connected: false,
   publicKey: null,
   connecting: false,
-  connect: async () => {},
+  connect: async () => {
+    throw new Error('WalletProvider is not mounted');
+  },
   disconnect: () => {},
   signAndSendTransaction: async () => '',
+  authorizeAndSignAndSendTransaction: async () => {
+    throw new Error('WalletProvider is not mounted');
+  },
 });
 
 export function useWallet() {
@@ -59,7 +68,8 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
     hydrateSupabaseAccessToken().catch(() => {});
   }, []);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (): Promise<PublicKey> => {
+    let connectedPubkey: PublicKey | null = null;
     setConnecting(true);
     try {
       await transact(async wallet => {
@@ -74,6 +84,7 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
 
         const base64Address = auth.accounts[0].address;
         const pubkey = parseAuthorizedAccountAddress(base64Address);
+        connectedPubkey = pubkey;
         const walletAddress = pubkey.toBase58();
 
         // Wallet signs a short-lived auth challenge. Server verifies signature and
@@ -103,6 +114,12 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
         // Best-effort replay for orphaned DB writes where on-chain tx succeeded.
         retryPendingConversations().catch(() => {});
       });
+
+      if (!connectedPubkey) {
+        throw new Error('Wallet authorize returned no usable account');
+      }
+
+      return connectedPubkey;
     } catch (error) {
       setPublicKey(null);
       await AsyncStorage.removeItem('@glimpse_wallet_address');
@@ -162,6 +179,77 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
     [publicKey],
   );
 
+  const authorizeAndSignAndSendTransaction = useCallback(
+    async (
+      buildTransaction: (donorPubkey: PublicKey) => Promise<Transaction>,
+    ): Promise<{publicKey: PublicKey; signature: string}> => {
+      setConnecting(true);
+
+      let donorPubkey: PublicKey | null = null;
+      let signature = '';
+
+      try {
+        await transact(async wallet => {
+          const auth = await wallet.authorize({
+            chain: `solana:${SOLANA_CLUSTER}`,
+            identity: APP_IDENTITY,
+          });
+
+          if (!auth.accounts?.length || !auth.accounts[0]?.address) {
+            throw new Error('Wallet authorize returned no accounts');
+          }
+
+          const base64Address = auth.accounts[0].address;
+          donorPubkey = parseAuthorizedAccountAddress(base64Address);
+          const walletAddress = donorPubkey.toBase58();
+
+          const message = createWalletAuthMessage();
+          const payload = utf8Encode(message);
+          const signedPayloads = await wallet.signMessages({
+            addresses: [base64Address],
+            payloads: [payload],
+          });
+
+          if (!signedPayloads[0]) {
+            throw new Error('Wallet did not return a signed auth payload');
+          }
+
+          const authSignature = encodeBase64(signedPayloads[0]);
+          const authResult = await authenticateWalletSignature({
+            wallet: walletAddress,
+            signature: authSignature,
+            message,
+          });
+
+          await setSupabaseAccessToken(authResult.token);
+          setPublicKey(donorPubkey);
+          await AsyncStorage.setItem('@glimpse_wallet_address', walletAddress);
+
+          const transaction = await buildTransaction(donorPubkey);
+          const signatures = await wallet.signAndSendTransactions({
+            transactions: [transaction],
+          });
+          const txSignature = signatures[0];
+          if (!txSignature) {
+            throw new Error('Wallet returned an empty signature');
+          }
+          signature = txSignature;
+        });
+
+        if (!donorPubkey || !signature) {
+          throw new Error('Wallet session did not return required values');
+        }
+
+        retryPendingConversations().catch(() => {});
+
+        return {publicKey: donorPubkey, signature};
+      } finally {
+        setConnecting(false);
+      }
+    },
+    [],
+  );
+
   const value = useMemo(
     () => ({
       connected,
@@ -170,6 +258,7 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
       connect,
       disconnect,
       signAndSendTransaction,
+      authorizeAndSignAndSendTransaction,
     }),
     [
       connected,
@@ -178,6 +267,7 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
       connect,
       disconnect,
       signAndSendTransaction,
+      authorizeAndSignAndSendTransaction,
     ],
   );
 

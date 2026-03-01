@@ -1,0 +1,54 @@
+publisher:
+  name: "Glimpse"
+  website: "https://giveglimpse.com"
+  email: "derrick@giveglimpse.com"
+  support_email: "derrick@giveglimpse.com"
+  media:
+    - purpose: icon
+      uri: "icon-512.png"
+  address: ""
+
+app:
+  name: "Glimpse"
+  address: ""
+  android_package: "com.seekerdapp"
+  urls:
+    license_url: "https://giveglimpse.com/privacy"
+    privacy_policy_url: "https://giveglimpse.com/privacy"
+    copyright_url: "https://giveglimpse.com/privacy"
+    website: "https://giveglimpse.com"
+  media:
+    - purpose: icon
+      uri: "icon-512.png"
+
+release:
+  address: ""
+  media:
+    - purpose: icon
+      uri: "icon-512.png"
+    - purpose: banner
+      uri: "banner-1200x600.png"
+    - purpose: screenshot
+      uri: "screenshots/01-campaigns.png"
+    - purpose: screenshot
+      uri: "screenshots/02-give-flow.png"
+    - purpose: screenshot
+      uri: "screenshots/03-confirmation.png"
+    - purpose: screenshot
+      uri: "screenshots/04-messages.png"
+  files:
+    - purpose: install
+      uri: "../android/app/build/outputs/apk/release/app-release.apk"
+  catalog:
+    en-US:
+      name: "Glimpse"
+      short_description: "USDC donations, real updates."
+      long_description: "Glimpse is a USDC donation app on Solana built for transparent giving.\n\nEvery donation is recorded on-chain and tied to a message thread so donors can follow what happened after they gave.\n\nHow it works:\n1. Open Give\n2. Enter USDC amount and choose a campaign\n3. Add optional context and an optional note\n4. Review and confirm\n5. Sign in your wallet\n6. Track updates in Messages\n\nAfter donation, your message thread opens immediately. In 24-48 hours, Glimpse follows up with a specific need match. In 5-7 days, donors receive receipts, photos, and progress updates.\n\nCampaign minimums apply by campaign (currently 10-25 USDC). Built on Solana for fast settlement and verifiable on-chain records."
+      new_in_version: "First release. Donate USDC, sign in-wallet, and follow real impact updates in-app."
+  android_details:
+    locales:
+      - en-US
+
+solana_mobile_dapp_publisher_portal:
+  google_store_package: "com.seekerdapp"
+  testing_instructions: "1. Connect a Solana wallet with USDC balance (e.g., Phantom or Solflare).\n2. Tap the Give tab.\n3. Select a campaign and enter a USDC amount of at least the campaign minimum.\n4. Tap Review Donation, then Confirm and Sign in wallet.\n5. Verify the conversation thread appears in the Messages tab with the welcome timeline."

@@ -6,11 +6,12 @@ export const SOLANA_CLUSTER: SolanaCluster = __DEV__
   ? 'devnet'
   : 'mainnet-beta';
 
+// Client RPC — public endpoint. Helius key stays server-side only (edge fn env var).
+// If client volume outgrows public RPC, add a Supabase edge proxy.
 const RPC_URLS: Record<SolanaCluster, string> = {
   devnet: 'https://api.devnet.solana.com',
   testnet: 'https://api.testnet.solana.com',
-  'mainnet-beta':
-    'https://mainnet.helius-rpc.com/?api-key=595f9a7c-9775-4e7b-b1f7-eb69cd88558f',
+  'mainnet-beta': 'https://api.mainnet-beta.solana.com',
 };
 
 export const RPC_URL = RPC_URLS[SOLANA_CLUSTER];

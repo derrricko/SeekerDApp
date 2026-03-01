@@ -51,7 +51,3 @@ export async function removePendingConversation(
   const filtered = existing.filter(p => p.txSignature !== txSignature);
   await AsyncStorage.setItem(RETRY_KEY, JSON.stringify(filtered));
 }
-
-export async function clearPendingConversations(): Promise<void> {
-  await AsyncStorage.removeItem(RETRY_KEY);
-}

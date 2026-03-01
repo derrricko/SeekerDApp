@@ -1,5 +1,12 @@
-import React, {useCallback, useState} from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {
+  Animated,
+  Easing,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {
   createBottomTabNavigator,
   BottomTabBarProps,
@@ -15,11 +22,12 @@ import HomeScreen from '../screens/HomeScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import HowItWorksCarousel from '../screens/HowItWorksCarousel';
 import MessagesScreen from '../screens/MessagesScreen';
+import {useUnread} from '../components/providers/UnreadProvider';
 
 export type RootTabParamList = {
   Glimpses: undefined;
   Give: undefined;
-  Messages: {conversationId?: string} | undefined;
+  Messages: {conversationId?: string; demoMode?: boolean} | undefined;
   Rank: undefined;
 };
 
@@ -39,17 +47,94 @@ interface GiveFlowContextValue {
   onOpenGiveFlow: () => void;
 }
 
+function GlimpsesIcon({active}: {active: boolean}) {
+  const iconColor = active ? TAB_BAR_THEME.textPrimary : '#55506A';
+
+  return (
+    <View style={[styles.glimpseIconFrame, {borderColor: iconColor}]}>
+      <View style={styles.glimpseIconRow}>
+        <View style={[styles.glimpseIconDot, {backgroundColor: iconColor}]} />
+        <View style={[styles.glimpseIconLine, {backgroundColor: iconColor}]} />
+      </View>
+      <View style={styles.glimpseIconRow}>
+        <View style={[styles.glimpseIconDot, {backgroundColor: iconColor}]} />
+        <View style={[styles.glimpseIconLine, {backgroundColor: iconColor}]} />
+      </View>
+      <View style={styles.glimpseIconRow}>
+        <View style={[styles.glimpseIconDot, {backgroundColor: iconColor}]} />
+        <View style={[styles.glimpseIconLine, {backgroundColor: iconColor}]} />
+      </View>
+    </View>
+  );
+}
+
+function MessagesIcon({active}: {active: boolean}) {
+  const iconColor = active ? TAB_BAR_THEME.textPrimary : '#55506A';
+
+  return (
+    <View style={styles.messagesIconWrap}>
+      <View style={[styles.messagesBubble, {borderColor: iconColor}]} />
+      <View style={[styles.messagesTail, {borderColor: iconColor}]} />
+    </View>
+  );
+}
+
 function AppTabBar({
   state,
   navigation,
   onOpenGiveFlow,
 }: BottomTabBarProps & GiveFlowContextValue) {
+  const {totalUnread, activeConversationId} = useUnread();
   const activeRouteName = state.routes[state.index]?.name as
     | keyof RootTabParamList
     | undefined;
   const isGlimpsesTab = activeRouteName === 'Glimpses';
-  const isRankTab = activeRouteName === 'Rank';
   const isGiveTab = activeRouteName === 'Give';
+  const isMessagesTab = activeRouteName === 'Messages';
+  const isMessagesThreadOpen = isMessagesTab && Boolean(activeConversationId);
+  const glimpsesIndicator = useRef(
+    new Animated.Value(isGlimpsesTab ? 1 : 0),
+  ).current;
+  const messagesIndicator = useRef(
+    new Animated.Value(isMessagesTab ? 1 : 0),
+  ).current;
+
+  useEffect(() => {
+    Animated.timing(glimpsesIndicator, {
+      toValue: isGlimpsesTab ? 1 : 0,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [glimpsesIndicator, isGlimpsesTab]);
+
+  useEffect(() => {
+    Animated.timing(messagesIndicator, {
+      toValue: isMessagesTab ? 1 : 0,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [messagesIndicator, isMessagesTab]);
+
+  const buildIndicatorStyle = (progress: Animated.Value) => ({
+    opacity: progress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 1],
+    }),
+    transform: [
+      {
+        scaleX: progress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.35, 1],
+        }),
+      },
+    ],
+  });
+
+  if (isMessagesThreadOpen) {
+    return <View style={styles.messagesBarHidden} />;
+  }
 
   return (
     <View
@@ -57,35 +142,42 @@ function AppTabBar({
         styles.wrap,
         {
           backgroundColor: TAB_BAR_THEME.background,
-          borderTopColor: TAB_BAR_THEME.border,
         },
       ]}>
+      <View
+        style={[
+          styles.topFill,
+          {
+            backgroundColor: TAB_BAR_THEME.background,
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.topRail,
+          {
+            backgroundColor: TAB_BAR_THEME.border,
+          },
+        ]}
+      />
+
       <TouchableOpacity
         onPress={() => navigation.navigate('Glimpses')}
         style={styles.sideButton}
         activeOpacity={0.8}>
-        <View
-          style={[
-            styles.sideIconCircle,
-            {
-              borderColor: TAB_BAR_THEME.border,
-              backgroundColor: isGlimpsesTab
-                ? TAB_BAR_THEME.border
-                : TAB_BAR_THEME.background,
-            },
-          ]}>
-          <Text
+        <View style={styles.sideIconStack}>
+          <View style={styles.sideIconWrap}>
+            <GlimpsesIcon active={isGlimpsesTab} />
+          </View>
+          <Animated.View
             style={[
-              styles.sideIconText,
+              styles.sideActiveIndicator,
               {
-                color: isGlimpsesTab
-                  ? TAB_BAR_THEME.background
-                  : TAB_BAR_THEME.textPrimary,
-                fontFamily: TAB_BAR_THEME.brand,
+                backgroundColor: TAB_BAR_THEME.accent,
               },
-            ]}>
-            ✉
-          </Text>
+              buildIndicatorStyle(glimpsesIndicator),
+            ]}
+          />
         </View>
       </TouchableOpacity>
 
@@ -107,21 +199,37 @@ function AppTabBar({
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => navigation.navigate('Rank')}
+        onPress={() => navigation.navigate('Messages')}
         style={styles.sideButton}
         activeOpacity={0.8}>
-        <Text
-          style={[
-            styles.sideText,
-            {
-              color: isRankTab
-                ? TAB_BAR_THEME.textPrimary
-                : TAB_BAR_THEME.textTertiary,
-              fontFamily: TAB_BAR_THEME.brand,
-            },
-          ]}>
-          RANK
-        </Text>
+        <View style={styles.sideIconStack}>
+          <View style={styles.sideIconWrap}>
+            <MessagesIcon active={isMessagesTab} />
+            {totalUnread > 0 ? (
+              <View
+                style={[
+                  styles.unreadBadge,
+                  {
+                    backgroundColor: TAB_BAR_THEME.accent,
+                    borderColor: TAB_BAR_THEME.background,
+                  },
+                ]}>
+                <Text style={styles.unreadBadgeText}>
+                  {totalUnread > 99 ? '99+' : totalUnread}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          <Animated.View
+            style={[
+              styles.sideActiveIndicator,
+              {
+                backgroundColor: TAB_BAR_THEME.accent,
+              },
+              buildIndicatorStyle(messagesIndicator),
+            ]}
+          />
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -151,7 +259,11 @@ function MainTabs({
         <Tab.Screen name="Glimpses" component={CampaignsScreen} />
         <Tab.Screen name="Give" component={GiveScreen} />
         <Tab.Screen name="Messages" component={MessagesScreen} />
-        <Tab.Screen name="Rank" component={LeaderboardScreen} />
+        <Tab.Screen
+          name="Rank"
+          component={LeaderboardScreen}
+          options={{tabBarButton: () => null}}
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );
@@ -169,6 +281,12 @@ export default function AppNavigator() {
   const openGiveFlow = useCallback(() => {
     setShowHowItWorks(true);
   }, []);
+
+  const openGiveTab = useCallback(() => {
+    if (navigationRef.isReady()) {
+      navigationRef.navigate('Give');
+    }
+  }, [navigationRef]);
 
   const closeGiveFlow = useCallback(() => {
     setShowHowItWorks(false);
@@ -194,7 +312,7 @@ export default function AppNavigator() {
 
   return (
     <View style={styles.root}>
-      <MainTabs onOpenGiveFlow={openGiveFlow} navigationRef={navigationRef} />
+      <MainTabs onOpenGiveFlow={openGiveTab} navigationRef={navigationRef} />
 
       <TouchableOpacity
         onPress={openGiveFlow}
@@ -240,34 +358,118 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 3,
-    height: 72,
+    height: 84,
     paddingHorizontal: 18,
-    paddingBottom: 8,
+    paddingBottom: 10,
     marginBottom: 18,
+    position: 'relative',
+    overflow: 'visible',
+  },
+  messagesBarHidden: {
+    height: 0,
+    marginBottom: 0,
+  },
+  topFill: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: -14,
+    height: 14,
+  },
+  topRail: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: -14,
+    height: 3,
   },
   sideButton: {
     minWidth: 92,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -10,
+    marginTop: 0,
   },
-  sideIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 3,
+  sideIconStack: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sideIconText: {
-    fontSize: 18,
-    lineHeight: 24,
-    fontWeight: '700',
+  sideIconWrap: {
+    width: 66,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  sideText: {
-    fontSize: 29,
-    letterSpacing: 1,
+  sideActiveIndicator: {
+    width: 18,
+    height: 3,
+    borderRadius: 3,
+    marginTop: -3,
+  },
+  glimpseIconFrame: {
+    width: 35,
+    height: 29,
+    borderRadius: 8,
+    borderWidth: 2.6,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+    justifyContent: 'space-between',
+  },
+  glimpseIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  glimpseIconDot: {
+    width: 4.5,
+    height: 4.5,
+    borderRadius: 3,
+    marginRight: 3.6,
+  },
+  glimpseIconLine: {
+    flex: 1,
+    height: 2.6,
+    borderRadius: 2,
+  },
+  messagesIconWrap: {
+    width: 36,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  messagesBubble: {
+    width: 27,
+    height: 19,
+    borderWidth: 2.6,
+    borderRadius: 7,
+    backgroundColor: 'transparent',
+  },
+  messagesTail: {
+    position: 'absolute',
+    right: 4,
+    bottom: 2,
+    width: 8,
+    height: 8,
+    borderLeftWidth: 2.6,
+    borderBottomWidth: 2.6,
+    borderBottomLeftRadius: 3,
+    transform: [{rotate: '-28deg'}],
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -7,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    lineHeight: 11,
     fontWeight: '700',
   },
   centerButton: {
@@ -275,7 +477,7 @@ const styles = StyleSheet.create({
     height: 132,
     borderRadius: 66,
     borderWidth: 3,
-    marginTop: -70,
+    marginTop: -62,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#1A1125',

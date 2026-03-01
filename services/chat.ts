@@ -1,6 +1,6 @@
 // v2 chat service — Supabase Realtime subscriptions + message CRUD
 
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {getSupabase} from './supabase';
 import {decodeBase64} from '../utils/base64';
 
@@ -25,6 +25,21 @@ export interface Conversation {
   // Joined from donations table
   amount_usdc?: number;
   recipient_id?: string;
+  tx_signature?: string;
+  unread_count?: number;
+}
+
+export interface DonationHistoryItem {
+  id: string;
+  amount_usdc: number;
+  recipient_id: string;
+  created_at: string;
+  hold_status: string;
+  hold_expires_at: string | null;
+  tx_signature: string;
+  donation_mode: string;
+  cadence: string;
+  conversation_id: string | null;
 }
 
 // ---------- Fetch conversations ----------
@@ -35,17 +50,27 @@ export async function fetchConversations(
   const supabase = getSupabase();
   const {data, error} = await supabase
     .from('conversations')
-    .select('*, donations(amount_usdc, recipient_id)')
+    .select('*, donations(amount_usdc, recipient_id, tx_signature)')
     .or(`donor_wallet.eq.${walletAddress},admin_wallet.eq.${walletAddress}`)
     .order('created_at', {ascending: false});
 
   if (error) {
     throw error;
   }
-  return (data || []).map(c => ({
+
+  const conversations = (data || []).map(c => ({
     ...c,
     amount_usdc: c.donations?.amount_usdc,
     recipient_id: c.donations?.recipient_id,
+    tx_signature: c.donations?.tx_signature,
+  }));
+
+  const conversationIds = conversations.map(c => c.id);
+  const unreadCounts = await fetchUnreadCounts(walletAddress, conversationIds);
+
+  return conversations.map(conversation => ({
+    ...conversation,
+    unread_count: unreadCounts[conversation.id] ?? 0,
   }));
 }
 
@@ -76,6 +101,17 @@ export async function sendMessage(
   mediaUrl?: string,
   mediaType?: 'image' | 'video' | 'receipt',
 ): Promise<Message> {
+  if (mediaUrl) {
+    // Only store internal storage paths (e.g. "<conversationId>/<file>").
+    // Reject absolute URLs so chat cannot be used as an external link/embed vector.
+    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(mediaUrl)) {
+      throw new Error('External media URLs are not allowed');
+    }
+    if (!mediaUrl.startsWith(`${conversationId}/`)) {
+      throw new Error('Media path must be scoped to this conversation');
+    }
+  }
+
   const supabase = getSupabase();
   const {data, error} = await supabase
     .from('messages')
@@ -93,6 +129,228 @@ export async function sendMessage(
     throw error;
   }
   return data;
+}
+
+// ---------- Read markers + unread counts ----------
+
+interface UnreadCountsRow {
+  conversation_id: string;
+  unread_count: number;
+}
+
+interface DonationWithConversation {
+  id: string;
+}
+
+interface DonationHistoryRow {
+  id: string;
+  amount_usdc: number | string | null;
+  recipient_id: string | null;
+  created_at: string;
+  hold_status: string | null;
+  hold_expires_at: string | null;
+  tx_signature: string | null;
+  donation_mode: string | null;
+  cadence: string | null;
+  conversations?: DonationWithConversation | DonationWithConversation[] | null;
+}
+
+async function fetchUnreadCounts(
+  walletAddress: string,
+  conversationIds?: string[],
+): Promise<Record<string, number>> {
+  if (conversationIds?.length === 0) {
+    return {};
+  }
+
+  const supabase = getSupabase();
+  const {data, error} = await supabase.rpc('get_unread_counts', {
+    p_wallet: walletAddress,
+    p_conversation_ids: conversationIds ?? null,
+  });
+
+  if (error) {
+    // Keep conversations usable even if unread metadata fails.
+    return {};
+  }
+
+  const rows = (data ?? []) as UnreadCountsRow[];
+  const unreadByConversation: Record<string, number> = {};
+  for (const row of rows) {
+    unreadByConversation[row.conversation_id] = Number(row.unread_count) || 0;
+  }
+  return unreadByConversation;
+}
+
+export async function markConversationRead(
+  conversationId: string,
+  walletAddress: string,
+): Promise<void> {
+  const supabase = getSupabase();
+  const {error} = await supabase.from('conversation_reads').upsert(
+    {
+      conversation_id: conversationId,
+      wallet: walletAddress,
+      last_read_at: new Date().toISOString(),
+    },
+    {
+      onConflict: 'conversation_id,wallet',
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function fetchDonationHistory(
+  walletAddress: string,
+): Promise<DonationHistoryItem[]> {
+  const supabase = getSupabase();
+  const {data, error} = await supabase
+    .from('donations')
+    .select(
+      'id, amount_usdc, recipient_id, created_at, hold_status, hold_expires_at, tx_signature, donation_mode, cadence, conversations(id)',
+    )
+    .eq('donor_wallet', walletAddress)
+    .order('created_at', {ascending: false});
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data ?? []) as DonationHistoryRow[];
+  return rows.map(row => {
+    const conversationJoin = Array.isArray(row.conversations)
+      ? row.conversations[0]
+      : row.conversations;
+    return {
+      id: row.id,
+      amount_usdc: Number(row.amount_usdc) || 0,
+      recipient_id: row.recipient_id || 'unknown',
+      created_at: row.created_at,
+      hold_status: row.hold_status || 'pending',
+      hold_expires_at: row.hold_expires_at,
+      tx_signature: row.tx_signature || '',
+      donation_mode: row.donation_mode || 'solo',
+      cadence: row.cadence || 'one_time',
+      conversation_id: conversationJoin?.id ?? null,
+    };
+  });
+}
+
+export function useUnreadCount(walletAddress: string | null) {
+  const [conversationUnreads, setConversationUnreads] = useState<
+    Record<string, number>
+  >({});
+  const [activeConversationId, setActiveConversationId] = useState<
+    string | null
+  >(null);
+  const activeConversationRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    activeConversationRef.current = activeConversationId;
+  }, [activeConversationId]);
+
+  const refresh = useCallback(async () => {
+    if (!walletAddress) {
+      setConversationUnreads({});
+      return;
+    }
+    const unreadMap = await fetchUnreadCounts(walletAddress);
+    setConversationUnreads(unreadMap);
+  }, [walletAddress]);
+
+  useEffect(() => {
+    refresh().catch(() => {});
+  }, [refresh]);
+
+  const markRead = useCallback(
+    async (conversationId: string) => {
+      if (!walletAddress) {
+        return;
+      }
+      await markConversationRead(conversationId, walletAddress);
+      setConversationUnreads(prev => {
+        if ((prev[conversationId] ?? 0) === 0) {
+          return prev;
+        }
+        return {...prev, [conversationId]: 0};
+      });
+    },
+    [walletAddress],
+  );
+
+  const setActiveConversation = useCallback(
+    (conversationId: string | null) => {
+      setActiveConversationId(conversationId);
+      if (conversationId) {
+        markRead(conversationId).catch(() => {});
+      }
+    },
+    [markRead],
+  );
+
+  useEffect(() => {
+    if (!walletAddress) {
+      return;
+    }
+
+    const supabase = getSupabase();
+    const channel = supabase
+      .channel(`messages-unread:${walletAddress}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+        },
+        payload => {
+          const message = payload.new as {
+            conversation_id?: string;
+            sender_wallet?: string;
+          };
+          const conversationId = message.conversation_id;
+          if (!conversationId || message.sender_wallet === walletAddress) {
+            return;
+          }
+
+          if (activeConversationRef.current === conversationId) {
+            markRead(conversationId).catch(() => {});
+            return;
+          }
+
+          setConversationUnreads(prev => ({
+            ...prev,
+            [conversationId]: (prev[conversationId] ?? 0) + 1,
+          }));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [markRead, walletAddress]);
+
+  const totalUnread = useMemo(
+    () =>
+      Object.values(conversationUnreads).reduce(
+        (sum, count) => sum + Math.max(0, count),
+        0,
+      ),
+    [conversationUnreads],
+  );
+
+  return {
+    totalUnread,
+    conversationUnreads,
+    activeConversationId,
+    markRead,
+    refresh,
+    setActiveConversation,
+  };
 }
 
 // ---------- Upload media ----------
@@ -115,15 +373,22 @@ export async function uploadChatMedia(
     throw error;
   }
 
-  const {data: urlData, error: urlError} = await supabase.storage
+  return data.path;
+}
+
+// ---------- Resolve media URL ----------
+
+/** Create a fresh signed URL for a stored file path. Call at render time. */
+export async function getMediaSignedUrl(filePath: string): Promise<string> {
+  const supabase = getSupabase();
+  const {data, error} = await supabase.storage
     .from('chat-media')
-    .createSignedUrl(data.path, 3600); // 1-hour expiry
+    .createSignedUrl(filePath, 3600);
 
-  if (urlError || !urlData?.signedUrl) {
-    throw urlError || new Error('Failed to create signed URL');
+  if (error || !data?.signedUrl) {
+    throw error || new Error('Failed to create signed URL');
   }
-
-  return urlData.signedUrl;
+  return data.signedUrl;
 }
 
 // ---------- useChatMessages hook ----------
