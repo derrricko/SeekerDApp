@@ -39,10 +39,7 @@ function amountMatchesWithTolerance(
   return diff <= 1n;
 }
 
-function amountMatchesExact(
-  rawAmount: bigint,
-  memoAmountRaw: bigint,
-): boolean {
+function amountMatchesExact(rawAmount: bigint, memoAmountRaw: bigint): boolean {
   return memoAmountRaw === rawAmount;
 }
 
