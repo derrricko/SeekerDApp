@@ -9,6 +9,7 @@ import React, {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,12 +26,15 @@ import {
   setSupabaseAccessToken,
 } from '../../services/supabase';
 import {decodeBase64, encodeBase64} from '../../utils/base64';
+import {verifySeekerToken} from '../../utils/sgt';
 import {utf8Encode} from '../../utils/utf8';
 
 interface WalletContextType {
   connected: boolean;
   publicKey: PublicKey | null;
   connecting: boolean;
+  hasSeekerToken: boolean;
+  sgtLoading: boolean;
   connect: () => Promise<PublicKey>;
   disconnect: () => void;
   signAndSendTransaction: (transaction: Transaction) => Promise<string>;
@@ -43,6 +47,8 @@ const WalletContext = createContext<WalletContextType>({
   connected: false,
   publicKey: null,
   connecting: false,
+  hasSeekerToken: false,
+  sgtLoading: false,
   connect: async () => {
     throw new Error('WalletProvider is not mounted');
   },
@@ -60,12 +66,44 @@ export function useWallet() {
 export function WalletProvider({children}: {children: React.ReactNode}) {
   const [publicKey, setPublicKey] = useState<PublicKey | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [hasSeekerToken, setHasSeekerToken] = useState(false);
+  const [sgtLoading, setSgtLoading] = useState(false);
+
+  // Request-id guard: prevents stale async SGT results from overwriting
+  // state after disconnect/reconnect.
+  const sgtCheckIdRef = useRef(0);
 
   const connected = publicKey !== null;
 
   // Restore auth token (if present) so Supabase client headers are hydrated early.
   React.useEffect(() => {
     hydrateSupabaseAccessToken().catch(() => {});
+  }, []);
+
+  // Trigger SGT verification for a wallet. Uses request-id to discard stale results.
+  const checkSeekerToken = useCallback((wallet: PublicKey) => {
+    const checkId = ++sgtCheckIdRef.current;
+    setSgtLoading(true);
+    setHasSeekerToken(false);
+    verifySeekerToken(wallet)
+      .then(result => {
+        if (sgtCheckIdRef.current !== checkId) {
+          return;
+        }
+        setHasSeekerToken(result.success && result.data === true);
+      })
+      .catch(() => {
+        if (sgtCheckIdRef.current !== checkId) {
+          return;
+        }
+        setHasSeekerToken(false);
+      })
+      .finally(() => {
+        if (sgtCheckIdRef.current !== checkId) {
+          return;
+        }
+        setSgtLoading(false);
+      });
   }, []);
 
   const connect = useCallback(async (): Promise<PublicKey> => {
@@ -119,19 +157,27 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
         throw new Error('Wallet authorize returned no usable account');
       }
 
+      // SGT check runs async — does not block wallet connection.
+      checkSeekerToken(connectedPubkey);
+
       return connectedPubkey;
     } catch (error) {
       setPublicKey(null);
+      setHasSeekerToken(false);
+      setSgtLoading(false);
       await AsyncStorage.removeItem('@glimpse_wallet_address');
       await setSupabaseAccessToken(null);
       throw error;
     } finally {
       setConnecting(false);
     }
-  }, []);
+  }, [checkSeekerToken]);
 
   const disconnect = useCallback(() => {
+    ++sgtCheckIdRef.current; // Invalidate any in-flight SGT check
     setPublicKey(null);
+    setHasSeekerToken(false);
+    setSgtLoading(false);
     AsyncStorage.removeItem('@glimpse_wallet_address').catch(() => {});
     setSupabaseAccessToken(null).catch(() => {});
   }, []);
@@ -240,6 +286,8 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
           throw new Error('Wallet session did not return required values');
         }
 
+        // SGT check runs async — does not block the donation result.
+        checkSeekerToken(donorPubkey);
         retryPendingConversations().catch(() => {});
 
         return {publicKey: donorPubkey, signature};
@@ -247,7 +295,7 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
         setConnecting(false);
       }
     },
-    [],
+    [checkSeekerToken],
   );
 
   const value = useMemo(
@@ -255,6 +303,8 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
       connected,
       publicKey,
       connecting,
+      hasSeekerToken,
+      sgtLoading,
       connect,
       disconnect,
       signAndSendTransaction,
@@ -264,6 +314,8 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
       connected,
       publicKey,
       connecting,
+      hasSeekerToken,
+      sgtLoading,
       connect,
       disconnect,
       signAndSendTransaction,
