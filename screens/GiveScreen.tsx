@@ -490,6 +490,25 @@ export default function GiveScreen() {
                 ) : null}
               </View>
 
+              <View style={styles.optionalDivider}>
+                <View
+                  style={[
+                    styles.optionalDividerLine,
+                    {backgroundColor: theme.colors.borderMuted},
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.optionalSectionLabel,
+                    {
+                      color: theme.colors.textTertiary,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  OPTIONAL
+                </Text>
+              </View>
+
               <View style={styles.fieldBlock}>
                 <Text
                   style={[
@@ -1015,5 +1034,17 @@ const styles = StyleSheet.create({
   explorerLinkText: {
     fontSize: 14,
     fontWeight: '700',
+  },
+  optionalDivider: {
+    marginTop: 4,
+    marginBottom: 14,
+  },
+  optionalDividerLine: {
+    height: 1,
+    marginBottom: 10,
+  },
+  optionalSectionLabel: {
+    fontSize: 11,
+    letterSpacing: 1.1,
   },
 });
