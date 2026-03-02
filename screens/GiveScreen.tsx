@@ -95,7 +95,7 @@ export default function GiveScreen() {
   const animateFieldFocus = (motion: Animated.Value, toValue: number) => {
     Animated.timing(motion, {
       toValue,
-      duration: 120,
+      duration: 100,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
@@ -179,7 +179,7 @@ export default function GiveScreen() {
 
     Animated.timing(stepMotion, {
       toValue: 0,
-      duration: 120,
+      duration: 250,
       easing: Easing.inOut(Easing.quad),
       useNativeDriver: true,
     }).start(() => {
@@ -187,7 +187,7 @@ export default function GiveScreen() {
       stepMotion.setValue(0);
       Animated.timing(stepMotion, {
         toValue: 1,
-        duration: 220,
+        duration: 250,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }).start();
@@ -203,7 +203,7 @@ export default function GiveScreen() {
     setCampaignMenuVisible(true);
     Animated.timing(campaignMenuMotion, {
       toValue: 1,
-      duration: 190,
+      duration: 180,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
@@ -217,7 +217,7 @@ export default function GiveScreen() {
     setCampaignOpen(false);
     Animated.timing(campaignMenuMotion, {
       toValue: 0,
-      duration: 150,
+      duration: 180,
       easing: Easing.inOut(Easing.quad),
       useNativeDriver: false,
     }).start(({finished}) => {

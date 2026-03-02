@@ -179,7 +179,7 @@ function MessageBubble({
   useEffect(() => {
     Animated.timing(enterMotion, {
       toValue: 1,
-      duration: 210,
+      duration: 180,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
@@ -739,13 +739,13 @@ function ChatView({
       Animated.sequence([
         Animated.timing(sendPulse, {
           toValue: 1.06,
-          duration: 90,
+          duration: 100,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(sendPulse, {
           toValue: 1,
-          duration: 130,
+          duration: 100,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
