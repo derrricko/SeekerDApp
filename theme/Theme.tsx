@@ -25,6 +25,8 @@ export interface AppTheme {
     danger: string;
     success: string;
     overlay: string;
+    surfaceMuted: string;
+    borderMuted: string;
   };
   spacing: {
     xs: number;
@@ -87,6 +89,8 @@ const lightTheme: AppTheme = {
     danger: '#A83D62',
     success: '#2A9274',
     overlay: 'rgba(12, 10, 22, 0.3)',
+    surfaceMuted: 'rgba(26,17,37,0.04)',
+    borderMuted: 'rgba(26,17,37,0.12)',
   },
   spacing: {
     xs: 8,
@@ -136,6 +140,8 @@ const darkTheme: AppTheme = {
     danger: '#FF6A85',
     success: '#30D158',
     overlay: 'rgba(3, 6, 12, 0.45)',
+    surfaceMuted: 'rgba(255,255,255,0.04)',
+    borderMuted: 'rgba(255,255,255,0.08)',
   },
   spacing: lightTheme.spacing,
   radius: lightTheme.radius,
