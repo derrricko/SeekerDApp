@@ -173,6 +173,7 @@ function MessageBubble({
   adminTimeColor: string;
   donorTimeColor: string;
 }) {
+  const {theme} = useTheme();
   const enterMotion = React.useRef(new Animated.Value(0)).current;
   const translateXStart = fromAdmin ? -8 : 8;
 
@@ -270,7 +271,7 @@ function MessageBubble({
 
       {item.media_type ? (
         <View style={styles.mediaTagWrap}>
-          <Text style={styles.mediaTagText}>
+          <Text style={[styles.mediaTagText, {color: theme.colors.accent}]}>
             {item.media_type === 'receipt' ? 'RECEIPT' : 'PHOTO'}
           </Text>
         </View>
@@ -475,7 +476,7 @@ export default function MessagesScreen() {
                     {amount} USDC
                   </Text>
                   {unreadCount > 0 ? (
-                    <View style={styles.conversationUnreadBadge}>
+                    <View style={[styles.conversationUnreadBadge, {backgroundColor: theme.colors.accent}]}>
                       <Text style={styles.conversationUnreadText}>
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </Text>
@@ -776,8 +777,8 @@ function ChatView({
           style={[
             styles.chatTopCard,
             {
-              backgroundColor: 'rgba(26,17,37,0.04)',
-              borderColor: 'rgba(26,17,37,0.12)',
+              backgroundColor: theme.colors.surfaceMuted,
+              borderColor: theme.colors.borderMuted,
             },
           ]}>
           <View style={styles.chatMetaWrap}>
@@ -857,14 +858,14 @@ function ChatView({
                 <MessageBubble
                   item={item}
                   fromAdmin={fromAdmin}
-                  adminBubbleBackground="rgba(26,17,37,0.06)"
-                  adminBubbleBorder="rgba(26,17,37,0.14)"
+                  adminBubbleBackground={theme.colors.surfaceMuted}
+                  adminBubbleBorder={theme.colors.borderMuted}
                   donorBubbleBackground={theme.colors.accent}
                   donorBubbleBorder={theme.colors.accentPressed}
                   adminTextColor={theme.colors.textPrimary}
-                  donorTextColor="rgba(248,244,255,0.98)"
+                  donorTextColor={theme.mode === 'light' ? 'rgba(248,244,255,0.98)' : '#F7FAFC'}
                   adminTimeColor={theme.colors.textTertiary}
-                  donorTimeColor="rgba(244,240,255,0.74)"
+                  donorTimeColor={theme.mode === 'light' ? 'rgba(244,240,255,0.74)' : 'rgba(247,250,252,0.6)'}
                 />
               );
             }}
@@ -890,16 +891,16 @@ function ChatView({
           style={[
             styles.inputBar,
             {
-              borderTopColor: 'rgba(101,84,209,0.2)',
-              backgroundColor: 'rgba(101,84,209,0.1)',
+              borderTopColor: theme.colors.borderMuted,
+              backgroundColor: theme.colors.surfaceMuted,
             },
           ]}>
           <TouchableOpacity
             style={[
               styles.mediaButton,
               {
-                borderColor: 'rgba(101,84,209,0.32)',
-                backgroundColor: '#F4F1FF',
+                borderColor: theme.colors.borderMuted,
+                backgroundColor: theme.colors.surface,
               },
             ]}
             onPress={pickPhoto}
@@ -911,8 +912,8 @@ function ChatView({
             style={[
               styles.mediaButton,
               {
-                borderColor: 'rgba(101,84,209,0.32)',
-                backgroundColor: '#F4F1FF',
+                borderColor: theme.colors.borderMuted,
+                backgroundColor: theme.colors.surface,
               },
             ]}
             onPress={takePhoto}
@@ -924,9 +925,9 @@ function ChatView({
             style={[
               styles.chatInput,
               {
-                backgroundColor: '#FFFFFF',
-                color: '#1A1125',
-                borderColor: 'rgba(141,125,199,0.45)',
+                backgroundColor: theme.mode === 'light' ? '#FFFFFF' : theme.colors.surface,
+                color: theme.colors.textPrimary,
+                borderColor: theme.colors.borderMuted,
               },
             ]}
             value={inputText}
@@ -941,12 +942,12 @@ function ChatView({
             style={[
               styles.sendIconButton,
               {
-                backgroundColor: '#6554D1',
+                backgroundColor: theme.colors.accent,
                 transform: [{scale: sendPulse}],
               },
               ((!inputText.trim() && !pickedImage) || sending) && {
-                backgroundColor: '#BFB5ED',
-                borderColor: 'rgba(101,84,209,0.35)',
+                backgroundColor: theme.colors.textTertiary,
+                borderColor: theme.colors.borderMuted,
               },
             ]}
             onPress={handleSend}
@@ -1074,7 +1075,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     letterSpacing: 0.7,
     fontWeight: '700',
-    color: '#4D41A8',
   },
   previewRow: {
     flexDirection: 'row',
@@ -1238,7 +1238,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#6554D1',
   },
   conversationUnreadText: {
     color: '#fff',
