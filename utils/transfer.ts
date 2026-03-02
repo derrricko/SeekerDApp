@@ -168,8 +168,9 @@ export async function buildDonationTransaction(
   transaction.add(memoIx);
 
   // Set blockhash + fee payer
-  const {blockhash, lastValidBlockHeight} =
-    await connection.getLatestBlockhash();
+  const {blockhash, lastValidBlockHeight} = await connection.getLatestBlockhash(
+    'confirmed',
+  );
   transaction.recentBlockhash = blockhash;
   transaction.feePayer = donor;
 

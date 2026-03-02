@@ -22,6 +22,7 @@ import {getExplorerUrl} from '../utils/explorer';
 import AppHeader from '../ui/AppHeader';
 import PrimaryButton from '../ui/PrimaryButton';
 import ScreenContainer from '../ui/ScreenContainer';
+import SurfaceCard from '../ui/SurfaceCard';
 
 type Step = 'form' | 'confirm' | 'processing';
 const DROPDOWN_ITEM_HEIGHT = 60;
@@ -94,7 +95,7 @@ export default function GiveScreen() {
   const animateFieldFocus = (motion: Animated.Value, toValue: number) => {
     Animated.timing(motion, {
       toValue,
-      duration: 120,
+      duration: 100,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
@@ -178,7 +179,7 @@ export default function GiveScreen() {
 
     Animated.timing(stepMotion, {
       toValue: 0,
-      duration: 120,
+      duration: 250,
       easing: Easing.inOut(Easing.quad),
       useNativeDriver: true,
     }).start(() => {
@@ -186,7 +187,7 @@ export default function GiveScreen() {
       stepMotion.setValue(0);
       Animated.timing(stepMotion, {
         toValue: 1,
-        duration: 220,
+        duration: 250,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }).start();
@@ -202,7 +203,7 @@ export default function GiveScreen() {
     setCampaignMenuVisible(true);
     Animated.timing(campaignMenuMotion, {
       toValue: 1,
-      duration: 190,
+      duration: 180,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
@@ -216,7 +217,7 @@ export default function GiveScreen() {
     setCampaignOpen(false);
     Animated.timing(campaignMenuMotion, {
       toValue: 0,
-      duration: 150,
+      duration: 180,
       easing: Easing.inOut(Easing.quad),
       useNativeDriver: false,
     }).start(({finished}) => {
@@ -490,6 +491,25 @@ export default function GiveScreen() {
                 ) : null}
               </View>
 
+              <View style={styles.optionalDivider}>
+                <View
+                  style={[
+                    styles.optionalDividerLine,
+                    {backgroundColor: theme.colors.borderMuted},
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.optionalSectionLabel,
+                    {
+                      color: theme.colors.textTertiary,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  OPTIONAL
+                </Text>
+              </View>
+
               <View style={styles.fieldBlock}>
                 <Text
                   style={[
@@ -682,16 +702,30 @@ export default function GiveScreen() {
                 )}
               </View>
 
-              <Text
-                style={[
-                  styles.timelineCopy,
-                  {color: theme.colors.textSecondary},
-                ]}>
-                After confirmation, your USDC donation is sent on-chain. Your
-                message thread opens immediately. In 24-48 hours we reach out
-                with the specific need your donation is supporting. In 5-7 days
-                you receive receipts, photos, and progress updates.
-              </Text>
+              <View style={styles.timelineList}>
+                <Text
+                  style={[
+                    styles.timelineItem,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  {'—  '}On-chain confirmation is immediate
+                </Text>
+                <Text
+                  style={[
+                    styles.timelineItem,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  {'—  '}5-7 days: receipts, photos, and updates
+                </Text>
+                <Text
+                  style={[
+                    styles.timelineItem,
+                    {color: theme.colors.textTertiary},
+                  ]}>
+                  {'—  '}Any surplus is donated to the community pool, disbursed
+                  every 6 months
+                </Text>
+              </View>
 
               {!!error && (
                 <Text style={[styles.error, {color: theme.colors.danger}]}>
@@ -706,7 +740,7 @@ export default function GiveScreen() {
                   styles.backButton,
                   {
                     borderColor: theme.colors.border,
-                    backgroundColor: inputSurface,
+                    backgroundColor: 'transparent',
                     opacity: loading || connecting ? 0.6 : 1,
                     transform: [
                       {scale: pressed ? 0.985 : 1},
@@ -722,7 +756,7 @@ export default function GiveScreen() {
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
-                  Back
+                  BACK
                 </Text>
               </Pressable>
 
@@ -760,26 +794,36 @@ export default function GiveScreen() {
             </View>
           ) : step === 'processing' ? (
             <View>
-              <Text
-                style={[
-                  styles.processingTitle,
-                  {
-                    color: theme.colors.textPrimary,
-                    fontFamily: theme.typography.brand,
-                  },
-                ]}>
-                DONATION CONFIRMED
-              </Text>
-              <Text
-                style={[
-                  styles.processingBody,
-                  {color: theme.colors.textSecondary},
-                ]}>
-                Your {formattedAmount} USDC donation is confirmed on-chain.
-                {'\n\n'}
-                We are processing your message thread. It will appear in your
-                Messages tab shortly.
-              </Text>
+              <SurfaceCard style={styles.processingCard}>
+                <Text
+                  style={[
+                    styles.processingTitle,
+                    {
+                      color: theme.colors.textPrimary,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  DONATION CONFIRMED
+                </Text>
+                <Text
+                  style={[
+                    styles.processingAmount,
+                    {
+                      color: theme.colors.accent,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  {formattedAmount} USDC
+                </Text>
+                <Text
+                  style={[
+                    styles.processingBody,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  Your donation is confirmed on-chain. We are processing your
+                  message thread — it will appear in Messages shortly.
+                </Text>
+              </SurfaceCard>
 
               {!!processingTxSig && (
                 <TouchableOpacity
@@ -820,7 +864,12 @@ export default function GiveScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<
+  Record<
+    string,
+    import('react-native').ViewStyle | import('react-native').TextStyle
+  >
+>({
   root: {
     flex: 1,
   },
@@ -951,18 +1000,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
   },
-  timelineCopy: {
+  timelineList: {
     marginTop: 12,
-    fontSize: 15,
-    lineHeight: 22,
+    gap: 4,
+  },
+  timelineItem: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   backButton: {
     marginTop: 14,
-    alignSelf: 'flex-start',
-    minWidth: 96,
-    height: 40,
+    width: '100%',
+    height: 48,
     borderWidth: 2,
-    paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -970,13 +1020,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 18,
     fontWeight: '700',
+    letterSpacing: 1,
   },
   confirmButton: {
     marginTop: 10,
     width: '100%',
     minHeight: 64,
     borderWidth: 3,
-    borderRadius: 32,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#1A1125',
@@ -992,11 +1043,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.2,
   },
+  processingCard: {
+    marginBottom: 16,
+    borderRadius: 0,
+  },
   processingTitle: {
     fontSize: 18,
     lineHeight: 22,
     fontWeight: '700',
     letterSpacing: 1,
+    marginBottom: 12,
+  },
+  processingAmount: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '700',
     marginBottom: 12,
   },
   processingBody: {
@@ -1015,5 +1076,17 @@ const styles = StyleSheet.create({
   explorerLinkText: {
     fontSize: 14,
     fontWeight: '700',
+  },
+  optionalDivider: {
+    marginTop: 4,
+    marginBottom: 14,
+  },
+  optionalDividerLine: {
+    height: 1,
+    marginBottom: 10,
+  },
+  optionalSectionLabel: {
+    fontSize: 11,
+    letterSpacing: 1.1,
   },
 });

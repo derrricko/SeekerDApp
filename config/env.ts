@@ -19,7 +19,7 @@ export const RPC_URL = RPC_URLS[SOLANA_CLUSTER];
 export const APP_IDENTITY = {
   name: 'Glimpse',
   uri: 'https://giveglimpse.com',
-  icon: 'favicon.ico',
+  icon: 'https://giveglimpse.com/icon.png',
 };
 
 // Supabase
@@ -30,11 +30,12 @@ export const SUPABASE_ANON_KEY =
 // Solana Memo Program v2
 export const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 
-// Glimpse Seeker device wallet — receives all donations AND acts as admin
-// for donor chat threads. Single wallet = full on-chain transparency.
+// Single-wallet architecture for launch: pool + admin = same address.
+// All donations go to this wallet. The admin identity for chat threads is the
+// same key. This provides full on-chain transparency. Post-launch, these may
+// diverge (separate pool, separate admin) — update both here and in the
+// record-donation edge function if that happens.
 export const ADMIN_WALLET = 'DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk';
-
-// Same wallet as admin — all donations go here, matching happens off-chain.
 export const MATCHING_POOL_WALLET =
   'DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk';
 
@@ -53,6 +54,8 @@ export const USDC_DECIMALS = 6;
 // SGTs only exist on mainnet — always verify against mainnet RPC.
 export const SGT_MINT_AUTHORITY =
   'GT2zuHVaZQYZSyQMgJPLzvkmyztfyXg2NJunqFp4p3A4';
+// SGT uses self-referencing metadata: the metadata pointer and group mint
+// are both the same address. Verified against on-chain SGT mint account.
 export const SGT_METADATA_ADDRESS =
   'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
 export const SGT_GROUP_MINT_ADDRESS =

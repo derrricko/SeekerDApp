@@ -1,5 +1,35 @@
 # Glimpse v2 — Deferred Work
 
+## 0. Pre-Mainnet Manual Testing
+
+**What:** Run the full manual test plan before taking real USDC on mainnet.
+
+**Why:** The donation flow touches wallet auth, on-chain USDC transfers, server-side validation, Supabase recording, and Realtime chat. Every handoff is a failure point. This plan covers happy path, edge cases, security (auth, RLS, tx integrity, data exposure), and financial reconciliation.
+
+**Plan:** `docs/testing/2026-03-01-manual-test-plan.md` — 13 sections, ~80 test cases.
+
+**Priority order:**
+1. Verify config constants (cluster, mint, ATA, RPC) before any tx tests
+2. Happy path end-to-end (wallet → donate → record → messages)
+3. Edge cases (insufficient balance, network drops, retry queue)
+4. Security (auth bypass, RLS, tx spoofing, APK secrets)
+5. Final gate: one real $1 USDC mainnet donation
+
+**Depends on:** Deploy-time items below completed first.
+
+---
+
+## 0b. Deploy-Time Checklist (Before Mainnet Launch)
+
+- [ ] **Re-enable SGT gating** in `navigation/AppNavigator.tsx` — restore `hasSeekerToken` checks in `GatedGiveScreen` and `GatedMessagesScreen`
+- [ ] **Remove mock data** from `screens/CampaignsScreen.tsx` (search `MOCK_DONATIONS`) and `screens/MessagesScreen.tsx` (search `MOCK_CONVERSATIONS`)
+- [ ] **Rotate Helius API key** on dashboard (old key `595f9a7c...` is in git history)
+- [ ] **Deploy migration 011** (explicit deny policies): `npx supabase db push`
+- [ ] **Deploy edge functions**: `npx supabase functions deploy wallet-auth && npx supabase functions deploy record-donation`
+- [ ] **Verify `config/env.ts`** mainnet values: cluster, USDC mint, pool ATA, RPC endpoint
+
+---
+
 ## 1. Functional Leaderboard
 
 **What:** Build a leaderboard screen that ranks donors by total SOL given, sourced from the `donations` Supabase table.
@@ -48,7 +78,54 @@
 
 ---
 
-## 5. Resolve Remaining npm Vulnerability State
+## 5. Replace dApp Store Placeholder Assets
+
+**What:** Replace all placeholder dApp Store assets with real branded content before submission.
+
+**Why:** The current icon (plain purple square), banner (solid dark rectangle), and all 4 screenshots (solid-color images) are placeholders. The dApp Store requires real assets showing the actual app experience. Placeholder assets will result in rejection during manual review.
+
+**Assets to replace:**
+- `dapp-store/icon-512.png` — 512x512 PNG with Glimpse branding/logo
+- `dapp-store/banner-1200x600.png` — 1200x600 PNG with app name, tagline, and/or device mockup
+- `dapp-store/screenshots/01-campaigns.png` — 1080x1920, show campaigns list
+- `dapp-store/screenshots/02-give.png` — 1080x1920, show give flow with amount entry
+- `dapp-store/screenshots/03-done.png` — 1080x1920, show confirmation/done screen
+- `dapp-store/screenshots/04-messages.png` — 1080x1920, show messages thread
+
+**Also verify before submission:**
+- `config.yaml` publisher/app/release addresses populated (run `npx dapp-store create publisher` + `create app`)
+- `https://giveglimpse.com/privacy` is live and returning a privacy policy
+- Confirm `com.seekerdapp` is the permanent package name
+
+**Depends on:** App running on-device for screenshot capture.
+
+---
+
+## 6. Two-Phone Messaging Test (Admin Reply Flow)
+
+**What:** Test the full messaging flow using two Seeker phones — one as donor, one as admin wallet.
+
+**Why:** The chat system has RLS policies that should allow both donor and admin wallets to send/read messages in a shared conversation. However, the app was built as donor-facing only. No dedicated admin UI exists. Need to verify whether the admin wallet can actually send messages from the app, or if admin responses are limited to Supabase dashboard inserts.
+
+**Test plan:**
+- Phone 1 (donor wallet): Donate USDC, open Messages tab, verify welcome message appears, send a reply
+- Phone 2 (admin wallet): Connect admin wallet (`DdqT7Fek...`), check if conversations appear in Messages tab, open a thread, attempt to send a message back to donor
+- Verify Realtime: Does donor see admin reply instantly? Does admin see donor reply instantly?
+- Verify unread badges update correctly on both phones
+- Test media: Can both sides send photos?
+
+**Known gaps to document:**
+- No admin mode or role switcher in the app
+- Admin wallet is hardcoded — every conversation uses the same admin
+- No message edit/delete capability
+- No conversation archiving or filtering
+- If admin reply from app fails, fallback is Supabase dashboard SQL insert
+
+**Depends on:** Two Seeker phones, devnet USDC in donor wallet, edge functions deployed.
+
+---
+
+## 7. Resolve Remaining npm Vulnerability State
 
 **What:** Address the 10 remaining npm audit vulnerabilities (3 high, 7 low) that require breaking dependency changes.
 

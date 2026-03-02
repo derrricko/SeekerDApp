@@ -69,6 +69,9 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
   const [hasSeekerToken, setHasSeekerToken] = useState(false);
   const [sgtLoading, setSgtLoading] = useState(false);
 
+  // Re-entrancy guard: useRef (not useState) for synchronous checking.
+  const connectingRef = useRef(false);
+
   // Request-id guard: prevents stale async SGT results from overwriting
   // state after disconnect/reconnect.
   const sgtCheckIdRef = useRef(0);
@@ -107,6 +110,10 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
   }, []);
 
   const connect = useCallback(async (): Promise<PublicKey> => {
+    if (connectingRef.current) {
+      throw new Error('Connection already in progress');
+    }
+    connectingRef.current = true;
     let connectedPubkey: PublicKey | null = null;
     setConnecting(true);
     try {
@@ -138,7 +145,10 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
           throw new Error('Wallet did not return a signed auth payload');
         }
 
-        const signature = encodeBase64(signedPayloads[0]);
+        // MWA signMessages may return signed message (sig + msg) or detached sig.
+        // Extract first 64 bytes to ensure we get just the ed25519 signature.
+        const signatureBytes = signedPayloads[0].slice(0, 64);
+        const signature = encodeBase64(signatureBytes);
         const authResult = await authenticateWalletSignature({
           wallet: walletAddress,
           signature,
@@ -170,6 +180,7 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
       throw error;
     } finally {
       setConnecting(false);
+      connectingRef.current = false;
     }
   }, [checkSeekerToken]);
 
@@ -229,6 +240,10 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
     async (
       buildTransaction: (donorPubkey: PublicKey) => Promise<Transaction>,
     ): Promise<{publicKey: PublicKey; signature: string}> => {
+      if (connectingRef.current) {
+        throw new Error('Connection already in progress');
+      }
+      connectingRef.current = true;
       setConnecting(true);
 
       let donorPubkey: PublicKey | null = null;
@@ -246,7 +261,20 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
           }
 
           const base64Address = auth.accounts[0].address;
-          donorPubkey = parseAuthorizedAccountAddress(base64Address);
+          const newPubkey = parseAuthorizedAccountAddress(base64Address);
+
+          // Wallet mismatch check: if user selects a different wallet in the
+          // MWA picker than the one already connected, log and update.
+          if (publicKey && !newPubkey.equals(publicKey)) {
+            console.warn(
+              'Wallet changed during seamless flow:',
+              publicKey.toBase58(),
+              '→',
+              newPubkey.toBase58(),
+            );
+          }
+
+          donorPubkey = newPubkey;
           const walletAddress = donorPubkey.toBase58();
 
           const message = createWalletAuthMessage();
@@ -260,7 +288,10 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
             throw new Error('Wallet did not return a signed auth payload');
           }
 
-          const authSignature = encodeBase64(signedPayloads[0]);
+          // MWA signMessages may return signed message (sig + msg) or detached sig.
+          // Extract first 64 bytes to ensure we get just the ed25519 signature.
+          const authSignatureBytes = signedPayloads[0].slice(0, 64);
+          const authSignature = encodeBase64(authSignatureBytes);
           const authResult = await authenticateWalletSignature({
             wallet: walletAddress,
             signature: authSignature,
@@ -291,11 +322,20 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
         retryPendingConversations().catch(() => {});
 
         return {publicKey: donorPubkey, signature};
+      } catch (error) {
+        // Clean up partial state if the session failed after auth succeeded
+        setPublicKey(null);
+        setHasSeekerToken(false);
+        setSgtLoading(false);
+        await AsyncStorage.removeItem('@glimpse_wallet_address');
+        await setSupabaseAccessToken(null);
+        throw error;
       } finally {
         setConnecting(false);
+        connectingRef.current = false;
       }
     },
-    [checkSeekerToken],
+    [checkSeekerToken, publicKey],
   );
 
   const value = useMemo(
