@@ -22,6 +22,7 @@ import {getExplorerUrl} from '../utils/explorer';
 import AppHeader from '../ui/AppHeader';
 import PrimaryButton from '../ui/PrimaryButton';
 import ScreenContainer from '../ui/ScreenContainer';
+import SurfaceCard from '../ui/SurfaceCard';
 
 type Step = 'form' | 'confirm' | 'processing';
 const DROPDOWN_ITEM_HEIGHT = 60;
@@ -792,26 +793,36 @@ export default function GiveScreen() {
             </View>
           ) : step === 'processing' ? (
             <View>
-              <Text
-                style={[
-                  styles.processingTitle,
-                  {
-                    color: theme.colors.textPrimary,
-                    fontFamily: theme.typography.brand,
-                  },
-                ]}>
-                DONATION CONFIRMED
-              </Text>
-              <Text
-                style={[
-                  styles.processingBody,
-                  {color: theme.colors.textSecondary},
-                ]}>
-                Your {formattedAmount} USDC donation is confirmed on-chain.
-                {'\n\n'}
-                We are processing your message thread. It will appear in your
-                Messages tab shortly.
-              </Text>
+              <SurfaceCard style={styles.processingCard}>
+                <Text
+                  style={[
+                    styles.processingTitle,
+                    {
+                      color: theme.colors.textPrimary,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  DONATION CONFIRMED
+                </Text>
+                <Text
+                  style={[
+                    styles.processingAmount,
+                    {
+                      color: theme.colors.accent,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  {formattedAmount} USDC
+                </Text>
+                <Text
+                  style={[
+                    styles.processingBody,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  Your donation is confirmed on-chain. We are processing your
+                  message thread — it will appear in Messages shortly.
+                </Text>
+              </SurfaceCard>
 
               {!!processingTxSig && (
                 <TouchableOpacity
@@ -1026,11 +1037,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.2,
   },
+  processingCard: {
+    marginBottom: 16,
+    borderRadius: 0,
+  },
   processingTitle: {
     fontSize: 18,
     lineHeight: 22,
     fontWeight: '700',
     letterSpacing: 1,
+    marginBottom: 12,
+  },
+  processingAmount: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '700',
     marginBottom: 12,
   },
   processingBody: {
