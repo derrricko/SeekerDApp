@@ -715,14 +715,15 @@ export default function GiveScreen() {
                     styles.timelineItem,
                     {color: theme.colors.textSecondary},
                   ]}>
-                  {'—  '}24-48 hours: matched to a specific need
+                  {'—  '}5-7 days: receipts, photos, and updates
                 </Text>
                 <Text
                   style={[
                     styles.timelineItem,
-                    {color: theme.colors.textSecondary},
+                    {color: theme.colors.textTertiary},
                   ]}>
-                  {'—  '}5-7 days: receipts, photos, and updates
+                  {'—  '}Any surplus is donated to the community pool, disbursed
+                  every 6 months
                 </Text>
               </View>
 

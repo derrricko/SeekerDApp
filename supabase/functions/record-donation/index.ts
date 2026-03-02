@@ -822,7 +822,7 @@ async function upsertConversation(params: {
   const {error: messageError} = await supabase.from('messages').insert({
     conversation_id: inserted.id,
     sender_wallet: ADMIN_WALLET,
-    body: `Next steps: Your donation of ${amountUSDC} USDC is confirmed on-chain. In 24-48 hours we will message you with the specific need your donation is supporting. In 5-7 days, this thread will include receipts, photos, and progress updates.`,
+    body: `Next steps: Your donation of ${amountUSDC} USDC is confirmed on-chain. In 5-7 days, this thread will include receipts, photos, and progress updates. Any amount exceeding the matched need will be donated to the Glimpse community pool, disbursed every 6 months.`,
   });
 
   if (messageError) {
