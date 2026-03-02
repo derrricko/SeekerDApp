@@ -159,9 +159,7 @@ export default function CampaignsScreen() {
                 styles.togglePill,
                 {
                   backgroundColor:
-                    viewMode === 'feed'
-                      ? theme.colors.accent
-                      : 'transparent',
+                    viewMode === 'feed' ? theme.colors.accent : 'transparent',
                 },
               ]}
               onPress={() => setViewMode('feed')}
@@ -224,7 +222,8 @@ export default function CampaignsScreen() {
                 walletAddress: walletAddress || 'demo',
                 loading: historyLoading,
                 error: historyError,
-                rows: donationHistory.length > 0 ? donationHistory : MOCK_DONATIONS,
+                rows:
+                  donationHistory.length > 0 ? donationHistory : MOCK_DONATIONS,
                 navigation,
                 theme,
               })}

@@ -19,7 +19,7 @@ export const RPC_URL = RPC_URLS[SOLANA_CLUSTER];
 export const APP_IDENTITY = {
   name: 'Glimpse',
   uri: 'https://giveglimpse.com',
-  icon: 'https://giveglimpse.com/icon.png',
+  icon: '/icon.png',
 };
 
 // Supabase

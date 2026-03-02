@@ -22,9 +22,7 @@ import HomeScreen from '../screens/HomeScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import HowItWorksCarousel from '../screens/HowItWorksCarousel';
 import MessagesScreen from '../screens/MessagesScreen';
-import SeekerRequiredScreen from '../screens/SeekerRequiredScreen';
 import {useUnread} from '../components/providers/UnreadProvider';
-import {useWallet} from '../components/providers/WalletProvider';
 import {useTheme} from '../theme/Theme';
 
 export type RootTabParamList = {
@@ -235,8 +233,8 @@ function AppTabBar({
   );
 }
 
-// SGT-gated screen wrappers — block Give/Messages for non-Seeker wallets.
-// TODO: Re-enable SGT gating before mainnet launch
+// SGT gating BYPASSED for mainnet testing. Re-enable before launch.
+// See docs/plans/2026-03-02-mwa-activity-lifecycle-fix.md for MWA fix status.
 function GatedGiveScreen() {
   return <GiveScreen />;
 }
@@ -523,5 +521,15 @@ const styles = StyleSheet.create({
     fontSize: 22,
     lineHeight: 24,
     fontWeight: '700',
+  },
+  loadingRoot: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 15,
+    lineHeight: 22,
   },
 });

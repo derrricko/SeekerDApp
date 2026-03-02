@@ -64,17 +64,17 @@ interface CampaignRule {
 const CAMPAIGN_RULES: CampaignRule[] = [
   {
     id: 'teacher-supplies',
-    minimumUSDC: 10,
+    minimumUSDC: 1,
     causePreferences: ['education', 'teacher-supplies'],
   },
   {
     id: 'single-moms-crisis',
-    minimumUSDC: 25,
+    minimumUSDC: 2,
     causePreferences: ['family-crisis', 'single-moms'],
   },
   {
     id: 'foster-care-after-school',
-    minimumUSDC: 15,
+    minimumUSDC: 3,
     causePreferences: ['foster-care', 'child-essentials', 'after-school'],
   },
 ];

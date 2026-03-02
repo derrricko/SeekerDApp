@@ -30,7 +30,7 @@ export const CAMPAIGN_OPTIONS: CampaignOption[] = [
     summary:
       'Funds urgent classroom supplies like notebooks, markers, books, and project materials so teachers can keep students equipped without paying out of pocket.',
     causePreferences: ['education', 'teacher-supplies'],
-    minimumUSDC: 10,
+    minimumUSDC: 1,
   },
   {
     id: 'single-moms-crisis',
@@ -39,7 +39,7 @@ export const CAMPAIGN_OPTIONS: CampaignOption[] = [
     summary:
       'Supports families facing immediate hardship with essentials like transportation, groceries, and critical household stability during emergency periods.',
     causePreferences: ['family-crisis', 'single-moms'],
-    minimumUSDC: 25,
+    minimumUSDC: 2,
   },
   {
     id: 'foster-care-after-school',
@@ -48,7 +48,7 @@ export const CAMPAIGN_OPTIONS: CampaignOption[] = [
     summary:
       'Helps foster and vulnerable children access after-school programs while covering essentials like diapers and formula for younger kids in care.',
     causePreferences: ['foster-care', 'child-essentials', 'after-school'],
-    minimumUSDC: 15,
+    minimumUSDC: 3,
   },
 ];
 
