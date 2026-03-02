@@ -48,7 +48,30 @@
 
 ---
 
-## 5. Resolve Remaining npm Vulnerability State
+## 5. Replace dApp Store Placeholder Assets
+
+**What:** Replace all placeholder dApp Store assets with real branded content before submission.
+
+**Why:** The current icon (plain purple square), banner (solid dark rectangle), and all 4 screenshots (solid-color images) are placeholders. The dApp Store requires real assets showing the actual app experience. Placeholder assets will result in rejection during manual review.
+
+**Assets to replace:**
+- `dapp-store/icon-512.png` — 512x512 PNG with Glimpse branding/logo
+- `dapp-store/banner-1200x600.png` — 1200x600 PNG with app name, tagline, and/or device mockup
+- `dapp-store/screenshots/01-campaigns.png` — 1080x1920, show campaigns list
+- `dapp-store/screenshots/02-give.png` — 1080x1920, show give flow with amount entry
+- `dapp-store/screenshots/03-done.png` — 1080x1920, show confirmation/done screen
+- `dapp-store/screenshots/04-messages.png` — 1080x1920, show messages thread
+
+**Also verify before submission:**
+- `config.yaml` publisher/app/release addresses populated (run `npx dapp-store create publisher` + `create app`)
+- `https://giveglimpse.com/privacy` is live and returning a privacy policy
+- Confirm `com.seekerdapp` is the permanent package name
+
+**Depends on:** App running on-device for screenshot capture.
+
+---
+
+## 6. Resolve Remaining npm Vulnerability State
 
 **What:** Address the 10 remaining npm audit vulnerabilities (3 high, 7 low) that require breaking dependency changes.
 

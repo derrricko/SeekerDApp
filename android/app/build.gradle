@@ -96,6 +96,8 @@ android {
         applicationId "com.seekerdapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+        // Bump versionCode for each dApp Store / Play Store release.
+        // dApp Store requires strictly increasing versionCode per release NFT.
         versionCode 1
         versionName "1.0"
     }
@@ -119,6 +121,13 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
+            // Fail early if signing credentials are missing — prevents unsigned release APKs.
+            if (!keystorePropertiesFile.exists()) {
+                throw new GradleException(
+                    "Release signing requires android/keystore.properties. " +
+                    "See README for setup instructions."
+                )
+            }
             signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"

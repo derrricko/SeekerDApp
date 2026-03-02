@@ -4,11 +4,6 @@ export type DonationCadence = 'one_time' | 'daily';
 export type DonationMode = 'solo' | 'group';
 export type HoldStatus = 'pending' | 'locked' | 'released';
 
-export interface CauseOption {
-  id: string;
-  label: string;
-}
-
 export interface CampaignOption {
   id: string;
   label: string;
@@ -25,15 +20,6 @@ export const MATCHING_POOL = {
   description:
     'Your USDC goes into the matching pool. Cause selections help us match you to the right need.',
 };
-
-export const CAUSE_OPTIONS: CauseOption[] = [
-  {id: 'transportation', label: 'Transportation'},
-  {id: 'housing', label: 'Housing'},
-  {id: 'food', label: 'Food access'},
-  {id: 'medical', label: 'Medical bills'},
-  {id: 'childcare', label: 'Childcare'},
-  {id: 'education', label: 'Education'},
-];
 
 // SYNC: campaign rules must match CAMPAIGN_RULES in supabase/functions/record-donation/index.ts
 export const CAMPAIGN_OPTIONS: CampaignOption[] = [

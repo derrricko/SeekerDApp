@@ -25,6 +25,7 @@ import MessagesScreen from '../screens/MessagesScreen';
 import SeekerRequiredScreen from '../screens/SeekerRequiredScreen';
 import {useUnread} from '../components/providers/UnreadProvider';
 import {useWallet} from '../components/providers/WalletProvider';
+import {useTheme} from '../theme/Theme';
 
 export type RootTabParamList = {
   Glimpses: undefined;
@@ -35,22 +36,15 @@ export type RootTabParamList = {
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-const TAB_BAR_THEME = {
-  background: '#F3EFFF',
-  border: '#1A1125',
-  textPrimary: '#1A1125',
-  textTertiary: '#6E6787',
-  accent: '#6554D1',
-  accentPressed: '#5646C4',
-  brand: 'CourierPrime-Regular',
-};
-
 interface GiveFlowContextValue {
   onOpenGiveFlow: () => void;
 }
 
 function GlimpsesIcon({active}: {active: boolean}) {
-  const iconColor = active ? TAB_BAR_THEME.textPrimary : '#55506A';
+  const {theme} = useTheme();
+  const iconColor = active
+    ? theme.colors.textPrimary
+    : theme.colors.textTertiary;
 
   return (
     <View style={[styles.glimpseIconFrame, {borderColor: iconColor}]}>
@@ -71,7 +65,10 @@ function GlimpsesIcon({active}: {active: boolean}) {
 }
 
 function MessagesIcon({active}: {active: boolean}) {
-  const iconColor = active ? TAB_BAR_THEME.textPrimary : '#55506A';
+  const {theme} = useTheme();
+  const iconColor = active
+    ? theme.colors.textPrimary
+    : theme.colors.textTertiary;
 
   return (
     <View style={styles.messagesIconWrap}>
@@ -86,6 +83,7 @@ function AppTabBar({
   navigation,
   onOpenGiveFlow,
 }: BottomTabBarProps & GiveFlowContextValue) {
+  const {theme} = useTheme();
   const {totalUnread, activeConversationId} = useUnread();
   const activeRouteName = state.routes[state.index]?.name as
     | keyof RootTabParamList
@@ -143,14 +141,14 @@ function AppTabBar({
       style={[
         styles.wrap,
         {
-          backgroundColor: TAB_BAR_THEME.background,
+          backgroundColor: theme.colors.surface,
         },
       ]}>
       <View
         style={[
           styles.topFill,
           {
-            backgroundColor: TAB_BAR_THEME.background,
+            backgroundColor: theme.colors.surface,
           },
         ]}
       />
@@ -158,7 +156,7 @@ function AppTabBar({
         style={[
           styles.topRail,
           {
-            backgroundColor: TAB_BAR_THEME.border,
+            backgroundColor: theme.colors.border,
           },
         ]}
       />
@@ -175,7 +173,7 @@ function AppTabBar({
             style={[
               styles.sideActiveIndicator,
               {
-                backgroundColor: TAB_BAR_THEME.accent,
+                backgroundColor: theme.colors.accent,
               },
               buildIndicatorStyle(glimpsesIndicator),
             ]}
@@ -189,13 +187,13 @@ function AppTabBar({
           styles.centerButton,
           {
             backgroundColor: isGiveTab
-              ? TAB_BAR_THEME.accentPressed
-              : TAB_BAR_THEME.accent,
-            borderColor: TAB_BAR_THEME.border,
+              ? theme.colors.accentPressed
+              : theme.colors.accent,
+            borderColor: theme.colors.border,
           },
         ]}
         activeOpacity={0.9}>
-        <Text style={[styles.centerText, {fontFamily: TAB_BAR_THEME.brand}]}>
+        <Text style={[styles.centerText, {fontFamily: theme.typography.brand}]}>
           DONATE
         </Text>
       </TouchableOpacity>
@@ -212,8 +210,8 @@ function AppTabBar({
                 style={[
                   styles.unreadBadge,
                   {
-                    backgroundColor: TAB_BAR_THEME.accent,
-                    borderColor: TAB_BAR_THEME.background,
+                    backgroundColor: theme.colors.accent,
+                    borderColor: theme.colors.surface,
                   },
                 ]}>
                 <Text style={styles.unreadBadgeText}>
@@ -226,7 +224,7 @@ function AppTabBar({
             style={[
               styles.sideActiveIndicator,
               {
-                backgroundColor: TAB_BAR_THEME.accent,
+                backgroundColor: theme.colors.accent,
               },
               buildIndicatorStyle(messagesIndicator),
             ]}
@@ -301,6 +299,7 @@ function MainTabs({
 }
 
 export default function AppNavigator() {
+  const {theme} = useTheme();
   const [entered, setEntered] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const insets = useSafeAreaInsets();
@@ -351,10 +350,10 @@ export default function AppNavigator() {
           styles.topHelpButton,
           {
             top: insets.top + 8,
-            borderColor: TAB_BAR_THEME.border,
+            borderColor: theme.colors.border,
             backgroundColor: showHowItWorks
-              ? TAB_BAR_THEME.accent
-              : TAB_BAR_THEME.background,
+              ? theme.colors.accent
+              : theme.colors.surface,
           },
         ]}
         activeOpacity={0.86}>
@@ -363,9 +362,9 @@ export default function AppNavigator() {
             styles.topHelpText,
             {
               color: showHowItWorks
-                ? TAB_BAR_THEME.background
-                : TAB_BAR_THEME.textPrimary,
-              fontFamily: TAB_BAR_THEME.brand,
+                ? theme.colors.surface
+                : theme.colors.textPrimary,
+              fontFamily: theme.typography.brand,
             },
           ]}>
           ?

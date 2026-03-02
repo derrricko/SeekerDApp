@@ -21,6 +21,24 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
 const TOKEN_TTL_S = 60 * 60 * 24; // 24 hours
 
+// ---------- Rate Limiting (in-memory, resets on cold start) ----------
+
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 10; // max requests per window
+const RATE_WINDOW_MS = 60_000; // 1 minute
+
+function checkRateLimit(wallet: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(wallet);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(wallet, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -55,6 +73,19 @@ serve(async (req: Request) => {
           headers: {...corsHeaders, 'Content-Type': 'application/json'},
         },
       );
+    }
+
+    // --- Validate wallet address format ---
+    if (typeof wallet !== 'string' || wallet.length < 32 || wallet.length > 44) {
+      return json({error: 'Invalid wallet address format'}, 400);
+    }
+    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet)) {
+      return json({error: 'Invalid wallet address format'}, 400);
+    }
+
+    // --- Per-wallet rate limiting ---
+    if (!checkRateLimit(wallet)) {
+      return json({error: 'Too many requests. Please try again later.'}, 429);
     }
 
     // --- Check timestamp freshness ---
@@ -231,4 +262,11 @@ function decodeBase58(str: string, expectedLen?: number): Uint8Array {
   result.set(numBytes, outLen - numBytes.length);
   // Leading '1' chars already accounted for by the zero-filled prefix
   return result;
+}
+
+function json(payload: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {...corsHeaders, 'Content-Type': 'application/json'},
+  });
 }

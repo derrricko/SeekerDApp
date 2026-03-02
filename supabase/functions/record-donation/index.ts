@@ -43,6 +43,8 @@ const USDC_DECIMALS = 6;
 
 // Seeker Genesis Token (SGT) — Token-2022 non-transferable NFT.
 const SGT_MINT_AUTHORITY = 'GT2zuHVaZQYZSyQMgJPLzvkmyztfyXg2NJunqFp4p3A4';
+// SGT uses self-referencing metadata: the metadata pointer and group mint
+// are both the same address. Verified against on-chain SGT mint account.
 const SGT_METADATA_ADDRESS = 'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
 const SGT_GROUP_MINT_ADDRESS = 'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
 const TOKEN_2022_PROGRAM_ID = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
@@ -84,6 +86,33 @@ const ALLOWED_CAUSE_PREFERENCES = new Set(
 // 48-hour hold window (ms)
 const HOLD_DURATION_MS = 48 * 60 * 60 * 1000;
 
+// ---------- Rate Limiting (in-memory, resets on cold start) ----------
+
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 5; // max requests per window
+const RATE_WINDOW_MS = 60_000; // 1 minute
+
+function checkRateLimit(wallet: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(wallet);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(wallet, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
+// ---------- RPC Error class ----------
+
+class RPCError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RPCError';
+  }
+}
+
 // CORS: use * for mobile client (React Native fetch does not send web Origin).
 // Auth is enforced via JWT bearer token, not CORS origin.
 const corsHeaders = {
@@ -109,6 +138,10 @@ serve(async req => {
     }
 
     const wallet = await verifyWalletFromJwt(token);
+
+    if (!checkRateLimit(wallet)) {
+      return json({error: 'Too many requests. Please try again later.'}, 429);
+    }
 
     // SGT gate — only Seeker device owners can donate.
     await verifySeekerTokenServerSide(wallet);
@@ -180,6 +213,12 @@ serve(async req => {
     );
   } catch (error) {
     console.error('[record-donation] error:', error);
+
+    // RPC errors → always 500 generic (prevent RPC error messages leaking to client)
+    if (error instanceof RPCError) {
+      return json({error: 'Internal server error'}, 500);
+    }
+
     const message = error instanceof Error ? error.message : 'Internal error';
     const lc = message.toLowerCase();
     // Auth errors → 401 (client should re-auth, not retry with same token)
@@ -204,6 +243,7 @@ serve(async req => {
       lc.includes('cause preferences') ||
       lc.includes('campaign') ||
       lc.includes('minimum') ||
+      lc.includes('exceeds maximum') ||
       lc.includes('txsignature is required')
     ) {
       return json({error: message}, 422);
@@ -420,6 +460,12 @@ async function fetchAndValidateUSDCTransaction(
     throw new Error('Invalid transfer amount');
   }
 
+  // Server-side max donation cap
+  const MAX_USDC = 10_000;
+  if (amountUSDC > MAX_USDC) {
+    throw new Error(`Donation amount ${amountUSDC} USDC exceeds maximum of ${MAX_USDC} USDC`);
+  }
+
   // Validate memo
   const memoIx = topInstructions.find(
     ix =>
@@ -517,8 +563,12 @@ async function verifySeekerTokenServerSide(walletAddress: string): Promise<void>
   ]);
 
   const accounts = result?.value || [];
+  const MAX_TOKEN_ACCOUNTS = 20;
+  let checked = 0;
 
   for (const account of accounts) {
+    if (++checked > MAX_TOKEN_ACCOUNTS) break;
+
     const parsed = account?.account?.data?.parsed?.info;
     if (!parsed) continue;
 
@@ -649,7 +699,7 @@ async function rpc(method: string, params: unknown[]): Promise<any> {
 
   const payload = await response.json();
   if (!response.ok || payload?.error) {
-    throw new Error(
+    throw new RPCError(
       payload?.error?.message ||
         `RPC ${method} failed with status ${response.status}`,
     );

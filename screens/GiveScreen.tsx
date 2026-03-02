@@ -863,7 +863,12 @@ export default function GiveScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<
+  Record<
+    string,
+    import('react-native').ViewStyle | import('react-native').TextStyle
+  >
+>({
   root: {
     flex: 1,
   },

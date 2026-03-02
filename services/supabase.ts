@@ -49,7 +49,7 @@ export async function hydrateSupabaseAccessToken(): Promise<void> {
 }
 
 /** Decode JWT payload and check exp claim without crypto. */
-function isTokenExpired(token: string): boolean {
+export function isTokenExpired(token: string): boolean {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) {
