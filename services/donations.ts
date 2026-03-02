@@ -1,10 +1,10 @@
 // v2 donation service — orchestrates the full USDC donation flow
 //
-// FLOW:
-//   buildDonationTransaction()  (SPL USDC transferChecked + Memo)
-//      → signAndSendTransaction()  via MWA
-//      → confirmTransaction() on-chain
-//      → secure record-donation edge function (server verifies SPL tx)
+// FLOW (two-phase to survive Seeker Activity destruction):
+//   Phase 1 (MWA session — fast, no network submission):
+//     authorize() → signMessages() → buildDonationTransaction() → signTransactions()
+//   Phase 2 (after MWA session — Activity is stable):
+//     sendRawTransaction() → confirmTransaction() → wallet-auth → record-donation
 //                                                              ↓ (on failure)
 //                                                        addPendingConversation()
 
@@ -23,8 +23,10 @@ import {
   removePendingConversation,
 } from '../utils/retry';
 import {SUPABASE_ANON_KEY, SUPABASE_URL} from '../config/env';
-import {getSupabaseAccessToken, isTokenExpired} from './supabase';
+import {getSupabaseAccessToken, isTokenExpired, setSupabaseAccessToken} from './supabase';
+import {authenticateWalletSignature} from './auth';
 import {DonationCadence, DonationMode} from '../data/donationConfig';
+import type {WalletSignResult} from '../components/providers/WalletProvider';
 
 export interface DonationResult {
   txSignature: string;
@@ -54,7 +56,12 @@ let donationMutex = false;
 
 /**
  * Execute donation in one wallet session:
- * authorize + wallet-auth signature + tx signature happen in a single MWA flow.
+ * 1. MWA: authorize + sign auth message + sign transaction (NO submission)
+ * 2. App: sendRawTransaction + confirmTransaction
+ * 3. App: wallet-auth + record-donation
+ *
+ * This separation ensures all network-dependent work happens AFTER the MWA
+ * session closes, surviving Android Activity destruction on Seeker.
  */
 export async function executeDonationSeamless(
   connection: Connection,
@@ -62,9 +69,9 @@ export async function executeDonationSeamless(
   recipientId: string,
   amountUSDC: number,
   cadence: DonationCadence,
-  authorizeAndSignAndSend: (
+  authorizeSignAndBuild: (
     buildTransaction: (donorPubkey: PublicKey) => Promise<Transaction>,
-  ) => Promise<{publicKey: PublicKey; signature: string}>,
+  ) => Promise<WalletSignResult>,
   causePreferences: string[] = [],
   donationMode: DonationMode = 'solo',
 ): Promise<Result<DonationResult>> {
@@ -84,10 +91,13 @@ export async function executeDonationSeamless(
     let blockhash = '';
     let lastValidBlockHeight = 0;
     let donorPubkey: PublicKey | null = null;
-    let txSignature = '';
+    let signedTransaction: Transaction | null = null;
+    let authSignature = '';
+    let authMessage = '';
 
+    // --- Phase 1: MWA session (fast, no network submission) ---
     try {
-      const signed = await authorizeAndSignAndSend(async donor => {
+      const walletResult = await authorizeSignAndBuild(async donor => {
         donorPubkey = donor;
         const built = await buildDonationTransaction(
           connection,
@@ -102,9 +112,48 @@ export async function executeDonationSeamless(
         return built.transaction;
       });
 
-      donorPubkey = signed.publicKey;
-      txSignature = signed.signature;
-    } catch (error) {
+      donorPubkey = walletResult.publicKey;
+      signedTransaction = walletResult.signedTransaction;
+      authSignature = walletResult.authSignature;
+      authMessage = walletResult.authMessage;
+    } catch (error: any) {
+      // Handle FallbackTxSent — wallet already sent via signAndSendTransactions
+      if (error?.name === 'FallbackTxSent') {
+        donorPubkey = error.publicKey;
+        const txSignature: string = error.txSignature;
+        authSignature = error.authSignature;
+        authMessage = error.authMessage;
+
+        // Ensure auth is complete — skip if WalletProvider already set a valid token
+        const fallbackToken = getSupabaseAccessToken();
+        if (!fallbackToken || isTokenExpired(fallbackToken)) {
+          try {
+            const authResult = await authenticateWalletSignature({
+              wallet: donorPubkey!.toBase58(),
+              signature: authSignature,
+              message: authMessage,
+            });
+            await setSupabaseAccessToken(authResult.token);
+          } catch {
+            // Auth may already be done from WalletProvider. Continue.
+          }
+        }
+
+        // Skip to confirmation — wallet already submitted the tx
+        return await confirmAndRecord(
+          connection,
+          txSignature,
+          blockhash,
+          lastValidBlockHeight,
+          donorPubkey!,
+          recipientId,
+          causePreferences,
+          donationMode,
+          memo,
+          amountUSDC,
+        );
+      }
+
       const msg = error instanceof Error ? error.message : 'Unknown error';
       if (
         msg.includes('Insufficient') ||
@@ -129,81 +178,135 @@ export async function executeDonationSeamless(
       return fail('TX_SEND_FAILED', 'Could not complete wallet transaction.');
     }
 
-    if (!donorPubkey || !memo) {
+    if (!donorPubkey || !memo || !signedTransaction) {
       return fail(
         'TX_SEND_FAILED',
         'Could not complete wallet transaction. Please try again.',
       );
     }
 
-    // Confirm on-chain — if this fails, tx may still land. Queue for retry.
+    // --- Phase 2: Submit the signed tx ourselves (Activity is stable) ---
+    let txSignature: string;
     try {
-      const confirmation = await connection.confirmTransaction(
-        {
-          signature: txSignature,
-          blockhash,
-          lastValidBlockHeight,
-        },
-        'confirmed',
-      );
-
-      if (confirmation.value.err) {
-        return fail(
-          'TX_CONFIRM_FAILED',
-          'Transaction was rejected on-chain. Your USDC was not transferred.',
-        );
-      }
-    } catch (error) {
-      // TX may still confirm — queue for safety before returning error
-      await addPendingConversation({
-        txSignature,
-        donorWallet: donorPubkey.toBase58(),
-        recipientId,
-        amountUSDC,
-        causePreferences,
-        donationMode,
-        timestamp: Date.now(),
+      const serialized = signedTransaction.serialize();
+      const sig = await connection.sendRawTransaction(serialized, {
+        skipPreflight: false,
+        maxRetries: 3,
       });
+      txSignature = sig;
+    } catch (error) {
       const txError = handleTransactionError(error);
       return {success: false, error: txError};
     }
 
-    let conversationId: string | null = null;
-    try {
-      conversationId = await recordAndCreateConversationSecure(
-        txSignature,
-        recipientId,
-        causePreferences,
-        donationMode,
-      );
-    } catch (error) {
-      // SGT failure = device not authorized. Surface to user, don't queue retry.
-      if (error instanceof SGTVerificationError) {
-        return fail(
-          'SGT_REQUIRED',
-          'This app requires a Solana Seeker device. Your donation was sent on-chain but cannot be recorded.',
-        );
+    // --- Phase 3: Confirm + authenticate + record ---
+    // Ensure wallet-auth is complete before recording.
+    // WalletProvider already attempted auth after transact(). Only retry if
+    // there is no valid token yet (avoids duplicate calls + replay guard rejection).
+    const existingToken = getSupabaseAccessToken();
+    if (!existingToken || isTokenExpired(existingToken)) {
+      try {
+        const authResult = await authenticateWalletSignature({
+          wallet: donorPubkey.toBase58(),
+          signature: authSignature,
+          message: authMessage,
+        });
+        await setSupabaseAccessToken(authResult.token);
+      } catch {
+        // Auth may already be done from WalletProvider. Continue.
       }
-      await addPendingConversation({
-        txSignature,
-        donorWallet: donorPubkey.toBase58(),
-        recipientId,
-        amountUSDC,
-        causePreferences,
-        donationMode,
-        timestamp: Date.now(),
-      });
     }
 
-    return ok({
+    return await confirmAndRecord(
+      connection,
       txSignature,
+      blockhash,
+      lastValidBlockHeight,
+      donorPubkey,
+      recipientId,
+      causePreferences,
+      donationMode,
       memo,
-      conversationId,
-      donorWallet: donorPubkey.toBase58(),
-    });
+      amountUSDC,
+    );
   } finally {
     donationMutex = false;
   }
+}
+
+/** Phase 3: Confirm on-chain, record in backend, return result. */
+async function confirmAndRecord(
+  connection: Connection,
+  txSignature: string,
+  blockhash: string,
+  lastValidBlockHeight: number,
+  donorPubkey: PublicKey,
+  recipientId: string,
+  causePreferences: string[],
+  donationMode: DonationMode,
+  memo: DonationMemo | null,
+  amountUSDC: number,
+): Promise<Result<DonationResult>> {
+  // Confirm on-chain
+  try {
+    const confirmation = await connection.confirmTransaction(
+      {signature: txSignature, blockhash, lastValidBlockHeight},
+      'confirmed',
+    );
+    if (confirmation.value.err) {
+      return fail(
+        'TX_CONFIRM_FAILED',
+        'Transaction was rejected on-chain. Your USDC was not transferred.',
+      );
+    }
+  } catch (error) {
+    // TX may still confirm — queue for safety
+    await addPendingConversation({
+      txSignature,
+      donorWallet: donorPubkey.toBase58(),
+      recipientId,
+      amountUSDC,
+      causePreferences,
+      donationMode,
+      timestamp: Date.now(),
+    });
+    const txError = handleTransactionError(error);
+    return {success: false, error: txError};
+  }
+
+  // Record in backend
+  let conversationId: string | null = null;
+  try {
+    conversationId = await recordAndCreateConversationSecure(
+      txSignature,
+      recipientId,
+      causePreferences,
+      donationMode,
+    );
+  } catch (error) {
+    if (error instanceof SGTVerificationError) {
+      return fail(
+        'SGT_REQUIRED',
+        'This app requires a Solana Seeker device. Your donation was sent on-chain but cannot be recorded.',
+      );
+    }
+    await addPendingConversation({
+      txSignature,
+      donorWallet: donorPubkey.toBase58(),
+      recipientId,
+      amountUSDC,
+      causePreferences,
+      donationMode,
+      timestamp: Date.now(),
+    });
+  }
+
+  return ok({
+    txSignature,
+    memo: memo || {d: '', r: '', a: amountUSDC, t: 0, app: 'glimpse', tok: 'usdc'},
+    conversationId,
+    donorWallet: donorPubkey.toBase58(),
+  });
 }
 
 // Max age for retry queue items — Solana RPC nodes only keep ~2 epochs of

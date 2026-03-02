@@ -44,7 +44,7 @@ export default function GiveScreen() {
   const {theme} = useTheme();
   const navigation = useNavigation<any>();
   const connection = useConnection();
-  const {connecting, authorizeAndSignAndSendTransaction} = useWallet();
+  const {connecting, authorizeSignAndBuildTransaction} = useWallet();
 
   const [amountInput, setAmountInput] = useState('');
   const [campaignId, setCampaignId] = useState('');
@@ -264,7 +264,7 @@ export default function GiveScreen() {
         MATCHING_POOL.id,
         amount,
         'one_time',
-        authorizeAndSignAndSendTransaction,
+        authorizeSignAndBuildTransaction,
         selectedCampaign.causePreferences,
         'solo',
       );
