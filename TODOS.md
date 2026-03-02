@@ -1,5 +1,24 @@
 # Glimpse v2 — Deferred Work
 
+## 0. Pre-Mainnet Manual Testing
+
+**What:** Run the full manual test plan before taking real USDC on mainnet.
+
+**Why:** The donation flow touches wallet auth, on-chain USDC transfers, server-side validation, Supabase recording, and Realtime chat. Every handoff is a failure point. This plan covers happy path, edge cases, security (auth, RLS, tx integrity, data exposure), and financial reconciliation.
+
+**Plan:** `docs/testing/2026-03-01-manual-test-plan.md` — 13 sections, ~80 test cases.
+
+**Priority order:**
+1. Verify config constants (cluster, mint, ATA, RPC) before any tx tests
+2. Happy path end-to-end (wallet → donate → record → messages)
+3. Edge cases (insufficient balance, network drops, retry queue)
+4. Security (auth bypass, RLS, tx spoofing, APK secrets)
+5. Final gate: one real $1 USDC mainnet donation
+
+**Depends on:** Edge functions deployed, Helius API key rotated, migration 011 deployed.
+
+---
+
 ## 1. Functional Leaderboard
 
 **What:** Build a leaderboard screen that ranks donors by total SOL given, sourced from the `donations` Supabase table.
@@ -71,7 +90,31 @@
 
 ---
 
-## 6. Resolve Remaining npm Vulnerability State
+## 6. Two-Phone Messaging Test (Admin Reply Flow)
+
+**What:** Test the full messaging flow using two Seeker phones — one as donor, one as admin wallet.
+
+**Why:** The chat system has RLS policies that should allow both donor and admin wallets to send/read messages in a shared conversation. However, the app was built as donor-facing only. No dedicated admin UI exists. Need to verify whether the admin wallet can actually send messages from the app, or if admin responses are limited to Supabase dashboard inserts.
+
+**Test plan:**
+- Phone 1 (donor wallet): Donate USDC, open Messages tab, verify welcome message appears, send a reply
+- Phone 2 (admin wallet): Connect admin wallet (`DdqT7Fek...`), check if conversations appear in Messages tab, open a thread, attempt to send a message back to donor
+- Verify Realtime: Does donor see admin reply instantly? Does admin see donor reply instantly?
+- Verify unread badges update correctly on both phones
+- Test media: Can both sides send photos?
+
+**Known gaps to document:**
+- No admin mode or role switcher in the app
+- Admin wallet is hardcoded — every conversation uses the same admin
+- No message edit/delete capability
+- No conversation archiving or filtering
+- If admin reply from app fails, fallback is Supabase dashboard SQL insert
+
+**Depends on:** Two Seeker phones, devnet USDC in donor wallet, edge functions deployed.
+
+---
+
+## 7. Resolve Remaining npm Vulnerability State
 
 **What:** Address the 10 remaining npm audit vulnerabilities (3 high, 7 low) that require breaking dependency changes.
 
