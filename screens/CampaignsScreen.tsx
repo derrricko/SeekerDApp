@@ -335,7 +335,10 @@ function renderDonationHistory({
       </Text>
 
       {!walletAddress ? (
-        <View style={[styles.stateCard, styles.centeredState]}>
+        <View style={[styles.stateCard, styles.centeredState, {
+          borderColor: theme.colors.borderMuted,
+          backgroundColor: theme.colors.surfaceMuted,
+        }]}>
           <Text
             style={[
               styles.stateText,
@@ -348,17 +351,26 @@ function renderDonationHistory({
           </Text>
         </View>
       ) : loading ? (
-        <View style={[styles.stateCard, styles.centeredState]}>
+        <View style={[styles.stateCard, styles.centeredState, {
+          borderColor: theme.colors.borderMuted,
+          backgroundColor: theme.colors.surfaceMuted,
+        }]}>
           <ActivityIndicator size="small" color={theme.colors.accent} />
         </View>
       ) : error ? (
-        <View style={[styles.stateCard, styles.centeredState]}>
+        <View style={[styles.stateCard, styles.centeredState, {
+          borderColor: theme.colors.borderMuted,
+          backgroundColor: theme.colors.surfaceMuted,
+        }]}>
           <Text style={[styles.stateText, {color: theme.colors.danger}]}>
             {error}
           </Text>
         </View>
       ) : rows.length === 0 ? (
-        <View style={[styles.stateCard, styles.centeredState]}>
+        <View style={[styles.stateCard, styles.centeredState, {
+          borderColor: theme.colors.borderMuted,
+          backgroundColor: theme.colors.surfaceMuted,
+        }]}>
           <Text style={[styles.stateText, {color: theme.colors.textSecondary}]}>
             No donations recorded for this wallet yet.
           </Text>
@@ -392,8 +404,8 @@ function renderDonationHistory({
                 style={[
                   styles.historyCard,
                   {
-                    backgroundColor: 'rgba(26,17,37,0.04)',
-                    borderColor: 'rgba(26,17,37,0.12)',
+                    backgroundColor: theme.colors.surfaceMuted,
+                    borderColor: theme.colors.borderMuted,
                   },
                 ]}>
                 <View style={styles.historyTopRow}>
@@ -421,10 +433,13 @@ function renderDonationHistory({
                 </Text>
                 <Text
                   style={[
-                    styles.historyMeta,
-                    {color: theme.colors.textTertiary},
+                    styles.historyThreadLink,
+                    {
+                      color: theme.colors.accent,
+                      fontFamily: theme.typography.brand,
+                    },
                   ]}>
-                  Mode: {item.donation_mode} - Cadence: {item.cadence}
+                  {item.conversation_id ? 'VIEW THREAD \u2192' : 'PROCESSING...'}
                 </Text>
               </TouchableOpacity>
             );
@@ -432,16 +447,6 @@ function renderDonationHistory({
         </View>
       )}
 
-      <Text
-        style={[
-          styles.note,
-          {
-            color: theme.colors.textTertiary,
-            fontFamily: theme.typography.brand,
-          },
-        ]}>
-        My Glimpses uses live donation rows from Supabase.
-      </Text>
     </>
   );
 }
@@ -640,8 +645,6 @@ const styles = StyleSheet.create({
   stateCard: {
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(26,17,37,0.12)',
-    backgroundColor: 'rgba(26,17,37,0.04)',
   },
   centeredState: {
     minHeight: 90,
@@ -654,10 +657,11 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     textAlign: 'center',
   },
-  note: {
-    marginTop: 10,
+  historyThreadLink: {
     fontSize: 10,
     lineHeight: 14,
-    letterSpacing: 0.2,
+    letterSpacing: 0.8,
+    fontWeight: '700',
+    marginTop: 6,
   },
 });
