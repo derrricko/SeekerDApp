@@ -18,6 +18,19 @@ import {fetchDonationHistory, type DonationHistoryItem} from '../services/chat';
 
 type ViewMode = 'feed' | 'my_glimpses';
 
+const FEED_WALLETS = [
+  '7aK9...mP3d',
+  'F2r4...vQ9x',
+  'D9n8...uT6w',
+  'Q1b5...kR2z',
+];
+const FEED_IMPACT_NOTES = [
+  '4 diaper packs for a foster family placement',
+  'a brake pad and labor payment for a single mom',
+  'two after-school program fee blocks',
+  'three classroom supply kits for public teachers',
+];
+
 const HOLD_STATUS_LABELS: Record<HoldStatus, string> = {
   pending: 'PENDING',
   locked: 'LOCKED',
@@ -97,14 +110,14 @@ export default function CampaignsScreen() {
             style={[
               styles.toggle,
               {
-                borderColor: 'rgba(26,17,37,0.1)',
-                backgroundColor: 'rgba(26,17,37,0.06)',
+                borderColor: theme.colors.borderMuted,
+                backgroundColor: theme.colors.surfaceMuted,
               },
             ]}>
             <TouchableOpacity
               style={[
                 styles.togglePill,
-                viewMode === 'feed' && styles.togglePillActive,
+                viewMode === 'feed' && {backgroundColor: theme.colors.borderMuted},
               ]}
               onPress={() => setViewMode('feed')}
               activeOpacity={0.85}>
@@ -125,7 +138,7 @@ export default function CampaignsScreen() {
             <TouchableOpacity
               style={[
                 styles.togglePill,
-                viewMode === 'my_glimpses' && styles.togglePillActive,
+                viewMode === 'my_glimpses' && {backgroundColor: theme.colors.borderMuted},
               ]}
               onPress={() => setViewMode('my_glimpses')}
               activeOpacity={0.85}>
@@ -146,13 +159,12 @@ export default function CampaignsScreen() {
           </View>
 
           <View
-            style={[styles.panelRule, {backgroundColor: 'rgba(26,17,37,0.12)'}]}
+            style={[styles.panelRule, {backgroundColor: theme.colors.borderMuted}]}
           />
 
           {viewMode === 'feed'
             ? renderFeed({
                 glimpses,
-                navigation,
                 theme,
               })
             : renderDonationHistory({
@@ -171,13 +183,22 @@ export default function CampaignsScreen() {
 
 function renderFeed({
   glimpses,
-  navigation,
   theme,
 }: {
   glimpses: ReturnType<typeof useAppState>['glimpses'];
-  navigation: any;
   theme: ReturnType<typeof useTheme>['theme'];
 }) {
+  const completedFeed = glimpses
+    .filter(glimpse => glimpse.status === 'Fulfilled')
+    .map((glimpse, index) => ({
+      id: `feed-${glimpse.id}`,
+      wallet: FEED_WALLETS[index % FEED_WALLETS.length],
+      amount: glimpse.raised,
+      impact: FEED_IMPACT_NOTES[index % FEED_IMPACT_NOTES.length],
+      glimpseLabel: glimpse.title,
+      timestampLabel: index === 0 ? 'Just now' : 'Recently',
+    }));
+
   return (
     <>
       <Text
@@ -188,121 +209,99 @@ function renderFeed({
             fontFamily: theme.typography.brand,
           },
         ]}>
-        CAMPAIGN FEED
+        COMPLETED GLIMPSES FEED
       </Text>
 
-      <View
-        style={[
-          styles.activityList,
-          {
-            backgroundColor: 'rgba(26,17,37,0.04)',
-            borderColor: 'rgba(26,17,37,0.08)',
-          },
-        ]}>
-        {glimpses.map((glimpse, index) => {
-          const isLast = index === glimpses.length - 1;
-          const stageLabel =
-            glimpse.status === 'Fulfilled' ? 'COMPLETED' : 'PROCESSING';
-          const stageColor =
-            glimpse.status === 'Fulfilled'
-              ? theme.colors.success
-              : theme.colors.accent;
-
-          return (
-            <TouchableOpacity
-              key={glimpse.id}
-              activeOpacity={0.82}
-              onPress={() => navigation.navigate('Messages')}
+      <View style={styles.feedWrap}>
+        {completedFeed.length === 0 ? (
+          <View
+            style={[
+              styles.feedEmpty,
+              {
+                backgroundColor: theme.colors.surfaceMuted,
+                borderColor: theme.colors.borderMuted,
+              },
+            ]}>
+            <Text
               style={[
-                styles.activityRow,
-                !isLast && {
-                  borderBottomWidth: 1,
-                  borderBottomColor: 'rgba(26,17,37,0.1)',
+                styles.feedEmptyText,
+                {
+                  color: theme.colors.textSecondary,
+                  fontFamily: theme.typography.brand,
                 },
               ]}>
-              <View
-                style={[
-                  styles.avatar,
-                  {
-                    backgroundColor:
-                      glimpse.visibility === 'Private'
-                        ? 'rgba(26,17,37,0.2)'
-                        : 'rgba(101,84,209,0.28)',
-                    borderColor:
-                      glimpse.visibility === 'Private'
-                        ? 'rgba(26,17,37,0.25)'
-                        : 'rgba(101,84,209,0.4)',
-                  },
-                ]}>
-                <Text
-                  style={[
-                    styles.avatarText,
-                    {
-                      color: theme.colors.textPrimary,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  {glimpse.title.slice(0, 2).toUpperCase()}
-                </Text>
-              </View>
-
-              <View style={styles.rowBody}>
-                <Text
-                  style={[styles.rowTitle, {color: theme.colors.textPrimary}]}>
-                  {glimpse.title}
-                </Text>
-                <Text
-                  style={[
-                    styles.rowMeta,
-                    {
-                      color: theme.colors.textSecondary,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  {glimpse.dateLabel} - {glimpse.id.toUpperCase()}
-                </Text>
-
-                <View style={styles.stageRow}>
-                  <View
-                    style={[styles.stageDot, {backgroundColor: stageColor}]}
-                  />
-                  <Text
-                    style={[
-                      styles.stageText,
-                      {color: stageColor, fontFamily: theme.typography.brand},
-                    ]}>
-                    {stageLabel}
-                  </Text>
-                </View>
-              </View>
-
+              No completed glimpses yet.
+            </Text>
+          </View>
+        ) : (
+          completedFeed.map(item => (
+            <View
+              key={item.id}
+              style={[
+                styles.feedCard,
+                {
+                  backgroundColor: theme.colors.surfaceMuted,
+                  borderColor: theme.colors.borderMuted,
+                },
+              ]}>
               <Text
                 style={[
-                  styles.amount,
+                  styles.feedAmount,
                   {
-                    color:
-                      glimpse.visibility === 'Private'
-                        ? theme.colors.textPrimary
-                        : theme.colors.accent,
+                    color: theme.colors.textPrimary,
+                    fontFamily: theme.typography.brand,
                   },
                 ]}>
-                ${glimpse.raised.toFixed(2)}
+                ${item.amount.toFixed(0)} USDC
               </Text>
-            </TouchableOpacity>
-          );
-        })}
+              <Text
+                style={[styles.feedBody, {color: theme.colors.textSecondary}]}>
+                {item.wallet} gave for {item.impact}.
+              </Text>
+              <Text
+                style={[styles.feedBody, {color: theme.colors.textSecondary}]}>
+                Applied to {item.glimpseLabel}.
+              </Text>
+              <View style={styles.feedMetaRow}>
+                <View
+                  style={[
+                    styles.feedCompleteDot,
+                    {backgroundColor: theme.colors.success},
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.feedMetaText,
+                    {
+                      color: theme.colors.success,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  COMPLETED
+                </Text>
+                <Text
+                  style={[
+                    styles.feedMetaDivider,
+                    {color: theme.colors.textTertiary},
+                  ]}>
+                  •
+                </Text>
+                <Text
+                  style={[
+                    styles.feedMetaText,
+                    {
+                      color: theme.colors.textTertiary,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  {item.timestampLabel}
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
       </View>
 
-      <Text
-        style={[
-          styles.note,
-          {
-            color: theme.colors.textTertiary,
-            fontFamily: theme.typography.brand,
-          },
-        ]}>
-        Feed shows active and completed campaigns.
-      </Text>
     </>
   );
 }
@@ -473,9 +472,6 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     paddingHorizontal: 10,
   },
-  togglePillActive: {
-    backgroundColor: 'rgba(26,17,37,0.18)',
-  },
   toggleText: {
     fontSize: 11,
     lineHeight: 14,
@@ -487,10 +483,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionLabel: {
-    fontSize: 10,
-    lineHeight: 12,
+    fontSize: 11,
+    lineHeight: 14,
     letterSpacing: 1,
-    marginBottom: 10,
+    marginBottom: 14,
   },
   activityList: {
     borderRadius: 10,
@@ -556,6 +552,60 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     minWidth: 58,
     textAlign: 'right',
+  },
+  feedWrap: {
+    gap: 8,
+  },
+  feedEmpty: {
+    borderWidth: 1,
+    borderRadius: 10,
+    minHeight: 90,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  feedEmptyText: {
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: 'center',
+  },
+  feedCard: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+  },
+  feedAmount: {
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  feedBody: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  feedMetaRow: {
+    marginTop: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  feedCompleteDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 6,
+    marginRight: 5,
+  },
+  feedMetaText: {
+    fontSize: 9,
+    lineHeight: 12,
+    letterSpacing: 0.7,
+    fontWeight: '700',
+  },
+  feedMetaDivider: {
+    marginHorizontal: 5,
+    fontSize: 9,
+    lineHeight: 12,
   },
   historyWrap: {
     gap: 8,
