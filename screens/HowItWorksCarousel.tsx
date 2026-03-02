@@ -196,7 +196,7 @@ function renderStep(step: number, typedAmount: string, cursorVisible: boolean) {
     return (
       <View style={styles.stepWrap}>
         <Text style={[styles.title, styles.titleSentence]}>
-          Choose how much you want to give.
+          Choose how much you want to give
         </Text>
 
         <View style={styles.moneyLoopCard}>
@@ -233,7 +233,7 @@ function renderStep(step: number, typedAmount: string, cursorVisible: boolean) {
     return (
       <View style={styles.stepWrap}>
         <Text style={[styles.title, styles.titleSentenceSmall]}>
-          choose the campaign you want to support.
+          select a campaign
         </Text>
         <CausesIcon />
       </View>
@@ -244,7 +244,7 @@ function renderStep(step: number, typedAmount: string, cursorVisible: boolean) {
     return (
       <View style={styles.stepWrap}>
         <Text style={[styles.title, styles.titleSentenceSmall]}>
-          add optional context and a note for the recipient.
+          add optional context and a note for the recipient
         </Text>
         <NoteIcon />
       </View>
@@ -255,7 +255,7 @@ function renderStep(step: number, typedAmount: string, cursorVisible: boolean) {
     return (
       <View style={styles.stepWrap}>
         <Text style={[styles.title, styles.titleSentenceSmall]}>
-          We connect you directly to the need.
+          We connect you directly to the need
         </Text>
         <ConnectIcon />
       </View>

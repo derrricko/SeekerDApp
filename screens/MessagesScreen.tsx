@@ -5,6 +5,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {
   Animated,
   Alert,
+  BackHandler,
   Linking,
   View,
   Text,
@@ -20,6 +21,7 @@ import {
   PermissionsAndroid,
 } from 'react-native';
 import {
+  useFocusEffect,
   useNavigation,
   useRoute,
   type RouteProp,
@@ -70,6 +72,30 @@ const MOCK_CONVERSATION: Conversation = {
   recipient_id: 'teacher-supplies',
 };
 
+// TODO: Remove mock conversations before mainnet launch
+const MOCK_CONVERSATIONS: Conversation[] = [
+  {
+    id: 'mock-conv-1',
+    donation_id: 'mock-1',
+    donor_wallet: MOCK_WALLET,
+    admin_wallet: ADMIN_WALLET,
+    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    amount_usdc: 25.0,
+    recipient_id: 'single-moms-crisis',
+    unread_count: 2,
+  },
+  {
+    id: 'mock-conv-2',
+    donation_id: 'mock-2',
+    donor_wallet: MOCK_WALLET,
+    admin_wallet: ADMIN_WALLET,
+    created_at: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
+    amount_usdc: 10.0,
+    recipient_id: 'teacher-supplies',
+    unread_count: 0,
+  },
+];
+
 function buildMockConversationFromParams(params: any): Conversation {
   const parsedAmount = Number(params?.demoAmountUSDC);
   const safeAmount =
@@ -109,7 +135,7 @@ function buildMockMessages(conversation: Conversation): Message[] {
       id: `mock-a1-${conversation.id}`,
       conversation_id: conversation.id,
       sender_wallet: ADMIN_WALLET,
-      body: `Thank you for your ${amount} USDC donation to ${recipientName} (${glimpseTag}). We will send your first update within 24-48 hours.`,
+      body: `Thank you for your ${amount} USDC donation to ${recipientName} (${glimpseTag}). Expect receipts, photos, and updates within 5-7 days.`,
       media_url: null,
       media_type: null,
       created_at: new Date(now - 42 * 60 * 1000).toISOString(),
@@ -335,7 +361,9 @@ export default function MessagesScreen() {
   const {conversationUnreads, markRead, setActiveConversation} = useUnread();
 
   const conversationId: string | undefined = route.params?.conversationId;
-  const useMocks = __DEV__ && route.params?.demoMode === true;
+  const useDemoParam = __DEV__ && route.params?.demoMode === true;
+  const [usingMockConvo, setUsingMockConvo] = useState(false);
+  const useMocks = useDemoParam || usingMockConvo;
   const walletAddress = publicKey?.toBase58() || (useMocks ? MOCK_WALLET : '');
   const mockConversation = React.useMemo(
     () => buildMockConversationFromParams(route.params),
@@ -397,6 +425,30 @@ export default function MessagesScreen() {
     }
   }, [conversation, setActiveConversation]);
 
+  // Intercept back gesture/button: go to inbox instead of previous tab
+  const goBackToInbox = useCallback(() => {
+    setConversation(null);
+    setUsingMockConvo(false);
+    setActiveConversation(null);
+    if (conversationId) {
+      navigation.setParams({conversationId: undefined});
+    }
+  }, [conversationId, navigation, setActiveConversation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBack = () => {
+        if (conversation) {
+          goBackToInbox();
+          return true; // handled
+        }
+        return false; // let default behavior happen
+      };
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      return () => sub.remove();
+    }, [conversation, goBackToInbox]),
+  );
+
   if (loading) {
     return (
       <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
@@ -409,8 +461,10 @@ export default function MessagesScreen() {
   }
 
   // No conversationId param — show conversation list
+  const displayConversations =
+    conversations.length > 0 ? conversations : MOCK_CONVERSATIONS;
   if (!conversationId && !useMocks && !conversation) {
-    if (conversations.length === 0) {
+    if (displayConversations.length === 0) {
       return (
         <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
           <AppHeader title="Messages" />
@@ -440,13 +494,12 @@ export default function MessagesScreen() {
       <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
         <AppHeader title="Messages" />
         <FlatList
-          data={conversations}
+          data={displayConversations}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.conversationList}
           renderItem={({item}) => {
             const amount = Number(item.amount_usdc ?? 0).toFixed(2);
-            const date = new Date(item.created_at).toLocaleDateString();
-            const recipientName = getRecipientLabel(item.recipient_id);
+            const glimpseTag = getRecipientGlimpseTag(item.recipient_id);
             const unreadCount =
               conversationUnreads[item.id] ?? item.unread_count ?? 0;
             return (
@@ -460,6 +513,8 @@ export default function MessagesScreen() {
                 ]}
                 activeOpacity={0.8}
                 onPress={() => {
+                  const isMock = item.id.startsWith('mock-');
+                  setUsingMockConvo(isMock);
                   setActiveConversation(item.id);
                   markRead(item.id).catch(() => {});
                   setConversation(item);
@@ -473,28 +528,32 @@ export default function MessagesScreen() {
                         fontFamily: theme.typography.brand,
                       },
                     ]}>
-                    {amount} USDC
+                    GLIMPSE {glimpseTag}
                   </Text>
-                  {unreadCount > 0 ? (
-                    <View
+                  <View style={styles.conversationRightGroup}>
+                    <Text
                       style={[
-                        styles.conversationUnreadBadge,
-                        {backgroundColor: theme.colors.accent},
+                        styles.conversationAmount,
+                        {
+                          color: theme.colors.textSecondary,
+                          fontFamily: theme.typography.brand,
+                        },
                       ]}>
-                      <Text style={styles.conversationUnreadText}>
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </Text>
-                    </View>
-                  ) : null}
+                      ${amount}
+                    </Text>
+                    {unreadCount > 0 ? (
+                      <View
+                        style={[
+                          styles.conversationUnreadBadge,
+                          {backgroundColor: theme.colors.accent},
+                        ]}>
+                        <Text style={styles.conversationUnreadText}>
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
-                <Text
-                  style={[
-                    styles.conversationMeta,
-                    {color: theme.colors.textSecondary},
-                  ]}>
-                  {recipientName} {'\u00B7'} {date} {'\u00B7'}{' '}
-                  {shortThreadId(item.id)}
-                </Text>
               </TouchableOpacity>
             );
           }}
@@ -559,6 +618,7 @@ export default function MessagesScreen() {
       onSetActiveConversation={setActiveConversation}
       onBackToThreads={() => {
         setConversation(null);
+        setUsingMockConvo(false);
         setActiveConversation(null);
         if (conversationId) {
           navigation.setParams({conversationId: undefined});
@@ -614,11 +674,10 @@ function ChatView({
   );
 
   useEffect(() => {
-    if (useMocks) {
-      return;
-    }
     onSetActiveConversation(conversation.id);
-    onMarkRead(conversation.id).catch(() => {});
+    if (!useMocks) {
+      onMarkRead(conversation.id).catch(() => {});
+    }
     return () => {
       onSetActiveConversation(null);
     };
@@ -1237,12 +1296,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
   },
   conversationTitle: {
-    fontSize: 18,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 20,
     fontWeight: '700',
+  },
+  conversationRightGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  conversationAmount: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   conversationUnreadBadge: {
     minWidth: 22,
@@ -1257,10 +1326,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 13,
     fontWeight: '700',
-  },
-  conversationMeta: {
-    fontSize: 12,
-    lineHeight: 16,
   },
   backToThreadsButton: {
     alignSelf: 'flex-start',

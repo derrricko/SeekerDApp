@@ -15,7 +15,18 @@
 4. Security (auth bypass, RLS, tx spoofing, APK secrets)
 5. Final gate: one real $1 USDC mainnet donation
 
-**Depends on:** Edge functions deployed, Helius API key rotated, migration 011 deployed.
+**Depends on:** Deploy-time items below completed first.
+
+---
+
+## 0b. Deploy-Time Checklist (Before Mainnet Launch)
+
+- [ ] **Re-enable SGT gating** in `navigation/AppNavigator.tsx` — restore `hasSeekerToken` checks in `GatedGiveScreen` and `GatedMessagesScreen`
+- [ ] **Remove mock data** from `screens/CampaignsScreen.tsx` (search `MOCK_DONATIONS`) and `screens/MessagesScreen.tsx` (search `MOCK_CONVERSATIONS`)
+- [ ] **Rotate Helius API key** on dashboard (old key `595f9a7c...` is in git history)
+- [ ] **Deploy migration 011** (explicit deny policies): `npx supabase db push`
+- [ ] **Deploy edge functions**: `npx supabase functions deploy wallet-auth && npx supabase functions deploy record-donation`
+- [ ] **Verify `config/env.ts`** mainnet values: cluster, USDC mint, pool ATA, RPC endpoint
 
 ---
 

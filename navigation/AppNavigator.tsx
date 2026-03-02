@@ -236,31 +236,12 @@ function AppTabBar({
 }
 
 // SGT-gated screen wrappers — block Give/Messages for non-Seeker wallets.
+// TODO: Re-enable SGT gating before mainnet launch
 function GatedGiveScreen() {
-  const {connected, hasSeekerToken, sgtLoading} = useWallet();
-  if (!connected) {
-    return <SeekerRequiredScreen title="Donate" />;
-  }
-  if (sgtLoading) {
-    return <SeekerRequiredScreen title="Donate" />;
-  }
-  if (!hasSeekerToken) {
-    return <SeekerRequiredScreen title="Donate" />;
-  }
   return <GiveScreen />;
 }
 
 function GatedMessagesScreen() {
-  const {connected, hasSeekerToken, sgtLoading} = useWallet();
-  if (!connected) {
-    return <SeekerRequiredScreen title="Messages" />;
-  }
-  if (sgtLoading) {
-    return <SeekerRequiredScreen title="Messages" />;
-  }
-  if (!hasSeekerToken) {
-    return <SeekerRequiredScreen title="Messages" />;
-  }
   return <MessagesScreen />;
 }
 

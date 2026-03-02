@@ -18,6 +18,46 @@ import {fetchDonationHistory, type DonationHistoryItem} from '../services/chat';
 
 type ViewMode = 'feed' | 'my_glimpses';
 
+// TODO: Remove mock data before mainnet launch
+const MOCK_DONATIONS: DonationHistoryItem[] = [
+  {
+    id: 'mock-1',
+    amount_usdc: 25.0,
+    recipient_id: 'matching-pool',
+    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    hold_status: 'released',
+    hold_expires_at: null,
+    tx_signature: '4xK9mP3d...demo',
+    donation_mode: 'solo',
+    cadence: 'one_time',
+    conversation_id: 'mock-conv-1',
+  },
+  {
+    id: 'mock-2',
+    amount_usdc: 10.0,
+    recipient_id: 'matching-pool',
+    created_at: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
+    hold_status: 'locked',
+    hold_expires_at: new Date(Date.now() + 22 * 60 * 60 * 1000).toISOString(),
+    tx_signature: 'F2r4vQ9x...demo',
+    donation_mode: 'solo',
+    cadence: 'one_time',
+    conversation_id: 'mock-conv-2',
+  },
+  {
+    id: 'mock-3',
+    amount_usdc: 50.0,
+    recipient_id: 'matching-pool',
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    hold_status: 'released',
+    hold_expires_at: null,
+    tx_signature: 'D9n8uT6w...demo',
+    donation_mode: 'solo',
+    cadence: 'one_time',
+    conversation_id: null,
+  },
+];
+
 const FEED_WALLETS = [
   '7aK9...mP3d',
   'F2r4...vQ9x',
@@ -33,8 +73,8 @@ const FEED_IMPACT_NOTES = [
 
 const HOLD_STATUS_LABELS: Record<HoldStatus, string> = {
   pending: 'PENDING',
-  locked: 'LOCKED',
-  released: 'RELEASED',
+  locked: 'PROCESSING',
+  released: 'COMPLETED',
 };
 
 export default function CampaignsScreen() {
@@ -110,15 +150,18 @@ export default function CampaignsScreen() {
             style={[
               styles.toggle,
               {
-                borderColor: theme.colors.borderMuted,
-                backgroundColor: theme.colors.surfaceMuted,
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.surface,
               },
             ]}>
             <TouchableOpacity
               style={[
                 styles.togglePill,
-                viewMode === 'feed' && {
-                  backgroundColor: theme.colors.borderMuted,
+                {
+                  backgroundColor:
+                    viewMode === 'feed'
+                      ? theme.colors.accent
+                      : 'transparent',
                 },
               ]}
               onPress={() => setViewMode('feed')}
@@ -129,7 +172,7 @@ export default function CampaignsScreen() {
                   {
                     color:
                       viewMode === 'feed'
-                        ? theme.colors.textPrimary
+                        ? '#F3EFFF'
                         : theme.colors.textSecondary,
                     fontFamily: theme.typography.brand,
                   },
@@ -140,8 +183,11 @@ export default function CampaignsScreen() {
             <TouchableOpacity
               style={[
                 styles.togglePill,
-                viewMode === 'my_glimpses' && {
-                  backgroundColor: theme.colors.borderMuted,
+                {
+                  backgroundColor:
+                    viewMode === 'my_glimpses'
+                      ? theme.colors.accent
+                      : 'transparent',
                 },
               ]}
               onPress={() => setViewMode('my_glimpses')}
@@ -152,7 +198,7 @@ export default function CampaignsScreen() {
                   {
                     color:
                       viewMode === 'my_glimpses'
-                        ? theme.colors.textPrimary
+                        ? '#F3EFFF'
                         : theme.colors.textSecondary,
                     fontFamily: theme.typography.brand,
                   },
@@ -175,10 +221,10 @@ export default function CampaignsScreen() {
                 theme,
               })
             : renderDonationHistory({
-                walletAddress,
+                walletAddress: walletAddress || 'demo',
                 loading: historyLoading,
                 error: historyError,
-                rows: donationHistory,
+                rows: donationHistory.length > 0 ? donationHistory : MOCK_DONATIONS,
                 navigation,
                 theme,
               })}
@@ -491,23 +537,22 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   toggle: {
-    borderWidth: 1,
-    borderRadius: 9,
-    paddingVertical: 3,
-    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderRadius: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
   },
   togglePill: {
-    borderRadius: 6,
-    paddingVertical: 3,
-    paddingHorizontal: 10,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
   },
   toggleText: {
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '700',
+    letterSpacing: 1,
   },
   panelRule: {
     height: 1,
