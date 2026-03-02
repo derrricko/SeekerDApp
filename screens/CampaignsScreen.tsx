@@ -117,7 +117,9 @@ export default function CampaignsScreen() {
             <TouchableOpacity
               style={[
                 styles.togglePill,
-                viewMode === 'feed' && {backgroundColor: theme.colors.borderMuted},
+                viewMode === 'feed' && {
+                  backgroundColor: theme.colors.borderMuted,
+                },
               ]}
               onPress={() => setViewMode('feed')}
               activeOpacity={0.85}>
@@ -138,7 +140,9 @@ export default function CampaignsScreen() {
             <TouchableOpacity
               style={[
                 styles.togglePill,
-                viewMode === 'my_glimpses' && {backgroundColor: theme.colors.borderMuted},
+                viewMode === 'my_glimpses' && {
+                  backgroundColor: theme.colors.borderMuted,
+                },
               ]}
               onPress={() => setViewMode('my_glimpses')}
               activeOpacity={0.85}>
@@ -159,7 +163,10 @@ export default function CampaignsScreen() {
           </View>
 
           <View
-            style={[styles.panelRule, {backgroundColor: theme.colors.borderMuted}]}
+            style={[
+              styles.panelRule,
+              {backgroundColor: theme.colors.borderMuted},
+            ]}
           />
 
           {viewMode === 'feed'
@@ -301,7 +308,6 @@ function renderFeed({
           ))
         )}
       </View>
-
     </>
   );
 }
@@ -335,10 +341,15 @@ function renderDonationHistory({
       </Text>
 
       {!walletAddress ? (
-        <View style={[styles.stateCard, styles.centeredState, {
-          borderColor: theme.colors.borderMuted,
-          backgroundColor: theme.colors.surfaceMuted,
-        }]}>
+        <View
+          style={[
+            styles.stateCard,
+            styles.centeredState,
+            {
+              borderColor: theme.colors.borderMuted,
+              backgroundColor: theme.colors.surfaceMuted,
+            },
+          ]}>
           <Text
             style={[
               styles.stateText,
@@ -351,26 +362,41 @@ function renderDonationHistory({
           </Text>
         </View>
       ) : loading ? (
-        <View style={[styles.stateCard, styles.centeredState, {
-          borderColor: theme.colors.borderMuted,
-          backgroundColor: theme.colors.surfaceMuted,
-        }]}>
+        <View
+          style={[
+            styles.stateCard,
+            styles.centeredState,
+            {
+              borderColor: theme.colors.borderMuted,
+              backgroundColor: theme.colors.surfaceMuted,
+            },
+          ]}>
           <ActivityIndicator size="small" color={theme.colors.accent} />
         </View>
       ) : error ? (
-        <View style={[styles.stateCard, styles.centeredState, {
-          borderColor: theme.colors.borderMuted,
-          backgroundColor: theme.colors.surfaceMuted,
-        }]}>
+        <View
+          style={[
+            styles.stateCard,
+            styles.centeredState,
+            {
+              borderColor: theme.colors.borderMuted,
+              backgroundColor: theme.colors.surfaceMuted,
+            },
+          ]}>
           <Text style={[styles.stateText, {color: theme.colors.danger}]}>
             {error}
           </Text>
         </View>
       ) : rows.length === 0 ? (
-        <View style={[styles.stateCard, styles.centeredState, {
-          borderColor: theme.colors.borderMuted,
-          backgroundColor: theme.colors.surfaceMuted,
-        }]}>
+        <View
+          style={[
+            styles.stateCard,
+            styles.centeredState,
+            {
+              borderColor: theme.colors.borderMuted,
+              backgroundColor: theme.colors.surfaceMuted,
+            },
+          ]}>
           <Text style={[styles.stateText, {color: theme.colors.textSecondary}]}>
             No donations recorded for this wallet yet.
           </Text>
@@ -439,14 +465,15 @@ function renderDonationHistory({
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
-                  {item.conversation_id ? 'VIEW THREAD \u2192' : 'PROCESSING...'}
+                  {item.conversation_id
+                    ? 'VIEW THREAD \u2192'
+                    : 'PROCESSING...'}
                 </Text>
               </TouchableOpacity>
             );
           })}
         </View>
       )}
-
     </>
   );
 }

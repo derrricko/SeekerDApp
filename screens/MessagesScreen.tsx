@@ -476,7 +476,11 @@ export default function MessagesScreen() {
                     {amount} USDC
                   </Text>
                   {unreadCount > 0 ? (
-                    <View style={[styles.conversationUnreadBadge, {backgroundColor: theme.colors.accent}]}>
+                    <View
+                      style={[
+                        styles.conversationUnreadBadge,
+                        {backgroundColor: theme.colors.accent},
+                      ]}>
                       <Text style={styles.conversationUnreadText}>
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </Text>
@@ -863,9 +867,17 @@ function ChatView({
                   donorBubbleBackground={theme.colors.accent}
                   donorBubbleBorder={theme.colors.accentPressed}
                   adminTextColor={theme.colors.textPrimary}
-                  donorTextColor={theme.mode === 'light' ? 'rgba(248,244,255,0.98)' : '#F7FAFC'}
+                  donorTextColor={
+                    theme.mode === 'light'
+                      ? 'rgba(248,244,255,0.98)'
+                      : '#F7FAFC'
+                  }
                   adminTimeColor={theme.colors.textTertiary}
-                  donorTimeColor={theme.mode === 'light' ? 'rgba(244,240,255,0.74)' : 'rgba(247,250,252,0.6)'}
+                  donorTimeColor={
+                    theme.mode === 'light'
+                      ? 'rgba(244,240,255,0.74)'
+                      : 'rgba(247,250,252,0.6)'
+                  }
                 />
               );
             }}
@@ -925,7 +937,8 @@ function ChatView({
             style={[
               styles.chatInput,
               {
-                backgroundColor: theme.mode === 'light' ? '#FFFFFF' : theme.colors.surface,
+                backgroundColor:
+                  theme.mode === 'light' ? '#FFFFFF' : theme.colors.surface,
                 color: theme.colors.textPrimary,
                 borderColor: theme.colors.borderMuted,
               },
