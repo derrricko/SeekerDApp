@@ -56,120 +56,6 @@ import {useUnread} from '../components/providers/UnreadProvider';
 const AnimatedTouchableOpacity =
   Animated.createAnimatedComponent(TouchableOpacity);
 
-// ---------- DEV MOCK DATA ----------
-// Fake conversation + messages so you can design the UI without a real donation.
-// Only used when __DEV__ is true. Delete this block before release.
-
-const MOCK_WALLET = 'DEVmock1111111111111111111111111111111111111';
-
-const MOCK_CONVERSATION: Conversation = {
-  id: 'mock-0001',
-  donation_id: 'don-001',
-  donor_wallet: MOCK_WALLET,
-  admin_wallet: ADMIN_WALLET,
-  created_at: new Date(Date.now() - 3600_000).toISOString(),
-  amount_usdc: 150.0,
-  recipient_id: 'teacher-supplies',
-};
-
-// TODO: Remove mock conversations before mainnet launch
-const MOCK_CONVERSATIONS: Conversation[] = [
-  {
-    id: 'mock-conv-1',
-    donation_id: 'mock-1',
-    donor_wallet: MOCK_WALLET,
-    admin_wallet: ADMIN_WALLET,
-    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    amount_usdc: 25.0,
-    recipient_id: 'single-moms-crisis',
-    unread_count: 2,
-  },
-  {
-    id: 'mock-conv-2',
-    donation_id: 'mock-2',
-    donor_wallet: MOCK_WALLET,
-    admin_wallet: ADMIN_WALLET,
-    created_at: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
-    amount_usdc: 10.0,
-    recipient_id: 'teacher-supplies',
-    unread_count: 0,
-  },
-];
-
-function buildMockConversationFromParams(params: any): Conversation {
-  const parsedAmount = Number(params?.demoAmountUSDC);
-  const safeAmount =
-    Number.isFinite(parsedAmount) && parsedAmount > 0
-      ? parsedAmount
-      : MOCK_CONVERSATION.amount_usdc;
-  const safeRecipientId =
-    typeof params?.demoRecipientId === 'string' && params.demoRecipientId
-      ? params.demoRecipientId
-      : MOCK_CONVERSATION.recipient_id;
-
-  return {
-    ...MOCK_CONVERSATION,
-    id:
-      typeof params?.conversationId === 'string' && params.conversationId
-        ? params.conversationId
-        : `mock-${safeRecipientId || 'thread'}`,
-    amount_usdc: safeAmount,
-    recipient_id: safeRecipientId,
-  };
-}
-
-function buildMockMessages(conversation: Conversation): Message[] {
-  const amount = Number(conversation.amount_usdc ?? 25).toFixed(2);
-  const recipientName = getRecipientLabel(conversation.recipient_id);
-  const glimpseTag = getRecipientGlimpseTag(conversation.recipient_id);
-  const now = Date.now();
-  const beneficiaryNote =
-    conversation.recipient_id === 'teacher-supplies'
-      ? 'Rebecca (2nd grade teacher): Thank you for this support. I purchased 12 phonics workbooks, dry-erase marker sets, and two classroom reading games. We are using them for daily small-group reading and writing stations this month.'
-      : conversation.recipient_id === 'single-moms-crisis'
-      ? 'Maria: Thank you for helping my family this week. We were able to cover groceries and gas, and I can get to work tomorrow.'
-      : 'Jasmine (foster program coordinator): Thank you. We bought diapers, formula, and two after-school activity kits for kids entering care this week.';
-
-  return [
-    {
-      id: `mock-a1-${conversation.id}`,
-      conversation_id: conversation.id,
-      sender_wallet: ADMIN_WALLET,
-      body: `Thank you for your ${amount} USDC donation to ${recipientName} (${glimpseTag}). Expect receipts, photos, and updates within 5-7 days.`,
-      media_url: null,
-      media_type: null,
-      created_at: new Date(now - 42 * 60 * 1000).toISOString(),
-    },
-    {
-      id: `mock-a2-${conversation.id}`,
-      conversation_id: conversation.id,
-      sender_wallet: MOCK_WALLET,
-      body: 'Thank you. I appreciate the clear updates.',
-      media_url: null,
-      media_type: null,
-      created_at: new Date(now - 36 * 60 * 1000).toISOString(),
-    },
-    {
-      id: `mock-a3-${conversation.id}`,
-      conversation_id: conversation.id,
-      sender_wallet: ADMIN_WALLET,
-      body: `Allocation update: your ${amount} USDC is now assigned inside ${recipientName} (${glimpseTag}).`,
-      media_url: null,
-      media_type: null,
-      created_at: new Date(now - 28 * 60 * 1000).toISOString(),
-    },
-    {
-      id: `mock-a4-${conversation.id}`,
-      conversation_id: conversation.id,
-      sender_wallet: ADMIN_WALLET,
-      body: beneficiaryNote,
-      media_url: null,
-      media_type: null,
-      created_at: new Date(now - 20 * 60 * 1000).toISOString(),
-    },
-  ];
-}
-
 // ---------- Helpers ----------
 
 function shortThreadId(id: string) {
@@ -361,34 +247,15 @@ export default function MessagesScreen() {
   const {conversationUnreads, markRead, setActiveConversation} = useUnread();
 
   const conversationId: string | undefined = route.params?.conversationId;
-  const useDemoParam = __DEV__ && route.params?.demoMode === true;
-  const [usingMockConvo, setUsingMockConvo] = useState(false);
-  const useMocks = useDemoParam || usingMockConvo;
-  const walletAddress = publicKey?.toBase58() || (useMocks ? MOCK_WALLET : '');
-  const mockConversation = React.useMemo(
-    () => buildMockConversationFromParams(route.params),
-    [route.params],
-  );
+  const walletAddress = publicKey?.toBase58() || '';
 
-  // In dev mode, use mock conversation. In prod, look up by conversationId.
-  const [conversation, setConversation] = useState<Conversation | null>(
-    useMocks ? mockConversation : null,
-  );
+  const [conversation, setConversation] = useState<Conversation | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(!useMocks);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch conversations from Supabase
   useEffect(() => {
-    if (!useMocks) {
-      return;
-    }
-    setActiveConversation(null);
-    setConversation(mockConversation);
-    setLoading(false);
-  }, [mockConversation, setActiveConversation, useMocks]);
-
-  // Fetch conversations from Supabase (prod only)
-  useEffect(() => {
-    if (useMocks || !connected || !walletAddress) {
+    if (!connected || !walletAddress) {
       setLoading(false);
       return;
     }
@@ -417,7 +284,7 @@ export default function MessagesScreen() {
     return () => {
       cancelled = true;
     };
-  }, [conversationId, connected, walletAddress, useMocks]);
+  }, [conversationId, connected, walletAddress]);
 
   useEffect(() => {
     if (!conversation) {
@@ -428,7 +295,6 @@ export default function MessagesScreen() {
   // Intercept back gesture/button: go to inbox instead of previous tab
   const goBackToInbox = useCallback(() => {
     setConversation(null);
-    setUsingMockConvo(false);
     setActiveConversation(null);
     if (conversationId) {
       navigation.setParams({conversationId: undefined});
@@ -461,10 +327,8 @@ export default function MessagesScreen() {
   }
 
   // No conversationId param — show conversation list
-  const displayConversations =
-    conversations.length > 0 ? conversations : MOCK_CONVERSATIONS;
-  if (!conversationId && !useMocks && !conversation) {
-    if (displayConversations.length === 0) {
+  if (!conversationId && !conversation) {
+    if (conversations.length === 0) {
       return (
         <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
           <AppHeader title="Messages" />
@@ -494,7 +358,7 @@ export default function MessagesScreen() {
       <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
         <AppHeader title="Messages" />
         <FlatList
-          data={displayConversations}
+          data={conversations}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.conversationList}
           renderItem={({item}) => {
@@ -513,8 +377,6 @@ export default function MessagesScreen() {
                 ]}
                 activeOpacity={0.8}
                 onPress={() => {
-                  const isMock = item.id.startsWith('mock-');
-                  setUsingMockConvo(isMock);
                   setActiveConversation(item.id);
                   markRead(item.id).catch(() => {});
                   setConversation(item);
@@ -613,12 +475,10 @@ export default function MessagesScreen() {
       conversation={conversation}
       hasRouteConversationId={!!conversationId}
       walletAddress={walletAddress}
-      useMocks={useMocks}
       onMarkRead={markRead}
       onSetActiveConversation={setActiveConversation}
       onBackToThreads={() => {
         setConversation(null);
-        setUsingMockConvo(false);
         setActiveConversation(null);
         if (conversationId) {
           navigation.setParams({conversationId: undefined});
@@ -634,7 +494,6 @@ function ChatView({
   conversation,
   hasRouteConversationId,
   walletAddress,
-  useMocks,
   onMarkRead,
   onSetActiveConversation,
   onBackToThreads,
@@ -642,20 +501,15 @@ function ChatView({
   conversation: Conversation;
   hasRouteConversationId: boolean;
   walletAddress: string;
-  useMocks: boolean;
   onMarkRead: (conversationId: string) => Promise<void>;
   onSetActiveConversation: (conversationId: string | null) => void;
   onBackToThreads: () => void;
 }) {
   const {theme} = useTheme();
-  const realChat = useChatMessages(useMocks ? null : conversation.id);
-  const mockMessages = React.useMemo(
-    () => buildMockMessages(conversation),
-    [conversation],
-  );
-  const messages = useMocks ? mockMessages : realChat.messages;
-  const chatLoading = useMocks ? false : realChat.loading;
-  const chatError = useMocks ? null : realChat.error;
+  const chat = useChatMessages(conversation.id);
+  const messages = chat.messages;
+  const chatLoading = chat.loading;
+  const chatError = chat.error;
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -675,13 +529,11 @@ function ChatView({
 
   useEffect(() => {
     onSetActiveConversation(conversation.id);
-    if (!useMocks) {
-      onMarkRead(conversation.id).catch(() => {});
-    }
+    onMarkRead(conversation.id).catch(() => {});
     return () => {
       onSetActiveConversation(null);
     };
-  }, [conversation.id, onMarkRead, onSetActiveConversation, useMocks]);
+  }, [conversation.id, onMarkRead, onSetActiveConversation]);
 
   const pickPhoto = useCallback(() => {
     launchImageLibrary(

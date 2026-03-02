@@ -18,46 +18,6 @@ import {fetchDonationHistory, type DonationHistoryItem} from '../services/chat';
 
 type ViewMode = 'feed' | 'my_glimpses';
 
-// TODO: Remove mock data before mainnet launch
-const MOCK_DONATIONS: DonationHistoryItem[] = [
-  {
-    id: 'mock-1',
-    amount_usdc: 25.0,
-    recipient_id: 'matching-pool',
-    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    hold_status: 'released',
-    hold_expires_at: null,
-    tx_signature: '4xK9mP3d...demo',
-    donation_mode: 'solo',
-    cadence: 'one_time',
-    conversation_id: 'mock-conv-1',
-  },
-  {
-    id: 'mock-2',
-    amount_usdc: 10.0,
-    recipient_id: 'matching-pool',
-    created_at: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
-    hold_status: 'locked',
-    hold_expires_at: new Date(Date.now() + 22 * 60 * 60 * 1000).toISOString(),
-    tx_signature: 'F2r4vQ9x...demo',
-    donation_mode: 'solo',
-    cadence: 'one_time',
-    conversation_id: 'mock-conv-2',
-  },
-  {
-    id: 'mock-3',
-    amount_usdc: 50.0,
-    recipient_id: 'matching-pool',
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    hold_status: 'released',
-    hold_expires_at: null,
-    tx_signature: 'D9n8uT6w...demo',
-    donation_mode: 'solo',
-    cadence: 'one_time',
-    conversation_id: null,
-  },
-];
-
 const FEED_WALLETS = [
   '7aK9...mP3d',
   'F2r4...vQ9x',
@@ -222,8 +182,7 @@ export default function CampaignsScreen() {
                 walletAddress: walletAddress || 'demo',
                 loading: historyLoading,
                 error: historyError,
-                rows:
-                  donationHistory.length > 0 ? donationHistory : MOCK_DONATIONS,
+                rows: donationHistory,
                 navigation,
                 theme,
               })}
