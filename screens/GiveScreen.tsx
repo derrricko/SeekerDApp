@@ -701,16 +701,29 @@ export default function GiveScreen() {
                 )}
               </View>
 
-              <Text
-                style={[
-                  styles.timelineCopy,
-                  {color: theme.colors.textSecondary},
-                ]}>
-                After confirmation, your USDC donation is sent on-chain. Your
-                message thread opens immediately. In 24-48 hours we reach out
-                with the specific need your donation is supporting. In 5-7 days
-                you receive receipts, photos, and progress updates.
-              </Text>
+              <View style={styles.timelineList}>
+                <Text
+                  style={[
+                    styles.timelineItem,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  {'—  '}On-chain confirmation is immediate
+                </Text>
+                <Text
+                  style={[
+                    styles.timelineItem,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  {'—  '}24-48 hours: matched to a specific need
+                </Text>
+                <Text
+                  style={[
+                    styles.timelineItem,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  {'—  '}5-7 days: receipts, photos, and updates
+                </Text>
+              </View>
 
               {!!error && (
                 <Text style={[styles.error, {color: theme.colors.danger}]}>
@@ -725,7 +738,7 @@ export default function GiveScreen() {
                   styles.backButton,
                   {
                     borderColor: theme.colors.border,
-                    backgroundColor: inputSurface,
+                    backgroundColor: 'transparent',
                     opacity: loading || connecting ? 0.6 : 1,
                     transform: [
                       {scale: pressed ? 0.985 : 1},
@@ -741,7 +754,7 @@ export default function GiveScreen() {
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
-                  Back
+                  BACK
                 </Text>
               </Pressable>
 
@@ -970,18 +983,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
   },
-  timelineCopy: {
+  timelineList: {
     marginTop: 12,
-    fontSize: 15,
-    lineHeight: 22,
+    gap: 4,
+  },
+  timelineItem: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   backButton: {
     marginTop: 14,
-    alignSelf: 'flex-start',
-    minWidth: 96,
-    height: 40,
+    width: '100%',
+    height: 48,
     borderWidth: 2,
-    paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -989,13 +1003,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 18,
     fontWeight: '700',
+    letterSpacing: 1,
   },
   confirmButton: {
     marginTop: 10,
     width: '100%',
     minHeight: 64,
     borderWidth: 3,
-    borderRadius: 32,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#1A1125',
