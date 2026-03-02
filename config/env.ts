@@ -2,9 +2,9 @@
 // Toggle __DEV__ to switch between devnet (debug builds) and mainnet (release).
 export type SolanaCluster = 'devnet' | 'testnet' | 'mainnet-beta';
 
-export const SOLANA_CLUSTER: SolanaCluster = __DEV__
-  ? 'devnet'
-  : 'mainnet-beta';
+// TODO: revert to __DEV__ toggle before release
+// Temporarily hardcoded to mainnet for on-device testing with real USDC.
+export const SOLANA_CLUSTER: SolanaCluster = 'mainnet-beta';
 
 // Client RPC — public endpoint. Helius key stays server-side only (edge fn env var).
 // If client volume outgrows public RPC, add a Supabase edge proxy.

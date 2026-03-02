@@ -629,7 +629,11 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
           setHasSeekerToken(false);
           setSgtLoading(false);
           await AsyncStorage.removeItem('@glimpse_wallet_address');
-          await setSupabaseAccessToken(null);
+          try {
+            await setSupabaseAccessToken(null);
+          } catch {
+            // Don't let Supabase client recreation clobber the real error
+          }
         }
         throw error;
       } finally {
