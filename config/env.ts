@@ -47,3 +47,16 @@ const USDC_MINTS: Record<SolanaCluster, string> = {
 
 export const USDC_MINT = USDC_MINTS[SOLANA_CLUSTER];
 export const USDC_DECIMALS = 6;
+
+// Seeker Genesis Token (SGT) — Token-2022 non-transferable NFT.
+// One per Solana Seeker device. Used for device-gated access.
+// SGTs only exist on mainnet — always verify against mainnet RPC.
+export const SGT_MINT_AUTHORITY =
+  'GT2zuHVaZQYZSyQMgJPLzvkmyztfyXg2NJunqFp4p3A4';
+export const SGT_METADATA_ADDRESS =
+  'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
+export const SGT_GROUP_MINT_ADDRESS =
+  'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
+
+// Mainnet RPC for SGT checks — used even in devnet builds.
+export const MAINNET_RPC_URL = 'https://api.mainnet-beta.solana.com';

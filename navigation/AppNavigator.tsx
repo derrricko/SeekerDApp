@@ -22,7 +22,9 @@ import HomeScreen from '../screens/HomeScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import HowItWorksCarousel from '../screens/HowItWorksCarousel';
 import MessagesScreen from '../screens/MessagesScreen';
+import SeekerRequiredScreen from '../screens/SeekerRequiredScreen';
 import {useUnread} from '../components/providers/UnreadProvider';
+import {useWallet} from '../components/providers/WalletProvider';
 
 export type RootTabParamList = {
   Glimpses: undefined;
@@ -235,6 +237,35 @@ function AppTabBar({
   );
 }
 
+// SGT-gated screen wrappers — block Give/Messages for non-Seeker wallets.
+function GatedGiveScreen() {
+  const {connected, hasSeekerToken, sgtLoading} = useWallet();
+  if (!connected) {
+    return <SeekerRequiredScreen title="Donate" />;
+  }
+  if (sgtLoading) {
+    return <SeekerRequiredScreen title="Donate" />;
+  }
+  if (!hasSeekerToken) {
+    return <SeekerRequiredScreen title="Donate" />;
+  }
+  return <GiveScreen />;
+}
+
+function GatedMessagesScreen() {
+  const {connected, hasSeekerToken, sgtLoading} = useWallet();
+  if (!connected) {
+    return <SeekerRequiredScreen title="Messages" />;
+  }
+  if (sgtLoading) {
+    return <SeekerRequiredScreen title="Messages" />;
+  }
+  if (!hasSeekerToken) {
+    return <SeekerRequiredScreen title="Messages" />;
+  }
+  return <MessagesScreen />;
+}
+
 function MainTabs({
   onOpenGiveFlow,
   navigationRef,
@@ -257,8 +288,8 @@ function MainTabs({
         tabBar={renderTabBar}
         screenOptions={{headerShown: false}}>
         <Tab.Screen name="Glimpses" component={CampaignsScreen} />
-        <Tab.Screen name="Give" component={GiveScreen} />
-        <Tab.Screen name="Messages" component={MessagesScreen} />
+        <Tab.Screen name="Give" component={GatedGiveScreen} />
+        <Tab.Screen name="Messages" component={GatedMessagesScreen} />
         <Tab.Screen
           name="Rank"
           component={LeaderboardScreen}

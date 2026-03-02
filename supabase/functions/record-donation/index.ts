@@ -41,6 +41,12 @@ const MATCHING_POOL_WALLET = 'DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk';
 const MATCHING_POOL_USDC_ATA = 'GUGy7SPXbETj4E4mNFGXY4jurm1DUjWp5KDTK1J11kwa';
 const USDC_DECIMALS = 6;
 
+// Seeker Genesis Token (SGT) — Token-2022 non-transferable NFT.
+const SGT_MINT_AUTHORITY = 'GT2zuHVaZQYZSyQMgJPLzvkmyztfyXg2NJunqFp4p3A4';
+const SGT_METADATA_ADDRESS = 'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
+const SGT_GROUP_MINT_ADDRESS = 'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
+const TOKEN_2022_PROGRAM_ID = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+
 type CampaignId =
   | 'teacher-supplies'
   | 'single-moms-crisis'
@@ -103,6 +109,9 @@ serve(async req => {
     }
 
     const wallet = await verifyWalletFromJwt(token);
+
+    // SGT gate — only Seeker device owners can donate.
+    await verifySeekerTokenServerSide(wallet);
 
     const body = await req.json();
     const txSignature =
@@ -181,6 +190,10 @@ serve(async req => {
       lc.includes('missing wallet claim')
     ) {
       return json({error: message}, 401);
+    }
+    // SGT gate → 403 (not a Seeker device owner)
+    if (lc.includes('seeker genesis token') || lc.includes('seeker device')) {
+      return json({error: message}, 403);
     }
     // Validation errors → 422 (permanent failure, do not retry)
     if (
@@ -492,6 +505,135 @@ async function getTransactionWithRetry(txSignature: string): Promise<any> {
 
   throw new Error('Transaction not found');
 }
+
+// ---------- SGT Verification (Server-Side) ----------
+
+async function verifySeekerTokenServerSide(walletAddress: string): Promise<void> {
+  // Fetch all Token-2022 accounts for this wallet
+  const result = await rpc('getTokenAccountsByOwner', [
+    walletAddress,
+    {programId: TOKEN_2022_PROGRAM_ID},
+    {encoding: 'jsonParsed'},
+  ]);
+
+  const accounts = result?.value || [];
+
+  for (const account of accounts) {
+    const parsed = account?.account?.data?.parsed?.info;
+    if (!parsed) continue;
+
+    const tokenAmount = parsed.tokenAmount;
+    if (!tokenAmount || Number(tokenAmount.amount) === 0) continue;
+
+    const mintAddress = parsed.mint;
+    if (!mintAddress) continue;
+
+    // Fetch mint account to check authority and extensions
+    const mintInfo = await rpc('getAccountInfo', [
+      mintAddress,
+      {encoding: 'jsonParsed'},
+    ]);
+
+    const mintData = mintInfo?.value?.data?.parsed?.info;
+    if (!mintData) continue;
+
+    // Check 1: mintAuthority
+    if (mintData.mintAuthority !== SGT_MINT_AUTHORITY) continue;
+
+    // Check 2 & 3: extensions (jsonParsed returns structured extension data)
+    const extensions = mintData.extensions || [];
+    let metadataPointerValid = false;
+    let groupMemberValid = false;
+
+    for (const ext of extensions) {
+      if (ext.extension === 'metadataPointer') {
+        const state = ext.state;
+        if (
+          state?.authority === SGT_MINT_AUTHORITY &&
+          state?.metadataAddress === SGT_METADATA_ADDRESS
+        ) {
+          metadataPointerValid = true;
+        }
+      }
+      if (ext.extension === 'tokenGroupMember') {
+        const state = ext.state;
+        if (state?.group === SGT_GROUP_MINT_ADDRESS) {
+          groupMemberValid = true;
+        }
+      }
+    }
+
+    // Fallback: if extensions array is empty but mintAuthority matches,
+    // try base64 encoding for raw TLV parsing
+    if (!metadataPointerValid && !groupMemberValid && extensions.length === 0) {
+      const rawInfo = await rpc('getAccountInfo', [
+        mintAddress,
+        {encoding: 'base64'},
+      ]);
+      const rawData = rawInfo?.value?.data;
+      if (rawData && Array.isArray(rawData) && rawData[0]) {
+        const bytes = Uint8Array.from(atob(rawData[0]), c => c.charCodeAt(0));
+        // Token-2022 mint: 82 bytes fixed + TLV extensions
+        if (bytes.length > 82) {
+          const tlv = bytes.slice(82);
+          let offset = 0;
+          while (offset + 4 <= tlv.length) {
+            const type = tlv[offset] | (tlv[offset + 1] << 8);
+            const length = tlv[offset + 2] | (tlv[offset + 3] << 8);
+            if (offset + 4 + length > tlv.length) break;
+
+            // Type 18 = MetadataPointer: [32 authority][32 metadataAddress]
+            if (type === 18 && length >= 64) {
+              const authority = encodeBase58(tlv.slice(offset + 4, offset + 4 + 32));
+              const metaAddr = encodeBase58(tlv.slice(offset + 4 + 32, offset + 4 + 64));
+              if (authority === SGT_MINT_AUTHORITY && metaAddr === SGT_METADATA_ADDRESS) {
+                metadataPointerValid = true;
+              }
+            }
+            // Type 22 = TokenGroupMember: [32 mint][32 group]
+            if (type === 22 && length >= 64) {
+              const group = encodeBase58(tlv.slice(offset + 4 + 32, offset + 4 + 64));
+              if (group === SGT_GROUP_MINT_ADDRESS) {
+                groupMemberValid = true;
+              }
+            }
+            offset += 4 + length;
+          }
+        }
+      }
+    }
+
+    if (metadataPointerValid && groupMemberValid) {
+      return; // Valid SGT found
+    }
+  }
+
+  throw new Error(
+    'Seeker Genesis Token not found — donation requires a Solana Seeker device',
+  );
+}
+
+// Minimal base58 encoder for raw TLV fallback (no external dependency in Deno)
+function encodeBase58(bytes: Uint8Array): string {
+  const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  let num = 0n;
+  for (const b of bytes) {
+    num = num * 256n + BigInt(b);
+  }
+  let encoded = '';
+  while (num > 0n) {
+    encoded = ALPHABET[Number(num % 58n)] + encoded;
+    num = num / 58n;
+  }
+  // Leading zeros
+  for (const b of bytes) {
+    if (b !== 0) break;
+    encoded = '1' + encoded;
+  }
+  return encoded || '1';
+}
+
+// ---------- RPC ----------
 
 async function rpc(method: string, params: unknown[]): Promise<any> {
   const response = await fetch(SOLANA_RPC_URL, {
