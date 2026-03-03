@@ -67,7 +67,7 @@ If the Pages repo is already cloned locally, just copy the file, commit, and pus
 
 ## Still TODO (not in this deploy)
 
-- Rotate Helius API key (old key in git history)
+- ~~Rotate Helius API key~~ Done (2026-03-03)
 - Re-enable SGT gating before mainnet launch
 - Build release APK for dApp Store submission
 - Photo wrapping issue in MessagesScreen.tsx (`aspectRatio: 4/3` may crop non-standard photos)

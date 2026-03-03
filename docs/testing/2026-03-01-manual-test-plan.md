@@ -13,7 +13,7 @@
 - [ ] Fresh install on device: `npx react-native run-android`
 - [ ] Confirm `config/env.ts` points to the right cluster
 - [ ] Confirm edge functions are deployed: `npx supabase functions list`
-- [ ] Verify Helius API key was rotated (old key `595f9a7c...` should be dead)
+- [x] Verify Helius API key was rotated (2026-03-03)
 
 ---
 
