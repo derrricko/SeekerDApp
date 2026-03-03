@@ -39,13 +39,11 @@ import {
   fetchConversations,
   getMediaSignedUrl,
   sendMessage,
+  updateDonationStatus,
   uploadChatMedia,
   useChatMessages,
 } from '../services/chat';
-import {
-  getRecipientGlimpseTag,
-  getRecipientLabel,
-} from '../data/donationConfig';
+import {getRecipientLabel} from '../data/donationConfig';
 import {ADMIN_WALLET} from '../config/env';
 import {getExplorerUrl} from '../utils/explorer';
 import AppHeader from '../ui/AppHeader';
@@ -250,6 +248,7 @@ export default function MessagesScreen() {
   const walletAddress = publicKey?.toBase58() || '';
 
   const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [activeGlimpseTag, setActiveGlimpseTag] = useState('#001');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -270,8 +269,15 @@ export default function MessagesScreen() {
         }
         setConversations(convos);
         if (conversationId) {
-          const target = convos.find(c => c.id === conversationId);
-          setConversation(target || null);
+          const targetIndex = convos.findIndex(c => c.id === conversationId);
+          if (targetIndex >= 0) {
+            setConversation(convos[targetIndex]);
+            setActiveGlimpseTag(
+              `#${String(convos.length - targetIndex).padStart(3, '0')}`,
+            );
+          } else {
+            setConversation(null);
+          }
         }
         setLoading(false);
       })
@@ -361,9 +367,12 @@ export default function MessagesScreen() {
           data={conversations}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.conversationList}
-          renderItem={({item}) => {
+          renderItem={({item, index}) => {
             const amount = Number(item.amount_usdc ?? 0).toFixed(2);
-            const glimpseTag = getRecipientGlimpseTag(item.recipient_id);
+            const glimpseNumber = String(
+              conversations.length - index,
+            ).padStart(3, '0');
+            const glimpseTag = `#${glimpseNumber}`;
             const unreadCount =
               conversationUnreads[item.id] ?? item.unread_count ?? 0;
             return (
@@ -380,6 +389,7 @@ export default function MessagesScreen() {
                   setActiveConversation(item.id);
                   markRead(item.id).catch(() => {});
                   setConversation(item);
+                  setActiveGlimpseTag(glimpseTag);
                 }}>
                 <View style={styles.conversationTopRow}>
                   <Text
@@ -473,6 +483,7 @@ export default function MessagesScreen() {
   return (
     <ChatView
       conversation={conversation}
+      glimpseTag={activeGlimpseTag}
       hasRouteConversationId={!!conversationId}
       walletAddress={walletAddress}
       onMarkRead={markRead}
@@ -492,6 +503,7 @@ export default function MessagesScreen() {
 
 function ChatView({
   conversation,
+  glimpseTag,
   hasRouteConversationId,
   walletAddress,
   onMarkRead,
@@ -499,6 +511,7 @@ function ChatView({
   onBackToThreads,
 }: {
   conversation: Conversation;
+  glimpseTag: string;
   hasRouteConversationId: boolean;
   walletAddress: string;
   onMarkRead: (conversationId: string) => Promise<void>;
@@ -506,6 +519,7 @@ function ChatView({
   onBackToThreads: () => void;
 }) {
   const {theme} = useTheme();
+  const {isAdmin} = useWallet();
   const chat = useChatMessages(conversation.id);
   const messages = chat.messages;
   const chatLoading = chat.loading;
@@ -514,11 +528,25 @@ function ChatView({
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [pickedImage, setPickedImage] = useState<Asset | null>(null);
+  const [donationStatus, setDonationStatus] = useState(
+    conversation.donation_status ?? 'confirmed',
+  );
+  const [markingComplete, setMarkingComplete] = useState(false);
   const flatListRef = React.useRef<FlatList>(null);
   const sendPulse = React.useRef(new Animated.Value(1)).current;
 
+  const handleMarkCompleted = useCallback(async () => {
+    setMarkingComplete(true);
+    try {
+      await updateDonationStatus(conversation.donation_id, 'completed');
+      setDonationStatus('completed');
+    } catch (e) {
+      console.error('Failed to mark completed:', e);
+    }
+    setMarkingComplete(false);
+  }, [conversation.donation_id]);
+
   const recipientName = getRecipientLabel(conversation.recipient_id);
-  const glimpseTag = getRecipientGlimpseTag(conversation.recipient_id);
   const displayAmount = conversation.amount_usdc ?? 0;
   const amount = Number(displayAmount).toFixed(2);
 
@@ -677,7 +705,7 @@ function ChatView({
     setSending(false);
   }, [conversation.id, inputText, pickedImage, sendPulse, walletAddress]);
 
-  const isAdmin = (senderWallet: string) =>
+  const isSenderAdmin = (senderWallet: string) =>
     senderWallet === ADMIN_WALLET || senderWallet === conversation.admin_wallet;
 
   return (
@@ -744,6 +772,38 @@ function ChatView({
                 </Text>
               </TouchableOpacity>
             ) : null}
+            {isAdmin && donationStatus === 'confirmed' ? (
+              <TouchableOpacity
+                onPress={handleMarkCompleted}
+                disabled={markingComplete}
+                style={[
+                  styles.markCompletedButton,
+                  {borderColor: theme.colors.success},
+                ]}
+                activeOpacity={0.8}>
+                <Text
+                  style={[
+                    styles.markCompletedText,
+                    {
+                      color: theme.colors.success,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  {markingComplete ? 'UPDATING...' : 'MARK COMPLETED'}
+                </Text>
+              </TouchableOpacity>
+            ) : isAdmin && donationStatus === 'completed' ? (
+              <Text
+                style={[
+                  styles.completedBadge,
+                  {
+                    color: theme.colors.success,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                COMPLETED
+              </Text>
+            ) : null}
           </View>
         </View>
 
@@ -768,7 +828,7 @@ function ChatView({
             maxToRenderPerBatch={15}
             windowSize={11}
             renderItem={({item}) => {
-              const fromAdmin = isAdmin(item.sender_wallet);
+              const fromAdmin = isSenderAdmin(item.sender_wallet);
               return (
                 <MessageBubble
                   item={item}
@@ -1132,6 +1192,25 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 0.5,
     marginTop: 6,
+  },
+  markCompletedButton: {
+    borderWidth: 2,
+    borderRadius: 0,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  markCompletedText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  completedBadge: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    marginTop: 8,
   },
   conversationList: {
     paddingHorizontal: 16,
