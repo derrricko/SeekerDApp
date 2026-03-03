@@ -28,6 +28,7 @@ export interface Conversation {
   recipient_id?: string;
   tx_signature?: string;
   unread_count?: number;
+  donation_status?: DonationStatus;
 }
 
 export interface DonationHistoryItem {
@@ -51,7 +52,7 @@ export async function fetchConversations(
   const supabase = getSupabase();
   const {data, error} = await supabase
     .from('conversations')
-    .select('*, donations(amount_usdc, recipient_id, tx_signature)')
+    .select('*, donations(amount_usdc, recipient_id, tx_signature, status)')
     .or(`donor_wallet.eq.${walletAddress},admin_wallet.eq.${walletAddress}`)
     .order('created_at', {ascending: false});
 
@@ -64,6 +65,7 @@ export async function fetchConversations(
     amount_usdc: c.donations?.amount_usdc,
     recipient_id: c.donations?.recipient_id,
     tx_signature: c.donations?.tx_signature,
+    donation_status: (c.donations?.status || 'confirmed') as DonationStatus,
   }));
 
   const conversationIds = conversations.map(c => c.id);
