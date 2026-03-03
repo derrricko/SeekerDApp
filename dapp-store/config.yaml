@@ -1,54 +1,82 @@
 publisher:
-  name: "Glimpse"
-  website: "https://giveglimpse.com"
-  email: "djwoepking@outlook.com"
-  support_email: "djwoepking@outlook.com"
+  name: Glimpse
+  website: https://giveglimpse.com
+  email: djwoepking@outlook.com
+  support_email: djwoepking@outlook.com
   media:
     - purpose: icon
-      uri: "icon-512.png"
-  address: ""
-
+      uri: icon-512.png
+  address: ''
 app:
-  name: "Glimpse"
-  address: ""
-  android_package: "com.seekerdapp"
+  name: Glimpse
+  address: EXaw3mEfQWgxxNQWNiuHAYYu8nNXYqeF8srpboudEXa
+  android_package: com.seekerdapp
   urls:
-    license_url: "https://giveglimpse.com/privacy"
-    privacy_policy_url: "https://giveglimpse.com/privacy"
-    copyright_url: "https://giveglimpse.com/privacy"
-    website: "https://giveglimpse.com"
+    license_url: https://giveglimpse.com/privacy
+    privacy_policy_url: https://giveglimpse.com/privacy
+    copyright_url: https://giveglimpse.com/privacy
+    website: https://giveglimpse.com
   media:
     - purpose: icon
-      uri: "icon-512.png"
-
+      uri: icon-512.png
 release:
-  address: ""
+  address: F6uhmhv27PstFHkzymPKQ53DFGFuUSigPpZNNrHtxe4h
   media:
     - purpose: icon
-      uri: "icon-512.png"
+      uri: icon-512.png
     - purpose: banner
-      uri: "banner-1200x600.png"
+      uri: banner-1200x600.png
     - purpose: screenshot
-      uri: "screenshots/01-campaigns.png"
+      uri: screenshots/01-campaigns.png
     - purpose: screenshot
-      uri: "screenshots/02-give-flow.png"
+      uri: screenshots/02-give-flow.png
     - purpose: screenshot
-      uri: "screenshots/03-confirmation.png"
+      uri: screenshots/03-confirmation.png
     - purpose: screenshot
-      uri: "screenshots/04-messages-thread.png"
+      uri: screenshots/04-messages-thread.png
   files:
     - purpose: install
-      uri: "../android/app/build/outputs/apk/release/app-release.apk"
+      uri: ../android/app/build/outputs/apk/release/app-release.apk
   catalog:
     en-US:
-      name: "Glimpse"
-      short_description: "Zero platform fees. Real impact. Every dollar on-chain."
-      long_description: "Most people's entire lives will be forever changed by a few thousand dollars. Glimpse makes sure every one of those dollars actually arrives.\n\nGlimpse is a USDC donation app where 100% of what you give goes toward helping people in need. No platform fees. Every transaction is recorded on the Solana blockchain so you can verify it yourself.\n\nWhen you donate, you can describe who you want to help and leave a personal note. Glimpse uses that context to match your donation to a specific person or cause. A message thread opens immediately so you can communicate directly and follow the impact of your gift.\n\nHow it works:\n1. Connect your Seeker wallet\n2. Pick a campaign and enter any USDC amount\n3. Add match context and a note for the recipient\n4. Review the details and sign\n5. Follow real updates in your message thread\n\nZero platform fees. Built on Solana for the Seeker community. Glimpse is not a nonprofit or 501(c)(3). Donations are not tax-deductible."
-      new_in_version: "First release. Direct USDC giving with on-chain transparency and impact messaging."
+      name: Glimpse
+      short_description: Give USDC. Zero platform fees.
+      long_description: |-
+        Most people's entire lives will be forever changed by a few thousand dollars. Glimpse makes sure every one of those dollars actually arrives.
+
+        Glimpse is a USDC donation app where 100% of what you give goes toward helping people in need. No platform fees. Every transaction is recorded on the Solana blockchain so you can verify it yourself.
+
+        When you donate, you can describe who you want to help and leave a personal note. Glimpse uses that context to match your donation to a specific person or cause. A message thread opens immediately so you can communicate directly and follow the impact of your gift.
+
+        How it works:
+        1. Connect your Seeker wallet
+        2. Pick a campaign and enter any USDC amount
+        3. Add match context and a note for the recipient
+        4. Review the details and sign
+        5. Follow real updates in your message thread
+
+        Zero platform fees. Built on Solana for the Seeker community. Glimpse is not a nonprofit or 501(c)(3). Donations are not tax-deductible.
+      new_in_version: First release. Direct USDC giving with on-chain transparency and impact messaging.
   android_details:
+    cert_fingerprint: 575ffc40590f18d8008fbf4b8e7bd7db03ce5e8e358f61d07b09c95fe363b116
+    min_sdk: 24
+    version: '1.0'
+    version_code: 1
     locales:
       - en-US
-
 solana_mobile_dapp_publisher_portal:
-  google_store_package: "com.seekerdapp"
-  testing_instructions: "1. Open the app and tap the Give button.\n2. Connect your Seeker wallet when prompted.\n3. Enter any USDC amount and select a campaign.\n4. Optionally add match context and a note.\n5. Tap Review Donation, then Confirm and Sign in your wallet.\n6. Verify the donation appears in the Glimpses tab with CONFIRMED status.\n7. Verify a message thread appears in the Messages tab."
+  google_store_package: com.seekerdapp
+  testing_instructions: |-
+    1. Open the app and tap the Give button.
+    2. Connect your Seeker wallet when prompted.
+    3. Enter any USDC amount and select a campaign.
+    4. Optionally add match context and a note.
+    5. Tap Review Donation, then Confirm and Sign in your wallet.
+    6. Verify the donation appears in the Glimpses tab with CONFIRMED status.
+    7. Verify a message thread appears in the Messages tab.
+lastSubmittedVersionOnChain:
+  address: F6uhmhv27PstFHkzymPKQ53DFGFuUSigPpZNNrHtxe4h
+  version_code: 1
+  apk_hash: RALkdAkvoYySB2XucX8bhF1YHtcKuDH08L7+oMeJzhI=
+lastUpdatedVersionOnStore:
+  address: F6uhmhv27PstFHkzymPKQ53DFGFuUSigPpZNNrHtxe4h

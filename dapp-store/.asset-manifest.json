@@ -1,0 +1,39 @@
+{
+  "assets": {
+    "icon-512.png": {
+      "path": "icon-512.png",
+      "sha256": "VZnPzw+D0gezpMoQ+Ny4RCUjcrXF1vhOOtb5zuhB6O0=",
+      "uri": "https://arweave.net/__Qlk_CJGCZ6YqXcwA6Ry2_1sxS3jVKm8MMzq356w74"
+    },
+    "../android/app/build/outputs/apk/release/app-release.apk": {
+      "path": "../android/app/build/outputs/apk/release/app-release.apk",
+      "sha256": "RALkdAkvoYySB2XucX8bhF1YHtcKuDH08L7+oMeJzhI=",
+      "uri": "https://arweave.net/19Ye5J49JUHUGW2lI5U4_8O7QXclZY-L4GNoOTLuToA"
+    },
+    "banner-1200x600.png": {
+      "path": "banner-1200x600.png",
+      "sha256": "DQlKfPj9rquT4YpLQDfR8DKn2tG63AdoG+9wTowVs/c=",
+      "uri": "https://arweave.net/11oWkfcYSFiWYzsrInNXj01JaeYxbSjAgL2jDoE5zv0"
+    },
+    "screenshots/01-campaigns.png": {
+      "path": "screenshots/01-campaigns.png",
+      "sha256": "SlSaFT8rrnsM23fezWDyAih08vimfhuiF8e+KpuNYC4=",
+      "uri": "https://arweave.net/T_NJIur_jBmR6MfxNYGOlDRoTixAvmQSq-bVuxg2rm0"
+    },
+    "screenshots/02-give-flow.png": {
+      "path": "screenshots/02-give-flow.png",
+      "sha256": "0wRuaJKLTYnE8IsVs3L2DLI6BAztmjvsOJ97KNiasUA=",
+      "uri": "https://arweave.net/JCqJHtG7D-aPnOt3XumZn2es_fajseWhQE_hhD3YJhY"
+    },
+    "screenshots/03-confirmation.png": {
+      "path": "screenshots/03-confirmation.png",
+      "sha256": "yqf68QnX6BA/4tgUOWiqyBPhy2Khm3I3MNpUGcvIpAY=",
+      "uri": "https://arweave.net/rhuAMsv6iFhMXB96Qs4OJjZaHX4F6o2ww0FNj1KsUIs"
+    },
+    "screenshots/04-messages-thread.png": {
+      "path": "screenshots/04-messages-thread.png",
+      "sha256": "A2NYdeFbljdPWsvu4+xrqrBXJHegnPr8UmcSu6A6VnA=",
+      "uri": "https://arweave.net/YUO99vz4ORDQkiSbLif3TmCVkw2CE5FI-B6oGs4R0U8"
+    }
+  }
+}
