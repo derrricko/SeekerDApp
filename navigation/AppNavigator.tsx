@@ -133,7 +133,7 @@ function AppTabBar({
     ],
   });
 
-  if (isMessagesThreadOpen) {
+  if (isMessagesThreadOpen || isGiveTab) {
     return <View style={styles.messagesBarHidden} />;
   }
 

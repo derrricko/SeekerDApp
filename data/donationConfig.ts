@@ -30,7 +30,7 @@ export const MATCHING_POOL = {
 export const CAMPAIGN_OPTIONS: CampaignOption[] = [
   {
     id: 'public-schools',
-    label: 'Public Schools (ex: diapers or formula, tire replacement)',
+    label: 'Public Schools',
     glimpseTag: '#001',
     summary:
       'Funds urgent needs at public schools — classroom supplies, transportation, and essentials that keep students and families supported.',
@@ -42,7 +42,7 @@ export const CAMPAIGN_OPTIONS: CampaignOption[] = [
     label: "Single Mom's / Families in Crisis",
     glimpseTag: '#002',
     summary:
-      'Supports families facing immediate hardship with essentials like transportation, groceries, and critical household stability during emergency periods.',
+      'Supports families facing immediate hardship with essentials like diapers, formula, tire replacement, groceries, and critical household stability.',
     causePreferences: ['family-crisis', 'single-moms'],
     minimumUSDC: 50,
   },
