@@ -96,6 +96,7 @@ interface WalletContextType {
   connecting: boolean;
   hasSeekerToken: boolean;
   sgtLoading: boolean;
+  recheckSgt: () => void;
   connect: () => Promise<PublicKey>;
   disconnect: () => void;
   signAndSendTransaction: (transaction: Transaction) => Promise<string>;
@@ -115,6 +116,7 @@ const WalletContext = createContext<WalletContextType>({
   connecting: false,
   hasSeekerToken: false,
   sgtLoading: false,
+  recheckSgt: () => {},
   connect: async () => {
     throw new Error('WalletProvider is not mounted');
   },
@@ -187,6 +189,12 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
         setSgtLoading(false);
       });
   }, []);
+
+  const recheckSgt = useCallback(() => {
+    if (publicKey) {
+      checkSeekerToken(publicKey);
+    }
+  }, [publicKey, checkSeekerToken]);
 
   // Hydrate wallet state on mount. Handles two cases:
   // 1. Normal cold start — JWT + wallet address in storage → restore session.
@@ -653,6 +661,7 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
       connecting,
       hasSeekerToken,
       sgtLoading,
+      recheckSgt,
       connect,
       disconnect,
       signAndSendTransaction,
@@ -664,6 +673,7 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
       connecting,
       hasSeekerToken,
       sgtLoading,
+      recheckSgt,
       connect,
       disconnect,
       signAndSendTransaction,

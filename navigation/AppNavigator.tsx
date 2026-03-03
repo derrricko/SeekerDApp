@@ -233,15 +233,9 @@ function AppTabBar({
   );
 }
 
-// SGT gating BYPASSED for mainnet testing. Re-enable before launch.
-// See docs/plans/2026-03-02-mwa-activity-lifecycle-fix.md for MWA fix status.
-function GatedGiveScreen() {
-  return <GiveScreen />;
-}
-
-function GatedMessagesScreen() {
-  return <MessagesScreen />;
-}
+// SGT enforcement is server-side only (record-donation edge function).
+// Client-side gating removed — the public mainnet RPC rate-limits the
+// Token-2022 queries needed for SGT verification, blocking legitimate users.
 
 function MainTabs({
   onOpenGiveFlow,
@@ -265,8 +259,8 @@ function MainTabs({
         tabBar={renderTabBar}
         screenOptions={{headerShown: false}}>
         <Tab.Screen name="Glimpses" component={CampaignsScreen} />
-        <Tab.Screen name="Give" component={GatedGiveScreen} />
-        <Tab.Screen name="Messages" component={GatedMessagesScreen} />
+        <Tab.Screen name="Give" component={GiveScreen} />
+        <Tab.Screen name="Messages" component={MessagesScreen} />
         <Tab.Screen
           name="Rank"
           component={LeaderboardScreen}

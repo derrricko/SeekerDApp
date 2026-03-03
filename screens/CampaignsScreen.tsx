@@ -29,7 +29,7 @@ const STALE_MS = 30_000;
 export default function CampaignsScreen() {
   const {theme} = useTheme();
   const navigation = useNavigation<any>();
-  const {publicKey} = useWallet();
+  const {publicKey, connect} = useWallet();
   const [viewMode, setViewMode] = useState<ViewMode>('feed');
 
   // Feed state (all donations)
@@ -232,6 +232,7 @@ export default function CampaignsScreen() {
                 theme,
                 emptyText: 'No donations recorded for this wallet yet.',
                 showDonorWallet: false,
+                onConnect: connect,
               })}
         </SurfaceCard>
       </ScreenContainer>
@@ -249,6 +250,7 @@ function renderDonationList({
   theme,
   emptyText,
   showDonorWallet,
+  onConnect,
 }: {
   requiresWallet: boolean;
   walletConnected: boolean;
@@ -259,10 +261,13 @@ function renderDonationList({
   theme: ReturnType<typeof useTheme>['theme'];
   emptyText: string;
   showDonorWallet: boolean;
+  onConnect?: () => void;
 }) {
   if (requiresWallet && !walletConnected) {
     return (
-      <View
+      <TouchableOpacity
+        activeOpacity={0.84}
+        onPress={() => onConnect?.()}
         style={[
           styles.stateCard,
           styles.centeredState,
@@ -281,7 +286,17 @@ function renderDonationList({
           ]}>
           Connect your wallet to see your donation history.
         </Text>
-      </View>
+        <Text
+          style={[
+            styles.stateLink,
+            {
+              color: theme.colors.accent,
+              fontFamily: theme.typography.brand,
+            },
+          ]}>
+          CONNECT WALLET →
+        </Text>
+      </TouchableOpacity>
     );
   }
 
@@ -501,6 +516,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     textAlign: 'center',
+  },
+  stateLink: {
+    fontSize: 10,
+    lineHeight: 14,
+    letterSpacing: 0.8,
+    fontWeight: '700',
+    marginTop: 10,
   },
   historyThreadLink: {
     fontSize: 10,

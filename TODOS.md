@@ -21,11 +21,11 @@
 
 ## 0b. Deploy-Time Checklist (Before Mainnet Launch)
 
-- [ ] **Re-enable SGT gating** in `navigation/AppNavigator.tsx` — restore `hasSeekerToken` checks in `GatedGiveScreen` and `GatedMessagesScreen`
-- [ ] **Remove mock data** from `screens/CampaignsScreen.tsx` (search `MOCK_DONATIONS`) and `screens/MessagesScreen.tsx` (search `MOCK_CONVERSATIONS`)
-- [ ] **Rotate Helius API key** on dashboard (old key `595f9a7c...` is in git history)
-- [ ] **Deploy migration 011** (explicit deny policies): `npx supabase db push`
-- [ ] **Deploy edge functions**: `npx supabase functions deploy wallet-auth && npx supabase functions deploy record-donation`
+- [x] **SGT gating** — server-side only (record-donation edge fn). Client-side removed (public RPC rate-limits Token-2022 queries).
+- [x] **Remove mock data** — AppStateProvider deleted, CampaignsScreen uses real Supabase data
+- [x] **Rotate Helius API key** — new key deployed to Supabase secrets (2026-03-02)
+- [x] **Deploy migrations** — 011 through 016 deployed
+- [x] **Deploy edge functions** — wallet-auth + record-donation deployed
 - [ ] **Verify `config/env.ts`** mainnet values: cluster, USDC mint, pool ATA, RPC endpoint
 
 ---
