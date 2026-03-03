@@ -19,9 +19,11 @@ How it works:
 5. Sign in your wallet
 6. Track updates in Messages
 
-After donation, your message thread opens immediately. In 24-48 hours, Glimpse follows up with a specific need match. In 5-7 days, donors receive receipts, photos, and progress updates.
+After donation, your message thread opens immediately. Glimpse follows up with updates as your donation is put to work.
 
 Campaign minimums apply by campaign (currently 10-25 USDC). Built on Solana for fast settlement and verifiable on-chain records.
+
+Glimpse is not a nonprofit or 501(c)(3). Donations are not tax-deductible.
 
 ## What's New (v1.0)
 First release. Donate USDC, sign in-wallet, and follow real impact updates in-app.

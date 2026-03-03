@@ -8,7 +8,7 @@
 //   5. Validate: info.authority === JWT wallet (donor)
 //   6. Validate: info.destination === MATCHING_POOL_USDC_ATA
 //   7. Validate: memo has tok="usdc", app="glimpse"
-//   8. Upsert donation (amount_usdc, cause_preferences, donation_mode, hold tracking)
+//   8. Upsert donation (amount_usdc, cause_preferences, donation_mode)
 //   9. Upsert conversation + welcome message timeline copy
 
 import {serve} from 'https://deno.land/std@0.177.0/http/server.ts';
@@ -31,10 +31,10 @@ const ADMIN_WALLET =
 const USDC_MINT_MAINNET = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const VALID_USDC_MINTS = new Set([USDC_MINT_MAINNET]);
 
-// Matching pool wallet + pre-computed USDC ATA (mainnet)
-//   Derivation: getAssociatedTokenAddress(USDC_MINT_MAINNET, MATCHING_POOL_WALLET)
+// Glimpse destination wallet + pre-computed USDC ATA (mainnet)
+//   Derivation: getAssociatedTokenAddress(USDC_MINT_MAINNET, GLIMPSE_WALLET)
 //   USDC_MINT_MAINNET = EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
-//   MATCHING_POOL_WALLET = DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk
+//   GLIMPSE_WALLET = DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk
 //   → ATA = GUGy7SPXbETj4E4mNFGXY4jurm1DUjWp5KDTK1J11kwa
 //   IMPORTANT: If wallet or mint changes, re-derive via spl-token on client.
 const MATCHING_POOL_WALLET = 'DdqT7Fek4FLNYcs9STT1Av1ZZgaXa6qNrTZso8USD3rk';
@@ -445,10 +445,10 @@ async function fetchAndValidateUSDCTransaction(
     );
   }
 
-  // Validate destination is the matching pool USDC ATA
+  // Validate destination is the Glimpse USDC ATA
   if (destination !== MATCHING_POOL_USDC_ATA) {
     throw new Error(
-      'Transaction destination does not match matching pool USDC account',
+      'Transaction destination does not match Glimpse USDC account',
     );
   }
 

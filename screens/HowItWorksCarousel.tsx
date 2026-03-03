@@ -255,7 +255,7 @@ function renderStep(step: number, typedAmount: string, cursorVisible: boolean) {
     return (
       <View style={styles.stepWrap}>
         <Text style={[styles.title, styles.titleSentenceSmall]}>
-          We connect you directly to the need
+          We connect you to the need
         </Text>
         <ConnectIcon />
       </View>

@@ -39,11 +39,11 @@ Rule: any touched code path should be checked against the Solana dev playbook be
 
 ## What Changed (v1 → v2)
 
-Glimpse pivoted from a complex USDC escrow/vault system to a direct USDC donation app with on-chain receipts, cause-preference matching, 48-hour custodial hold, and donor-recipient messaging. Built for the Monolith hackathon by a solo founder.
+Glimpse pivoted from a complex vault system to a direct USDC donation app with on-chain receipts, cause-preference matching, and donor-recipient messaging. Built for the Monolith hackathon by a solo founder.
 
-**v1 (archived on `feat/visual-skeleton-rework`):** USDC SPL transfers, Anchor escrow program, vault PDAs, campaigns, activity-weighted giving, glassmorphism design system, SIWS auth.
+**v1 (archived on `feat/visual-skeleton-rework`):** USDC SPL transfers, vault PDAs, campaigns, activity-weighted giving, glassmorphism design system, SIWS auth.
 
-**v2 (this branch `v2/give-portal`):** USDC SPL transfers with Memo receipts, cause-preference matching, Solo/Group metadata, 48-hour custodial hold, Supabase Realtime chat, 4-tab app (Glimpses, Give, Messages, Rank placeholder).
+**v2 (this branch `v2/give-portal`):** USDC SPL transfers with Memo receipts, cause-preference matching, Solo/Group metadata, Supabase Realtime chat, 4-tab app (Glimpses, Give, Messages, Rank placeholder).
 
 ## App Architecture
 
@@ -158,10 +158,10 @@ TODOS.md                               — Deferred work with full context
 5. Picks cadence (one-time or daily)
 6. App builds tx: SPL transferChecked + Memo instruction (atomic)
 7. MWA signAndSendTransactions
-8. On confirm: record in Supabase + create chat conversation + 48h hold
+8. On confirm: record in Supabase + create chat conversation
 9. If Supabase fails: queue in AsyncStorage, retry on next open
 
-All donations go to the matching pool wallet. Cause preferences help match donors to needs.
+All donations go to the Glimpse wallet. Cause preferences help match donors to needs.
 
 ## Memo Format (On-Chain Receipt)
 ```json
@@ -218,7 +218,7 @@ All donations go to the matching pool wallet. Cause preferences help match donor
     6. Validate: info.destination = MATCHING_POOL_USDC_ATA
     7. Validate: memo has tok="usdc", app="glimpse", amounts match
     8. Upsert donation row (amount_usdc, status, cause_preferences, donation_mode)
-    9. Upsert conversation + welcome message (48h hold copy)
+    9. Upsert conversation + welcome message
    10. Return { conversationId }
 ```
 
