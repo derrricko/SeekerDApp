@@ -25,7 +25,7 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {PublicKey, Transaction} from '@solana/web3.js';
 import {transact} from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
-import {APP_IDENTITY, SOLANA_CLUSTER} from '../../config/env';
+import {ADMIN_WALLET, APP_IDENTITY, SOLANA_CLUSTER} from '../../config/env';
 import {
   createWalletAuthMessage,
   authenticateWalletSignature,
@@ -97,6 +97,7 @@ interface WalletContextType {
   hasSeekerToken: boolean;
   sgtLoading: boolean;
   recheckSgt: () => void;
+  isAdmin: boolean;
   connect: () => Promise<PublicKey>;
   disconnect: () => void;
   signAndSendTransaction: (transaction: Transaction) => Promise<string>;
@@ -117,6 +118,7 @@ const WalletContext = createContext<WalletContextType>({
   hasSeekerToken: false,
   sgtLoading: false,
   recheckSgt: () => {},
+  isAdmin: false,
   connect: async () => {
     throw new Error('WalletProvider is not mounted');
   },
@@ -163,6 +165,7 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
   const sgtCheckIdRef = useRef(0);
 
   const connected = publicKey !== null;
+  const isAdmin = publicKey?.toBase58() === ADMIN_WALLET;
 
   // Trigger SGT verification for a wallet. Uses request-id to discard stale results.
   const checkSeekerToken = useCallback((wallet: PublicKey) => {
@@ -662,6 +665,7 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
       hasSeekerToken,
       sgtLoading,
       recheckSgt,
+      isAdmin,
       connect,
       disconnect,
       signAndSendTransaction,
@@ -674,6 +678,7 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
       hasSeekerToken,
       sgtLoading,
       recheckSgt,
+      isAdmin,
       connect,
       disconnect,
       signAndSendTransaction,
