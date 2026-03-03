@@ -263,6 +263,21 @@ export function fetchAllDonations(
   return queryDonations({limit});
 }
 
+export async function updateDonationStatus(
+  donationId: string,
+  status: DonationStatus,
+): Promise<void> {
+  const supabase = getSupabase();
+  const {error} = await supabase
+    .from('donations')
+    .update({status})
+    .eq('id', donationId);
+
+  if (error) {
+    throw error;
+  }
+}
+
 export function useUnreadCount(walletAddress: string | null) {
   const [conversationUnreads, setConversationUnreads] = useState<
     Record<string, number>
