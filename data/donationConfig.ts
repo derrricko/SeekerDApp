@@ -2,7 +2,12 @@ import {MATCHING_POOL_WALLET} from '../config/env';
 
 export type DonationCadence = 'one_time' | 'daily';
 export type DonationMode = 'solo' | 'group';
-export type HoldStatus = 'pending' | 'locked' | 'released';
+export type DonationStatus = 'confirmed' | 'completed';
+
+export const DONATION_STATUS_LABELS: Record<DonationStatus, string> = {
+  confirmed: 'CONFIRMED',
+  completed: 'COMPLETED',
+};
 
 export interface CampaignOption {
   id: string;

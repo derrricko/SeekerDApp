@@ -83,9 +83,6 @@ const ALLOWED_CAUSE_PREFERENCES = new Set(
   CAMPAIGN_RULES.flatMap(rule => rule.causePreferences),
 );
 
-// 48-hour hold window (ms)
-const HOLD_DURATION_MS = 48 * 60 * 60 * 1000;
-
 // ---------- Rate Limiting (in-memory, resets on cold start) ----------
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -144,7 +141,9 @@ serve(async req => {
     }
 
     // SGT gate — only Seeker device owners can donate.
-    await verifySeekerTokenServerSide(wallet);
+    if (Deno.env.get('SGT_GATE_ENABLED') !== 'false') {
+      await verifySeekerTokenServerSide(wallet);
+    }
 
     const body = await req.json();
     const txSignature =
@@ -756,8 +755,6 @@ async function upsertDonation(params: {
     return existing.id;
   }
 
-  const holdExpiresAt = new Date(Date.now() + HOLD_DURATION_MS).toISOString();
-
   let insertResult = await supabase
     .from('donations')
     .insert({
@@ -769,8 +766,7 @@ async function upsertDonation(params: {
       cadence,
       donation_mode: donationMode,
       cause_preferences: causePreferences,
-      hold_status: 'pending',
-      hold_expires_at: holdExpiresAt,
+      status: 'confirmed',
     })
     .select('id')
     .single();

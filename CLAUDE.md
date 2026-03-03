@@ -72,8 +72,6 @@ screens/HowItWorksCarousel.tsx         — Onboarding carousel
 
 components/providers/ConnectionProvider.tsx — Solana RPC connection
 components/providers/WalletProvider.tsx     — MWA wallet + wallet-signed Supabase auth
-components/providers/AppStateProvider.tsx   — Local app state (leaderboard, feed, glimpses)
-
 services/auth.ts                       — createWalletAuthMessage, authenticateWalletSignature
 services/supabase.ts                   — Supabase client + JWT token management
 services/donations.ts                  — executeDonation() orchestrator (USDC)
@@ -123,8 +121,8 @@ TODOS.md                               — Deferred work with full context
                               │ Fetch jsonParsed tx    │      │ donations        │
                               │ Find transferChecked ix│      │  amount_usdc     │
                               │ Validate USDC mint     │─────▶│  donation_mode   │
-                              │ Validate pool ATA      │      │  hold_status     │
-                              │ Validate memo.tok=usdc │      │  hold_expires_at │
+                              │ Validate pool ATA      │      │  status          │
+                              │ Validate memo.tok=usdc │      │                  │
                               │ Store cause_preferences│      │  cause_preferences│
                               └───────────────────────┘      │ conversations    │
                                                               │ messages         │
@@ -177,12 +175,9 @@ All donations go to the matching pool wallet. Cause preferences help match donor
 - `tok`: "usdc" (token identifier)
 - `c`: cadence ("one_time" or "daily")
 
-## Hold Status State Machine
-```
-  pending ──(processing)──▶ locked ──(admin action)──▶ released
-```
-- Hold is custodial (admin releases when donation is matched)
-- Done screen copy: "Your donation is being processed. We are connecting you to a need..."
+## Donation Status
+- `confirmed` — on-chain tx confirmed, recorded in backend
+- `completed` — admin marks donation as fulfilled
 
 ## Wallet Auth Flow
 ```
@@ -222,7 +217,7 @@ All donations go to the matching pool wallet. Cause preferences help match donor
     5. Validate: info.authority = JWT wallet (donor)
     6. Validate: info.destination = MATCHING_POOL_USDC_ATA
     7. Validate: memo has tok="usdc", app="glimpse", amounts match
-    8. Upsert donation row (amount_usdc, hold_status, cause_preferences, donation_mode)
+    8. Upsert donation row (amount_usdc, status, cause_preferences, donation_mode)
     9. Upsert conversation + welcome message (48h hold copy)
    10. Return { conversationId }
 ```
@@ -247,7 +242,7 @@ Key USDC error codes: `INSUFFICIENT_USDC`, `USDC_ACCOUNT_NOT_FOUND`, `INSUFFICIE
 ## Supabase Backend
 
 ### Tables (migration 001 + 004 + 005)
-- `donations` — tx_signature (unique), donor_wallet, recipient_wallet, recipient_id, amount_sol (legacy), amount_usdc, cadence, donation_mode, hold_status, hold_expires_at, cause_preferences
+- `donations` — tx_signature (unique), donor_wallet, recipient_wallet, recipient_id, amount_sol (legacy), amount_usdc, cadence, donation_mode, status, cause_preferences
 - `conversations` — donation_id (FK), donor_wallet, admin_wallet
 - `messages` — conversation_id (FK), sender_wallet, body, media_url, media_type
 
@@ -262,7 +257,7 @@ Key USDC error codes: `INSUFFICIENT_USDC`, `USDC_ACCOUNT_NOT_FOUND`, `INSUFFICIE
 - `wallet-auth` — ed25519 signature verify → JWT issuance (24h TTL)
 - `record-donation` — SPL transferChecked validation → upsert donation + conversation
   - Validates USDC mint, pool ATA, memo tok="usdc"
-  - Stores cause_preferences, donation_mode, hold_status, hold_expires_at
+  - Stores cause_preferences, donation_mode, status
 
 ### Chat Architecture
 - **Realtime:** Supabase postgres_changes on `messages` table

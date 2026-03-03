@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glimpse — Stream Overlay</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --purple: #5b5bd6;
+  --purple-glow: rgba(91, 91, 214, 0.35);
+  --bg: #f0e9ff;
+  --grid: rgba(91, 91, 214, 0.12);
+  --ink: #1a1a2e;
+  --white: #ffffff;
+  --black: #000000;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 1920×1080 Canvas ─────────────────────────────── */
+.canvas {
+  width: 1920px;
+  height: 1080px;
+  position: relative;
+  flex-shrink: 0;
+  transform-origin: center center;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+  overflow: hidden;
+}
+
+/* ── Purple Border Frame ──────────────────────────── */
+.canvas::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 20px solid var(--purple);
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ── Corner Accents ───────────────────────────────── */
+.corner {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  z-index: 101;
+  pointer-events: none;
+}
+.corner::before, .corner::after {
+  content: '';
+  position: absolute;
+  background: var(--purple);
+}
+.corner-tl { top: 20px; left: 20px; }
+.corner-tl::before { top: 0; left: 0; width: 60px; height: 4px; }
+.corner-tl::after  { top: 0; left: 0; width: 4px; height: 60px; }
+
+.corner-tr { top: 20px; right: 20px; }
+.corner-tr::before { top: 0; right: 0; width: 60px; height: 4px; }
+.corner-tr::after  { top: 0; right: 0; width: 4px; height: 60px; }
+
+.corner-bl { bottom: 20px; left: 20px; }
+.corner-bl::before { bottom: 0; left: 0; width: 60px; height: 4px; }
+.corner-bl::after  { bottom: 0; left: 0; width: 4px; height: 60px; }
+
+.corner-br { bottom: 20px; right: 20px; }
+.corner-br::before { bottom: 0; right: 0; width: 60px; height: 4px; }
+.corner-br::after  { bottom: 0; right: 0; width: 4px; height: 60px; }
+
+/* ── Webcam Frame ─────────────────────────────────── */
+.webcam {
+  position: absolute;
+  left: 160px;
+  top: 240px;
+  width: 640px;
+}
+
+.live-dot {
+  position: absolute;
+  top: -16px;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  background: #e53e3e;
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.webcam-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: rgba(0, 0, 0, 0.03);
+  border: 6px solid var(--black);
+}
+
+/* ── Bottom Bar ───────────────────────────────────── */
+.bottom-bar {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  height: 36px;
+  background: var(--purple);
+  z-index: 50;
+}
+
+/* ── Decorative: Scan Line ────────────────────────── */
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--purple-glow), transparent);
+  animation: scan 6s ease-in-out infinite;
+  opacity: 0.4;
+  z-index: 90;
+  pointer-events: none;
+}
+
+@keyframes scan {
+  0%   { top: 20px; }
+  50%  { top: calc(100% - 56px); }
+  100% { top: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="canvas" id="canvas">
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
+  <div class="scanline"></div>
+
+  <div class="webcam">
+    <div class="live-dot"></div>
+    <div class="webcam-frame"></div>
+  </div>
+
+  <div class="bottom-bar"></div>
+</div>
+
+<script>
+function fit() {
+  const c = document.getElementById('canvas');
+  const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  c.style.transform = 'scale(' + s + ')';
+}
+window.addEventListener('resize', fit);
+fit();
+</script>
+</body>
+</html>

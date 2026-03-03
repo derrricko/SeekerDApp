@@ -2,9 +2,11 @@
 // Toggle __DEV__ to switch between devnet (debug builds) and mainnet (release).
 export type SolanaCluster = 'devnet' | 'testnet' | 'mainnet-beta';
 
-export const SOLANA_CLUSTER: SolanaCluster = __DEV__
-  ? 'devnet'
-  : 'mainnet-beta';
+// Hardcoded to mainnet — edge functions only validate against mainnet RPC.
+// The __DEV__ toggle created a client/server mismatch: debug builds sent
+// devnet transactions that the server could never find on mainnet.
+// TODO: Add devnet support to edge functions before re-enabling the toggle.
+export const SOLANA_CLUSTER: SolanaCluster = 'mainnet-beta';
 
 // Client RPC — public endpoint. Helius key stays server-side only (edge fn env var).
 // If client volume outgrows public RPC, add a Supabase edge proxy.
@@ -25,7 +27,7 @@ export const APP_IDENTITY = {
 // Supabase
 export const SUPABASE_URL = 'https://knvagydrbbvuumabmxcg.supabase.co';
 export const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtudmFneWRyYmJ2dXVtYWJteGNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2MzA5MjEsImV4cCI6MjA1NDIwNjkyMX0.AE_8fhzb0Y4TN9_DAXLZ3QLUJNJogYCJN6bB8kqL_OE';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtudmFneWRyYmJ2dXVtYWJteGNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjU2NTMsImV4cCI6MjA4NjQwMTY1M30._YRE0u_16AGeHGsgmSHHIa9J5O6ZZQHo3gFNBFiMycc';
 
 // Solana Memo Program v2
 export const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';

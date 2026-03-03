@@ -553,8 +553,10 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
           });
           await setSupabaseAccessToken(authResult.token);
           await AsyncStorage.removeItem(PENDING_AUTH_KEY);
-        } catch {
-          // Auth failed — will be retried on hydration. Don't block the tx.
+        } catch (wpAuthErr) {
+          const msg = wpAuthErr instanceof Error ? wpAuthErr.message : String(wpAuthErr);
+          console.error('[WP] wallet-auth FAILED:', msg);
+          // Auth failed — donations.ts will retry with same credentials.
         }
 
         setPublicKey(donorPubkey);

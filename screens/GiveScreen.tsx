@@ -297,8 +297,11 @@ export default function GiveScreen() {
         reset();
         navigation.navigate('Messages', {conversationId});
       } else {
-        // Backend failed but tx is on-chain — show processing state
+        // Backend failed but tx is on-chain — show processing state with error
         setProcessingTxSig(result.data.txSignature);
+        if (result.data.recordError) {
+          setError(`Backend: ${result.data.recordError}`);
+        }
         transitionToStep('processing');
       }
     } catch {
@@ -824,6 +827,12 @@ export default function GiveScreen() {
                   message thread — it will appear in Messages shortly.
                 </Text>
               </SurfaceCard>
+
+              {!!error && (
+                <Text style={[styles.error, {color: theme.colors.danger}]}>
+                  {error}
+                </Text>
+              )}
 
               {!!processingTxSig && (
                 <TouchableOpacity

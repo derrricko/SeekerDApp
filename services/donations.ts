@@ -33,6 +33,8 @@ export interface DonationResult {
   memo: DonationMemo;
   conversationId: string | null;
   donorWallet: string;
+  /** Non-null when backend recording failed (tx is on-chain but not in Supabase). */
+  recordError: string | null;
 }
 
 /** Thrown when the server returns 4xx — permanent failure, do not retry. */
@@ -205,6 +207,7 @@ export async function executeDonationSeamless(
     // there is no valid token yet (avoids duplicate calls + replay guard rejection).
     const existingToken = getSupabaseAccessToken();
     if (!existingToken || isTokenExpired(existingToken)) {
+      console.warn('[donation] No valid auth token — attempting wallet-auth...');
       try {
         const authResult = await authenticateWalletSignature({
           wallet: donorPubkey.toBase58(),
@@ -212,8 +215,10 @@ export async function executeDonationSeamless(
           message: authMessage,
         });
         await setSupabaseAccessToken(authResult.token);
-      } catch {
-        // Auth may already be done from WalletProvider. Continue.
+      } catch (authErr) {
+        const msg = authErr instanceof Error ? authErr.message : String(authErr);
+        console.error('[donation] wallet-auth FAILED:', msg);
+        // Continue — token may have been set by WalletProvider
       }
     }
 
@@ -276,6 +281,7 @@ async function confirmAndRecord(
 
   // Record in backend
   let conversationId: string | null = null;
+  let recordError: string | null = null;
   try {
     conversationId = await recordAndCreateConversationSecure(
       txSignature,
@@ -284,6 +290,10 @@ async function confirmAndRecord(
       donationMode,
     );
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('[record-donation] FAILED:', errorMsg);
+    recordError = errorMsg;
+
     if (error instanceof SGTVerificationError) {
       return fail(
         'SGT_REQUIRED',
@@ -306,6 +316,7 @@ async function confirmAndRecord(
     memo: memo || {d: '', r: '', a: amountUSDC, t: 0, app: 'glimpse', tok: 'usdc'},
     conversationId,
     donorWallet: donorPubkey.toBase58(),
+    recordError,
   });
 }
 

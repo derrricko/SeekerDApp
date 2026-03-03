@@ -9,7 +9,6 @@ import {StatusBar} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {ConnectionProvider} from './components/providers/ConnectionProvider';
 import {WalletProvider} from './components/providers/WalletProvider';
-import {AppStateProvider} from './components/providers/AppStateProvider';
 import {UnreadProvider} from './components/providers/UnreadProvider';
 import AppNavigator from './navigation/AppNavigator';
 import {ThemeProvider} from './theme/Theme';
@@ -21,11 +20,9 @@ export default function App() {
         <StatusBar barStyle="dark-content" backgroundColor="#EDE8FA" />
         <ConnectionProvider>
           <WalletProvider>
-            <AppStateProvider>
-              <UnreadProvider>
-                <AppNavigator />
-              </UnreadProvider>
-            </AppStateProvider>
+            <UnreadProvider>
+              <AppNavigator />
+            </UnreadProvider>
           </WalletProvider>
         </ConnectionProvider>
       </ThemeProvider>

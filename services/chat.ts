@@ -34,12 +34,12 @@ export interface DonationHistoryItem {
   amount_usdc: number;
   recipient_id: string;
   created_at: string;
-  hold_status: string;
-  hold_expires_at: string | null;
+  status: string;
   tx_signature: string;
   donation_mode: string;
   cadence: string;
   conversation_id: string | null;
+  donor_wallet?: string;
 }
 
 // ---------- Fetch conversations ----------
@@ -147,11 +147,11 @@ interface DonationHistoryRow {
   amount_usdc: number | string | null;
   recipient_id: string | null;
   created_at: string;
-  hold_status: string | null;
-  hold_expires_at: string | null;
+  status: string | null;
   tx_signature: string | null;
   donation_mode: string | null;
   cadence: string | null;
+  donor_wallet?: string | null;
   conversations?: DonationWithConversation | DonationWithConversation[] | null;
 }
 
@@ -210,7 +210,7 @@ export async function fetchDonationHistory(
   const {data, error} = await supabase
     .from('donations')
     .select(
-      'id, amount_usdc, recipient_id, created_at, hold_status, hold_expires_at, tx_signature, donation_mode, cadence, conversations(id)',
+      'id, amount_usdc, recipient_id, created_at, status, tx_signature, donation_mode, cadence, conversations(id)',
     )
     .eq('donor_wallet', walletAddress)
     .order('created_at', {ascending: false});
@@ -229,12 +229,47 @@ export async function fetchDonationHistory(
       amount_usdc: Number(row.amount_usdc) || 0,
       recipient_id: row.recipient_id || 'unknown',
       created_at: row.created_at,
-      hold_status: row.hold_status || 'pending',
-      hold_expires_at: row.hold_expires_at,
+      status: row.status || 'confirmed',
       tx_signature: row.tx_signature || '',
       donation_mode: row.donation_mode || 'solo',
       cadence: row.cadence || 'one_time',
       conversation_id: conversationJoin?.id ?? null,
+    };
+  });
+}
+
+export async function fetchAllDonations(
+  limit = 50,
+): Promise<DonationHistoryItem[]> {
+  const supabase = getSupabase();
+  const {data, error} = await supabase
+    .from('donations')
+    .select(
+      'id, amount_usdc, donor_wallet, recipient_id, created_at, status, tx_signature, donation_mode, cadence, conversations(id)',
+    )
+    .order('created_at', {ascending: false})
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data ?? []) as (DonationHistoryRow & {donor_wallet?: string})[];
+  return rows.map(row => {
+    const conversationJoin = Array.isArray(row.conversations)
+      ? row.conversations[0]
+      : row.conversations;
+    return {
+      id: row.id,
+      amount_usdc: Number(row.amount_usdc) || 0,
+      recipient_id: row.recipient_id || 'unknown',
+      created_at: row.created_at,
+      status: row.status || 'confirmed',
+      tx_signature: row.tx_signature || '',
+      donation_mode: row.donation_mode || 'solo',
+      cadence: row.cadence || 'one_time',
+      conversation_id: conversationJoin?.id ?? null,
+      donor_wallet: row.donor_wallet ?? undefined,
     };
   });
 }

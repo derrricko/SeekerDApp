@@ -27,11 +27,13 @@ export async function authenticateWalletSignature(params: {
 
   const payload = await safeParseJson(response);
   if (!response.ok) {
-    const message =
-      typeof payload?.error === 'string'
-        ? payload.error
-        : 'Wallet authentication failed';
-    throw new Error(message);
+    const serverError =
+      typeof payload?.error === 'string' ? payload.error : null;
+    const detail = serverError || JSON.stringify(payload) || '(empty body)';
+    console.error(
+      `[wallet-auth] HTTP ${response.status}: ${detail}`,
+    );
+    throw new Error(serverError || `Wallet auth failed (HTTP ${response.status})`);
   }
 
   if (
