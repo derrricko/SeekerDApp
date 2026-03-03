@@ -35,20 +35,20 @@ release:
     - purpose: screenshot
       uri: "screenshots/03-confirmation.png"
     - purpose: screenshot
-      uri: "screenshots/04-messages.png"
+      uri: "screenshots/04-messages-thread.png"
   files:
     - purpose: install
       uri: "../android/app/build/outputs/apk/release/app-release.apk"
   catalog:
     en-US:
       name: "Glimpse"
-      short_description: "USDC donations, real updates."
-      long_description: "Glimpse is a USDC donation app on Solana built for transparent giving.\n\nEvery donation is recorded on-chain and tied to a message thread so donors can follow what happened after they gave.\n\nHow it works:\n1. Open Give\n2. Enter USDC amount and choose a campaign\n3. Add optional context and an optional note\n4. Review and confirm\n5. Sign in your wallet\n6. Track updates in Messages\n\nAfter donation, your message thread opens immediately. In 24-48 hours, Glimpse follows up with a specific need match. In 5-7 days, donors receive receipts, photos, and progress updates.\n\nCampaign minimums apply by campaign (currently 10-25 USDC). Built on Solana for fast settlement and verifiable on-chain records."
-      new_in_version: "First release. Donate USDC, sign in-wallet, and follow real impact updates in-app."
+      short_description: "Zero fees. Real impact. Every dollar on-chain."
+      long_description: "Most people's entire lives will be forever changed by a few thousand dollars. Glimpse makes sure every one of those dollars actually arrives.\n\nGlimpse is a USDC donation app where 100% of what you give goes directly to people in need. No platform fees. No processing cuts. Every transaction is recorded on the Solana blockchain so you can verify it yourself.\n\nWhen you donate, you can describe who you want to help and leave a personal note. Glimpse uses that context to match your donation to a specific person or cause. A message thread opens immediately so you can communicate directly and follow the impact of your gift.\n\nHow it works:\n1. Connect your Seeker wallet\n2. Pick a campaign and enter any USDC amount\n3. Add match context and a note for the recipient\n4. Review the details and sign\n5. Follow real updates in your message thread\n\nZero fees. Zero middlemen. Built on Solana for the Seeker community."
+      new_in_version: "First release. Direct USDC giving with on-chain transparency and impact messaging."
   android_details:
     locales:
       - en-US
 
 solana_mobile_dapp_publisher_portal:
   google_store_package: "com.seekerdapp"
-  testing_instructions: "1. Connect a Solana wallet with USDC balance (e.g., Phantom or Solflare).\n2. Tap the Give tab.\n3. Select a campaign and enter a USDC amount of at least the campaign minimum.\n4. Tap Review Donation, then Confirm and Sign in wallet.\n5. Verify the conversation thread appears in the Messages tab with the welcome timeline."
+  testing_instructions: "1. Open the app and tap the Give button.\n2. Connect your Seeker wallet when prompted.\n3. Enter any USDC amount and select a campaign.\n4. Optionally add match context and a note.\n5. Tap Review Donation, then Confirm and Sign in your wallet.\n6. Verify the donation appears in the Glimpses tab with CONFIRMED status.\n7. Verify a message thread appears in the Messages tab."

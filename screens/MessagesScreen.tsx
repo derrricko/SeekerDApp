@@ -1,7 +1,7 @@
 // v2 Messages Screen — direct chat view (no thread list)
 // Navigated to via conversationId param from the donation flow.
 
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   Animated,
   Alert,
@@ -43,7 +43,7 @@ import {
   uploadChatMedia,
   useChatMessages,
 } from '../services/chat';
-import {getRecipientLabel} from '../data/donationConfig';
+import {getRecipientLabel, type DonationStatus} from '../data/donationConfig';
 import {ADMIN_WALLET} from '../config/env';
 import {getExplorerUrl} from '../utils/explorer';
 import AppHeader from '../ui/AppHeader';
@@ -119,9 +119,7 @@ function MessageBubble({
           setResolvedMediaUri(url);
         }
       })
-      .catch(() => {
-        // Silently fail — image won't render
-      });
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -136,6 +134,7 @@ function MessageBubble({
 
   return (
     <Animated.View
+      renderToHardwareTextureAndroid={!!mediaSource}
       style={[
         styles.bubble,
         fromAdmin
@@ -172,11 +171,13 @@ function MessageBubble({
         },
       ]}>
       {mediaSource && (
-        <Image
-          source={mediaSource}
-          style={styles.mediaImage}
-          resizeMode="cover"
-        />
+        <View style={styles.mediaWrap}>
+          <Image
+            source={mediaSource}
+            style={styles.mediaImage}
+            resizeMode="cover"
+          />
+        </View>
       )}
 
       {item.media_type ? (
@@ -241,7 +242,7 @@ export default function MessagesScreen() {
   const {theme} = useTheme();
   const navigation = useNavigation<any>();
   const route = useRoute<MessagesRouteProp>();
-  const {connected, publicKey} = useWallet();
+  const {connected, publicKey, isAdmin} = useWallet();
   const {conversationUnreads, markRead, setActiveConversation} = useUnread();
 
   const conversationId: string | undefined = route.params?.conversationId;
@@ -392,16 +393,28 @@ export default function MessagesScreen() {
                   setActiveGlimpseTag(glimpseTag);
                 }}>
                 <View style={styles.conversationTopRow}>
-                  <Text
-                    style={[
-                      styles.conversationTitle,
-                      {
-                        color: theme.colors.textPrimary,
-                        fontFamily: theme.typography.brand,
-                      },
-                    ]}>
-                    GLIMPSE {glimpseTag}
-                  </Text>
+                  <View>
+                    <Text
+                      style={[
+                        styles.conversationTitle,
+                        {
+                          color: theme.colors.textPrimary,
+                          fontFamily: theme.typography.brand,
+                        },
+                      ]}>
+                      GLIMPSE {glimpseTag}
+                    </Text>
+                    {isAdmin && item.donor_wallet ? (
+                      <Text
+                        style={[
+                          styles.conversationDonorWallet,
+                          {color: theme.colors.textSecondary},
+                        ]}>
+                        {item.donor_wallet.slice(0, 4)}...
+                        {item.donor_wallet.slice(-4)}
+                      </Text>
+                    ) : null}
+                  </View>
                   <View style={styles.conversationRightGroup}>
                     <Text
                       style={[
@@ -495,6 +508,15 @@ export default function MessagesScreen() {
           navigation.setParams({conversationId: undefined});
         }
       }}
+      onStatusChange={newStatus => {
+        setConversations(prev =>
+          prev.map(c =>
+            c.id === conversation.id
+              ? {...c, donation_status: newStatus}
+              : c,
+          ),
+        );
+      }}
     />
   );
 }
@@ -509,6 +531,7 @@ function ChatView({
   onMarkRead,
   onSetActiveConversation,
   onBackToThreads,
+  onStatusChange,
 }: {
   conversation: Conversation;
   glimpseTag: string;
@@ -517,6 +540,7 @@ function ChatView({
   onMarkRead: (conversationId: string) => Promise<void>;
   onSetActiveConversation: (conversationId: string | null) => void;
   onBackToThreads: () => void;
+  onStatusChange?: (status: DonationStatus) => void;
 }) {
   const {theme} = useTheme();
   const {isAdmin} = useWallet();
@@ -532,19 +556,27 @@ function ChatView({
     conversation.donation_status ?? 'confirmed',
   );
   const [markingComplete, setMarkingComplete] = useState(false);
+  const markingRef = useRef(false);
   const flatListRef = React.useRef<FlatList>(null);
   const sendPulse = React.useRef(new Animated.Value(1)).current;
 
   const handleMarkCompleted = useCallback(async () => {
+    if (markingRef.current) {
+      return;
+    }
+    markingRef.current = true;
     setMarkingComplete(true);
     try {
       await updateDonationStatus(conversation.donation_id, 'completed');
       setDonationStatus('completed');
+      onStatusChange?.('completed');
     } catch (e) {
       console.error('Failed to mark completed:', e);
+      Alert.alert('Update failed', 'Could not mark donation as completed. Try again.');
     }
     setMarkingComplete(false);
-  }, [conversation.donation_id]);
+    markingRef.current = false;
+  }, [conversation.donation_id, onStatusChange]);
 
   const recipientName = getRecipientLabel(conversation.recipient_id);
   const displayAmount = conversation.amount_usdc ?? 0;
@@ -792,7 +824,7 @@ function ChatView({
                   {markingComplete ? 'UPDATING...' : 'MARK COMPLETED'}
                 </Text>
               </TouchableOpacity>
-            ) : isAdmin && donationStatus === 'completed' ? (
+            ) : donationStatus === 'completed' ? (
               <Text
                 style={[
                   styles.completedBadge,
@@ -1039,11 +1071,17 @@ const styles = StyleSheet.create({
     marginTop: 5,
     alignSelf: 'flex-end',
   },
+  mediaWrap: {
+    marginHorizontal: -11,
+    marginTop: -11,
+    marginBottom: 8,
+    borderTopLeftRadius: 11,
+    borderTopRightRadius: 11,
+    overflow: 'hidden',
+  },
   mediaImage: {
     width: '100%',
-    height: 210,
-    borderRadius: 8,
-    marginBottom: 8,
+    aspectRatio: 4 / 3,
   },
   mediaTagWrap: {
     alignSelf: 'flex-start',
@@ -1232,6 +1270,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 20,
     fontWeight: '700',
+  },
+  conversationDonorWallet: {
+    fontSize: 10,
+    letterSpacing: 0.5,
+    marginTop: 2,
   },
   conversationRightGroup: {
     flexDirection: 'row',

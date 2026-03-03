@@ -29,31 +29,31 @@ export const MATCHING_POOL = {
 // SYNC: campaign rules must match CAMPAIGN_RULES in supabase/functions/record-donation/index.ts
 export const CAMPAIGN_OPTIONS: CampaignOption[] = [
   {
-    id: 'teacher-supplies',
-    label: 'Supplies for public school teachers',
+    id: 'public-schools',
+    label: 'Public Schools (ex: diapers or formula, tire replacement)',
     glimpseTag: '#001',
     summary:
-      'Funds urgent classroom supplies like notebooks, markers, books, and project materials so teachers can keep students equipped without paying out of pocket.',
-    causePreferences: ['education', 'teacher-supplies'],
-    minimumUSDC: 1,
+      'Funds urgent needs at public schools — classroom supplies, transportation, and essentials that keep students and families supported.',
+    causePreferences: ['education', 'public-schools'],
+    minimumUSDC: 25,
   },
   {
     id: 'single-moms-crisis',
-    label: 'Support for single moms and families in crisis',
+    label: "Single Mom's / Families in Crisis",
     glimpseTag: '#002',
     summary:
       'Supports families facing immediate hardship with essentials like transportation, groceries, and critical household stability during emergency periods.',
     causePreferences: ['family-crisis', 'single-moms'],
-    minimumUSDC: 2,
+    minimumUSDC: 50,
   },
   {
     id: 'foster-care-after-school',
-    label: 'Foster care after school programs, diapers and formula',
+    label: 'Foster Care / After School Programs',
     glimpseTag: '#003',
     summary:
-      'Helps foster and vulnerable children access after-school programs while covering essentials like diapers and formula for younger kids in care.',
+      'Helps foster and vulnerable children access after-school programs while covering essentials for younger kids in care.',
     causePreferences: ['foster-care', 'child-essentials', 'after-school'],
-    minimumUSDC: 3,
+    minimumUSDC: 100,
   },
 ];
 

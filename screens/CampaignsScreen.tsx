@@ -364,26 +364,8 @@ function renderDonationList({
         const truncatedWallet = item.donor_wallet
           ? `${item.donor_wallet.slice(0, 4)}...${item.donor_wallet.slice(-4)}`
           : '';
-        return (
-          <TouchableOpacity
-            key={item.id}
-            activeOpacity={0.84}
-            onPress={() => {
-              if (item.conversation_id) {
-                navigation.navigate('Messages', {
-                  conversationId: item.conversation_id,
-                });
-              } else {
-                navigation.navigate('Messages');
-              }
-            }}
-            style={[
-              styles.historyCard,
-              {
-                backgroundColor: theme.colors.surfaceMuted,
-                borderColor: theme.colors.borderMuted,
-              },
-            ]}>
+        const cardContent = (
+          <>
             <View style={styles.historyTopRow}>
               <Text
                 style={[
@@ -418,6 +400,46 @@ function renderDonationList({
                 {new Date(item.created_at).toLocaleDateString()}
               </Text>
             )}
+          </>
+        );
+
+        if (showDonorWallet) {
+          return (
+            <View
+              key={item.id}
+              style={[
+                styles.historyCard,
+                {
+                  backgroundColor: theme.colors.surfaceMuted,
+                  borderColor: theme.colors.borderMuted,
+                },
+              ]}>
+              {cardContent}
+            </View>
+          );
+        }
+
+        return (
+          <TouchableOpacity
+            key={item.id}
+            activeOpacity={0.84}
+            onPress={() => {
+              if (item.conversation_id) {
+                navigation.navigate('Messages', {
+                  conversationId: item.conversation_id,
+                });
+              } else {
+                navigation.navigate('Messages');
+              }
+            }}
+            style={[
+              styles.historyCard,
+              {
+                backgroundColor: theme.colors.surfaceMuted,
+                borderColor: theme.colors.borderMuted,
+              },
+            ]}>
+            {cardContent}
             <Text
               style={[
                 styles.historyThreadLink,

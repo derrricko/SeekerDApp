@@ -19,7 +19,18 @@
 
 ---
 
-## 0b. Deploy-Time Checklist (Before Mainnet Launch)
+## 0b. giveglimpse.com Website
+
+- [x] **Domain purchased** — giveglimpse.com on Namecheap
+- [x] **Privacy policy hosted** — `giveglimpse.com/privacy` via GitHub Pages
+- [x] **DNS configured** — A records + CNAME pointing to GitHub Pages
+- [ ] **Build a real landing page** — replace placeholder with proper marketing site (low priority, not blocking launch)
+
+Repo: `github.com/derrricko/giveglimpse-site`
+
+---
+
+## 0c. Deploy-Time Checklist (Before Mainnet Launch)
 
 - [x] **SGT gating** — server-side only (record-donation edge fn). Client-side removed (public RPC rate-limits Token-2022 queries).
 - [x] **Remove mock data** — AppStateProvider deleted, CampaignsScreen uses real Supabase data

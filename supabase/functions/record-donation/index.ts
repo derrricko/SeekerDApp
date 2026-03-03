@@ -50,7 +50,7 @@ const SGT_GROUP_MINT_ADDRESS = 'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
 const TOKEN_2022_PROGRAM_ID = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
 
 type CampaignId =
-  | 'teacher-supplies'
+  | 'public-schools'
   | 'single-moms-crisis'
   | 'foster-care-after-school';
 
@@ -63,18 +63,18 @@ interface CampaignRule {
 // SYNC: campaign rules must match CAMPAIGN_OPTIONS in data/donationConfig.ts
 const CAMPAIGN_RULES: CampaignRule[] = [
   {
-    id: 'teacher-supplies',
-    minimumUSDC: 1,
-    causePreferences: ['education', 'teacher-supplies'],
+    id: 'public-schools',
+    minimumUSDC: 25,
+    causePreferences: ['education', 'public-schools'],
   },
   {
     id: 'single-moms-crisis',
-    minimumUSDC: 2,
+    minimumUSDC: 50,
     causePreferences: ['family-crisis', 'single-moms'],
   },
   {
     id: 'foster-care-after-school',
-    minimumUSDC: 3,
+    minimumUSDC: 100,
     causePreferences: ['foster-care', 'child-essentials', 'after-school'],
   },
 ];
