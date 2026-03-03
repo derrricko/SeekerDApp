@@ -3,6 +3,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {getSupabase} from './supabase';
 import {decodeBase64} from '../utils/base64';
+import type {DonationStatus} from '../data/donationConfig';
 
 // ---------- Types ----------
 
@@ -34,7 +35,7 @@ export interface DonationHistoryItem {
   amount_usdc: number;
   recipient_id: string;
   created_at: string;
-  status: string;
+  status: DonationStatus;
   tx_signature: string;
   donation_mode: string;
   cadence: string;
@@ -203,75 +204,61 @@ export async function markConversationRead(
   }
 }
 
-export async function fetchDonationHistory(
-  walletAddress: string,
-): Promise<DonationHistoryItem[]> {
-  const supabase = getSupabase();
-  const {data, error} = await supabase
-    .from('donations')
-    .select(
-      'id, amount_usdc, recipient_id, created_at, status, tx_signature, donation_mode, cadence, conversations(id)',
-    )
-    .eq('donor_wallet', walletAddress)
-    .order('created_at', {ascending: false});
-
-  if (error) {
-    throw error;
-  }
-
-  const rows = (data ?? []) as DonationHistoryRow[];
-  return rows.map(row => {
-    const conversationJoin = Array.isArray(row.conversations)
-      ? row.conversations[0]
-      : row.conversations;
-    return {
-      id: row.id,
-      amount_usdc: Number(row.amount_usdc) || 0,
-      recipient_id: row.recipient_id || 'unknown',
-      created_at: row.created_at,
-      status: row.status || 'confirmed',
-      tx_signature: row.tx_signature || '',
-      donation_mode: row.donation_mode || 'solo',
-      cadence: row.cadence || 'one_time',
-      conversation_id: conversationJoin?.id ?? null,
-    };
-  });
+function mapDonationRow(row: DonationHistoryRow): DonationHistoryItem {
+  const conversationJoin = Array.isArray(row.conversations)
+    ? row.conversations[0]
+    : row.conversations;
+  return {
+    id: row.id,
+    amount_usdc: Number(row.amount_usdc) || 0,
+    recipient_id: row.recipient_id || 'unknown',
+    created_at: row.created_at,
+    status: (row.status || 'confirmed') as DonationStatus,
+    tx_signature: row.tx_signature || '',
+    donation_mode: row.donation_mode || 'solo',
+    cadence: row.cadence || 'one_time',
+    conversation_id: conversationJoin?.id ?? null,
+    donor_wallet: row.donor_wallet ?? undefined,
+  };
 }
 
-export async function fetchAllDonations(
-  limit = 50,
-): Promise<DonationHistoryItem[]> {
+async function queryDonations(opts: {
+  walletAddress?: string;
+  limit?: number;
+}): Promise<DonationHistoryItem[]> {
   const supabase = getSupabase();
-  const {data, error} = await supabase
+  let query = supabase
     .from('donations')
     .select(
       'id, amount_usdc, donor_wallet, recipient_id, created_at, status, tx_signature, donation_mode, cadence, conversations(id)',
     )
-    .order('created_at', {ascending: false})
-    .limit(limit);
+    .order('created_at', {ascending: false});
 
+  if (opts.walletAddress) {
+    query = query.eq('donor_wallet', opts.walletAddress);
+  }
+  if (opts.limit) {
+    query = query.limit(opts.limit);
+  }
+
+  const {data, error} = await query;
   if (error) {
     throw error;
   }
 
-  const rows = (data ?? []) as (DonationHistoryRow & {donor_wallet?: string})[];
-  return rows.map(row => {
-    const conversationJoin = Array.isArray(row.conversations)
-      ? row.conversations[0]
-      : row.conversations;
-    return {
-      id: row.id,
-      amount_usdc: Number(row.amount_usdc) || 0,
-      recipient_id: row.recipient_id || 'unknown',
-      created_at: row.created_at,
-      status: row.status || 'confirmed',
-      tx_signature: row.tx_signature || '',
-      donation_mode: row.donation_mode || 'solo',
-      cadence: row.cadence || 'one_time',
-      conversation_id: conversationJoin?.id ?? null,
-      donor_wallet: row.donor_wallet ?? undefined,
-    };
-  });
+  return (data ?? [] as DonationHistoryRow[]).map(mapDonationRow);
+}
+
+export function fetchDonationHistory(
+  walletAddress: string,
+): Promise<DonationHistoryItem[]> {
+  return queryDonations({walletAddress});
+}
+
+export function fetchAllDonations(
+  limit = 50,
+): Promise<DonationHistoryItem[]> {
+  return queryDonations({limit});
 }
 
 export function useUnreadCount(walletAddress: string | null) {

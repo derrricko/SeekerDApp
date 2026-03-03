@@ -14,7 +14,6 @@ import ScreenContainer from '../ui/ScreenContainer';
 import SurfaceCard from '../ui/SurfaceCard';
 import {
   getRecipientLabel,
-  type DonationStatus,
   DONATION_STATUS_LABELS,
 } from '../data/donationConfig';
 import {
@@ -24,6 +23,8 @@ import {
 } from '../services/chat';
 
 type ViewMode = 'feed' | 'my_glimpses';
+
+const STALE_MS = 30_000;
 
 export default function CampaignsScreen() {
   const {theme} = useTheme();
@@ -53,9 +54,8 @@ export default function CampaignsScreen() {
       return;
     }
 
-    const STALE_MS = 30_000;
     if (
-      feedDonations.length > 0 &&
+      lastFeedFetchAt.current > 0 &&
       Date.now() - lastFeedFetchAt.current < STALE_MS
     ) {
       return;
@@ -102,9 +102,8 @@ export default function CampaignsScreen() {
       return;
     }
 
-    const STALE_MS = 30_000;
     if (
-      donationHistory.length > 0 &&
+      lastHistoryFetchAt.current > 0 &&
       Date.now() - lastHistoryFetchAt.current < STALE_MS
     ) {
       return;
@@ -213,6 +212,8 @@ export default function CampaignsScreen() {
 
           {viewMode === 'feed'
             ? renderDonationList({
+                requiresWallet: false,
+                walletConnected: !!walletAddress,
                 loading: feedLoading,
                 error: feedError,
                 rows: feedDonations,
@@ -222,7 +223,8 @@ export default function CampaignsScreen() {
                 showDonorWallet: true,
               })
             : renderDonationList({
-                walletAddress,
+                requiresWallet: true,
+                walletConnected: !!walletAddress,
                 loading: historyLoading,
                 error: historyError,
                 rows: donationHistory,
@@ -238,7 +240,8 @@ export default function CampaignsScreen() {
 }
 
 function renderDonationList({
-  walletAddress,
+  requiresWallet,
+  walletConnected,
   loading,
   error,
   rows,
@@ -247,7 +250,8 @@ function renderDonationList({
   emptyText,
   showDonorWallet,
 }: {
-  walletAddress?: string | null;
+  requiresWallet: boolean;
+  walletConnected: boolean;
   loading: boolean;
   error: string | null;
   rows: DonationHistoryItem[];
@@ -256,7 +260,7 @@ function renderDonationList({
   emptyText: string;
   showDonorWallet: boolean;
 }) {
-  if (walletAddress === undefined ? false : !walletAddress) {
+  if (requiresWallet && !walletConnected) {
     return (
       <View
         style={[
@@ -337,11 +341,9 @@ function renderDonationList({
     <View style={styles.historyWrap}>
       {rows.map(item => {
         const recipient = getRecipientLabel(item.recipient_id);
-        const status = item.status as DonationStatus;
-        const statusLabel =
-          DONATION_STATUS_LABELS[status] ?? item.status.toUpperCase();
+        const statusLabel = DONATION_STATUS_LABELS[item.status] ?? 'CONFIRMED';
         const statusColor =
-          status === 'completed'
+          item.status === 'completed'
             ? theme.colors.success
             : theme.colors.accent;
         const truncatedWallet = item.donor_wallet
