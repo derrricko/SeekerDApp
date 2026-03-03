@@ -15,7 +15,7 @@ For current build execution priorities and mainnet launch gating, see `STATUS.md
 
 Derrick Woepking. Based in Muscatine, Iowa. Husband. Father of a one-year-old son.
 
-He has no technical background. He started trying to build Glimpse four years ago as an NFT project in 2022 — the tooling wasn't ready. He tried to find a technical co-founder — that didn't work out. He tried traditional fundraising — that didn't work either. In 2026, AI tooling finally let him build the entire product himself: the React Native mobile app, the Anchor escrow program, the Supabase backend. Every line of code. Solo.
+He has no technical background. He started trying to build Glimpse four years ago as an NFT project in 2022 — the tooling wasn't ready. He tried to find a technical co-founder — that didn't work out. He tried traditional fundraising — that didn't work either. In 2026, AI tooling finally let him build the entire product himself: the React Native mobile app, the Solana integration, the Supabase backend. Every line of code. Solo.
 
 He is faith-driven but not performative about it. He says "God prompted me" as a statement of fact about his experience, not as marketing. His conviction came from personal experience — buying a stranger a car, sponsoring a child in Africa, watching his friend bootstrap a nonprofit in Tulsa — not from market research.
 
@@ -221,15 +221,14 @@ Faith is part of the founder's motivation, not the product's marketing. This dis
 ## 9. Business Identity
 
 ### Entity
-Public Benefit Corporation (Delaware). A for-profit technology company with a legally codified social mission. Glimpse does not handle donations — the blockchain does. Donors give directly to recipients via on-chain escrow. Glimpse builds the platform and the connection layer.
+Public Benefit Corporation (Delaware). A for-profit technology company with a legally codified social mission. Glimpse builds the platform and the connection layer between donors and people in need.
+
+Glimpse is a new company navigating an evolving regulatory and legal landscape. Our entity structure, revenue model, and operational processes are actively being evaluated with legal counsel. Nothing in this document should be construed as a binding commitment to a specific business model or financial structure.
 
 ### Revenue philosophy
-"We monetize attention, not generosity." Donors never pay. 0% platform fees is permanent. Revenue comes from:
-- Local business sponsorships (a tire shop sponsors the "tires" need in their community)
-- Web3 brand partnerships (Solana ecosystem companies reach a crypto-native audience doing good)
-- Premium nonprofit tools (analytics, donor CRM, priority placement)
+Donors never pay fees. 0% platform fees on donations. Glimpse's long-term revenue model is under active development and will be disclosed as it is finalized.
 
-This is the same model as community media platforms: the donors are the audience, the impact is the content, and brands pay for visibility with people who provably care about their community.
+*Disclaimer: Glimpse is not a nonprofit or 501(c)(3). Donations made through Glimpse are not tax-deductible. Glimpse is a technology platform, not a financial advisor or regulated financial institution.*
 
 ---
 

@@ -276,19 +276,13 @@ function MainTabs({
 
 export default function AppNavigator() {
   const {theme} = useTheme();
-  const [entered, setEntered] = useState<boolean | null>(null);
+  const [entered, setEntered] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const insets = useSafeAreaInsets();
   const navigationRef = React.useMemo(
     () => createNavigationContainerRef<RootTabParamList>(),
     [],
   );
-
-  useEffect(() => {
-    AsyncStorage.getItem(ONBOARDED_KEY).then(value => {
-      setEntered(value === 'true');
-    });
-  }, []);
 
   const openGiveFlow = useCallback(() => {
     setShowHowItWorks(true);
@@ -311,17 +305,11 @@ export default function AppNavigator() {
     }
   }, [navigationRef]);
 
-  if (entered === null) {
-    return <View style={[styles.root, {backgroundColor: theme.colors.background}]} />;
-  }
-
   if (!entered) {
     return (
       <HomeScreen
         onContinue={() => {
-          AsyncStorage.setItem(ONBOARDED_KEY, 'true').catch(() => {});
           setEntered(true);
-          openGiveFlow();
         }}
       />
     );

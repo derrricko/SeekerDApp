@@ -283,7 +283,7 @@ function renderStep(step: number, typedAmount: string, cursorVisible: boolean) {
         <View style={styles.docLine} />
       </View>
       <Text style={styles.bodySpread}>
-        5-7 days after funds are locked,{'\n'}your Glimpse is updated with
+        As your donation is put to work,{'\n'}your Glimpse is updated with
         {'\n'}photos, receipts, and impact.
       </Text>
     </View>

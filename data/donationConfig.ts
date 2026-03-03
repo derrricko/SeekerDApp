@@ -19,11 +19,11 @@ export interface CampaignOption {
 }
 
 export const MATCHING_POOL = {
-  id: 'matching-pool',
-  name: 'Glimpse Matching Pool',
+  id: 'glimpse-wallet',
+  name: 'Glimpse',
   wallet: MATCHING_POOL_WALLET,
   description:
-    'Your USDC goes into the matching pool. Cause selections help us match you to the right need.',
+    'Your USDC donation is received by Glimpse. Cause selections help us understand how to put your donation to work.',
 };
 
 // SYNC: campaign rules must match CAMPAIGN_RULES in supabase/functions/record-donation/index.ts

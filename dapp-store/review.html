@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glimpse — dApp Store Listing Review</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #fafafa;
+      padding: 3rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 3rem; }
+    h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #666;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #222;
+    }
+    section { margin-bottom: 3rem; }
+
+    /* Icon */
+    .icon-row { display: flex; align-items: center; gap: 2rem; }
+    .icon-row img { border-radius: 22%; }
+    .icon-label { color: #999; font-size: 0.85rem; }
+
+    /* Banner */
+    .banner-wrap img {
+      width: 100%;
+      max-width: 1200px;
+      border-radius: 8px;
+      border: 1px solid #222;
+    }
+
+    /* Screenshots */
+    .screenshots {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      padding-bottom: 1rem;
+    }
+    .screenshot-card {
+      flex-shrink: 0;
+      text-align: center;
+    }
+    .screenshot-card img {
+      height: 420px;
+      border-radius: 8px;
+      border: 1px solid #222;
+    }
+    .screenshot-card p {
+      color: #666;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Copy */
+    .copy-block {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .copy-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #555;
+      margin-bottom: 0.5rem;
+    }
+    .copy-block p, .copy-block ol {
+      color: #ccc;
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+    .copy-block ol { padding-left: 1.25rem; }
+    .copy-block li { margin-bottom: 0.25rem; }
+    .short-desc {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #fafafa;
+    }
+
+    /* Meta */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .meta-item {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .meta-item .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #555;
+      margin-bottom: 0.25rem;
+    }
+    .meta-item .value {
+      color: #ccc;
+      font-size: 0.9rem;
+      word-break: break-all;
+    }
+    .meta-item a { color: #6554D1; text-decoration: none; }
+    .meta-item a:hover { text-decoration: underline; }
+
+    /* Testing */
+    .testing ol {
+      padding-left: 1.25rem;
+      color: #ccc;
+      font-size: 0.9rem;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>Glimpse — dApp Store Listing</h1>
+  <p class="subtitle">Visual review of all submission assets and copy</p>
+
+  <!-- ICON -->
+  <section>
+    <h2>App Icon (512x512)</h2>
+    <div class="icon-row">
+      <img src="icon-512.png" width="128" height="128" alt="App icon">
+      <div>
+        <img src="icon-512.png" width="64" height="64" alt="App icon small">
+        <p class="icon-label" style="margin-top:0.5rem;">128px &nbsp;&middot;&nbsp; 64px previews</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- BANNER -->
+  <section>
+    <h2>Banner (1200x600)</h2>
+    <div class="banner-wrap">
+      <img src="banner-1200x600.png" alt="Store banner">
+    </div>
+  </section>
+
+  <!-- SCREENSHOTS -->
+  <section>
+    <h2>Screenshots (1080x1920)</h2>
+    <div class="screenshots">
+      <div class="screenshot-card">
+        <img src="screenshots/01-campaigns.png" alt="Feed">
+        <p>01 — Feed</p>
+      </div>
+      <div class="screenshot-card">
+        <img src="screenshots/02-give-flow.png" alt="Give">
+        <p>02 — Give</p>
+      </div>
+      <div class="screenshot-card">
+        <img src="screenshots/03-confirmation.png" alt="Confirmation">
+        <p>03 — Confirmation</p>
+      </div>
+      <div class="screenshot-card">
+        <img src="screenshots/04-messages-thread.png" alt="Messages">
+        <p>04 — Messages</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LISTING COPY -->
+  <section>
+    <h2>Listing Copy</h2>
+
+    <div class="copy-block">
+      <div class="copy-label">Short Description</div>
+      <p class="short-desc">Zero fees. Real impact. Every dollar on-chain.</p>
+    </div>
+
+    <div class="copy-block">
+      <div class="copy-label">Long Description</div>
+      <p>Most people's entire lives will be forever changed by a few thousand dollars. Glimpse makes sure every one of those dollars actually arrives.</p>
+      <br>
+      <p>Glimpse is a USDC donation app where 100% of what you give goes directly to people in need. No platform fees. No processing cuts. Every transaction is recorded on the Solana blockchain so you can verify it yourself.</p>
+      <br>
+      <p>When you donate, you can describe who you want to help and leave a personal note. Glimpse uses that context to match your donation to a specific person or cause. A message thread opens immediately so you can communicate directly and follow the impact of your gift.</p>
+      <br>
+      <p><strong>How it works:</strong></p>
+      <ol>
+        <li>Connect your Seeker wallet</li>
+        <li>Pick a campaign and enter any USDC amount</li>
+        <li>Add match context and a note for the recipient</li>
+        <li>Review the details and sign</li>
+        <li>Follow real updates in your message thread</li>
+      </ol>
+      <br>
+      <p>Zero fees. Zero middlemen. Built on Solana for the Seeker community.</p>
+    </div>
+
+    <div class="copy-block">
+      <div class="copy-label">What's New</div>
+      <p>First release. Direct USDC giving with on-chain transparency and impact messaging.</p>
+    </div>
+  </section>
+
+  <!-- META -->
+  <section>
+    <h2>App Metadata</h2>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <div class="label">Publisher</div>
+        <div class="value">Glimpse</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Package</div>
+        <div class="value">com.seekerdapp</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Website</div>
+        <div class="value"><a href="https://giveglimpse.com" target="_blank">giveglimpse.com</a></div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Privacy Policy</div>
+        <div class="value"><a href="https://giveglimpse.com/privacy" target="_blank">giveglimpse.com/privacy</a></div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Contact</div>
+        <div class="value">derrick@giveglimpse.com</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Locale</div>
+        <div class="value">en-US</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTING INSTRUCTIONS -->
+  <section>
+    <h2>Testing Instructions (for reviewers)</h2>
+    <div class="copy-block testing">
+      <ol>
+        <li>Open the app and tap the Give button.</li>
+        <li>Connect your Seeker wallet when prompted.</li>
+        <li>Enter any USDC amount and select a campaign.</li>
+        <li>Optionally add match context and a note.</li>
+        <li>Tap Review Donation, then Confirm and Sign in your wallet.</li>
+        <li>Verify the donation appears in the Glimpses tab with CONFIRMED status.</li>
+        <li>Verify a message thread appears in the Messages tab.</li>
+      </ol>
+    </div>
+  </section>
+</body>
+</html>

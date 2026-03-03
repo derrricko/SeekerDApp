@@ -720,14 +720,6 @@ export default function GiveScreen() {
                   ]}>
                   {'—  '}5-7 days: receipts, photos, and updates
                 </Text>
-                <Text
-                  style={[
-                    styles.timelineItem,
-                    {color: theme.colors.textTertiary},
-                  ]}>
-                  {'—  '}Any surplus is donated to the community pool, disbursed
-                  every 6 months
-                </Text>
               </View>
 
               {!!error && (
