@@ -1,6 +1,7 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  Linking,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -16,6 +17,7 @@ import {
   getRecipientLabel,
   DONATION_STATUS_LABELS,
 } from '../data/donationConfig';
+import {getExplorerUrl} from '../utils/explorer';
 import {
   fetchDonationHistory,
   fetchAllDonations,
@@ -415,6 +417,21 @@ function renderDonationList({
                 },
               ]}>
               {cardContent}
+              {item.tx_signature ? (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() =>
+                    Linking.openURL(getExplorerUrl(item.tx_signature))
+                  }>
+                  <Text
+                    style={[
+                      styles.explorerLink,
+                      {color: theme.colors.textTertiary},
+                    ]}>
+                    View on Explorer {'\u2197'}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           );
         }
@@ -440,18 +457,36 @@ function renderDonationList({
               },
             ]}>
             {cardContent}
-            <Text
-              style={[
-                styles.historyThreadLink,
-                {
-                  color: theme.colors.accent,
-                  fontFamily: theme.typography.brand,
-                },
-              ]}>
-              {item.conversation_id
-                ? 'VIEW THREAD \u2192'
-                : 'PROCESSING...'}
-            </Text>
+            <View style={styles.historyActions}>
+              {item.tx_signature ? (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={e => {
+                    e.stopPropagation();
+                    Linking.openURL(getExplorerUrl(item.tx_signature));
+                  }}>
+                  <Text
+                    style={[
+                      styles.explorerLink,
+                      {color: theme.colors.textTertiary},
+                    ]}>
+                    View on Explorer {'\u2197'}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+              <Text
+                style={[
+                  styles.historyThreadLink,
+                  {
+                    color: theme.colors.accent,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                {item.conversation_id
+                  ? 'VIEW THREAD \u2192'
+                  : 'PROCESSING...'}
+              </Text>
+            </View>
           </TouchableOpacity>
         );
       })}
@@ -551,6 +586,16 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     letterSpacing: 0.8,
     fontWeight: '700',
+  },
+  historyActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: 6,
+  },
+  explorerLink: {
+    fontSize: 10,
+    lineHeight: 14,
+    letterSpacing: 0.3,
   },
 });

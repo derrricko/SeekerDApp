@@ -720,6 +720,14 @@ export default function GiveScreen() {
                   ]}>
                   {'—  '}5-7 days: receipts, photos, and updates
                 </Text>
+                <Text
+                  style={[
+                    styles.timelineItem,
+                    {color: theme.colors.textTertiary},
+                  ]}>
+                  {'—  '}Network fee: {'<'}$0.01 SOL (paid to Solana
+                  validators, not Glimpse)
+                </Text>
               </View>
 
               {!!error && (
