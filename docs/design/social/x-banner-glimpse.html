@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Glimpse X Banner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 1500px;
+  height: 500px;
+  overflow: hidden;
+  font-family: 'Space Mono', monospace;
+  background: #f0e9ff;
+}
+
+.canvas {
+  width: 1500px;
+  height: 500px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  background-color: #f0e9ff;
+  background-image:
+    linear-gradient(rgba(91, 91, 214, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(91, 91, 214, 0.12) 1px, transparent 1px);
+  background-size: 40px 40px;
+  color: #1a1a2e;
+}
+
+/* ── Purple border frame ── */
+.canvas::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border: 20px solid #5b5bd6;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ── Corner accents ── */
+.corner {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  z-index: 101;
+  pointer-events: none;
+}
+.corner::before, .corner::after {
+  content: '';
+  position: absolute;
+  background: #5b5bd6;
+}
+.corner-tl { top: 12px; left: 12px; }
+.corner-tl::before { top: 0; left: 0; width: 48px; height: 4px; }
+.corner-tl::after  { top: 0; left: 0; width: 4px; height: 48px; }
+
+.corner-tr { top: 12px; right: 12px; }
+.corner-tr::before { top: 0; right: 0; width: 48px; height: 4px; }
+.corner-tr::after  { top: 0; right: 0; width: 4px; height: 48px; }
+
+.corner-bl { bottom: 12px; left: 12px; }
+.corner-bl::before { bottom: 0; left: 0; width: 48px; height: 4px; }
+.corner-bl::after  { bottom: 0; left: 0; width: 4px; height: 48px; }
+
+.corner-br { bottom: 12px; right: 12px; }
+.corner-br::before { bottom: 0; right: 0; width: 48px; height: 4px; }
+.corner-br::after  { bottom: 0; right: 0; width: 4px; height: 48px; }
+
+/* ── Scan line ── */
+.scanline {
+  position: absolute;
+  top: 40%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(91, 91, 214, 0.35), transparent);
+  z-index: 90;
+  pointer-events: none;
+}
+
+/* ── Content layout ── */
+.content {
+  position: relative;
+  z-index: 5;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 120px;
+}
+
+/* ── Left: Logo ── */
+.logo {
+  font-size: 88px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #1a1a2e;
+  line-height: 1;
+  position: relative;
+  display: inline-block;
+}
+.logo::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: #5b5bd6;
+}
+
+.tagline {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(26, 26, 46, 0.45);
+  margin-top: 20px;
+}
+
+/* ── Right: Info stack ── */
+.info-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.announcement {
+  background: #5b5bd6;
+  color: #ffffff;
+  padding: 18px 44px;
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 12px 12px 0 #1a1a2e;
+}
+
+.tag {
+  display: inline-block;
+  border: 4px solid #5b5bd6;
+  padding: 10px 28px;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #5b5bd6;
+  text-transform: uppercase;
+}
+
+.meta {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(26, 26, 46, 0.4);
+  text-align: center;
+}
+
+/* ── Bottom ticker ── */
+.ticker {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  height: 30px;
+  background: #5b5bd6;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  z-index: 50;
+}
+.ticker-content {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  white-space: nowrap;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding-left: 20px;
+}
+.ticker-content span { opacity: 0.5; }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+  <div class="scanline"></div>
+
+  <div class="content">
+    <div class="info-stack">
+      <div class="announcement">Zero Fees &middot; On-Chain &middot; USDC</div>
+      <div class="tag">Built for Solana Seeker</div>
+      <div class="meta">giveglimpse.com &middot; @GiveGlimpse</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

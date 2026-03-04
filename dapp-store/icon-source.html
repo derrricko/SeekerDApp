@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 512px;
+    height: 512px;
+    overflow: hidden;
+    background: #EDE8FA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  /* Grid background — 15% opacity accent lines, 32px spacing scaled up ~1.4x for icon */
+  .grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .grid .h, .grid .v {
+    position: absolute;
+    background: rgba(101, 84, 209, 0.15);
+  }
+  .grid .h {
+    left: 0; right: 0; height: 1px;
+  }
+  .grid .v {
+    top: 0; bottom: 0; width: 1px;
+  }
+
+  /* Button wrapper — scaled up ~1.8x from 216x86 for icon clarity */
+  .btn-wrap {
+    position: relative;
+    width: 388px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 3D shadow plate */
+  .shadow-plate {
+    position: absolute;
+    width: 388px;
+    height: 155px;
+    border-radius: 79px;
+    border: 7px solid #1A1125;
+    background: #3F35AB;
+    transform: translate(7px, 18px);
+  }
+
+  /* Main button */
+  .give-btn {
+    position: relative;
+    width: 388px;
+    height: 155px;
+    border-radius: 79px;
+    border: 7px solid #1A1125;
+    background: #6554D1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Top highlight */
+  .highlight {
+    position: absolute;
+    top: 16px;
+    width: 76%;
+    height: 32px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.24);
+  }
+
+  /* Text */
+  .give-text {
+    font-family: 'Courier Prime', monospace;
+    font-weight: 700;
+    font-size: 70px;
+    letter-spacing: 5px;
+    color: #FFFFFF;
+    text-transform: lowercase;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Rounded corners on icon itself */
+  .icon-mask {
+    width: 512px;
+    height: 512px;
+    border-radius: 112px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: #EDE8FA;
+  }
+</style>
+</head>
+<body>
+  <div class="icon-mask">
+    <!-- Grid -->
+    <div class="grid" id="grid"></div>
+
+    <!-- Button -->
+    <div class="btn-wrap">
+      <div class="shadow-plate"></div>
+      <div class="give-btn">
+        <div class="highlight"></div>
+        <span class="give-text">give</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Generate grid lines at 45px spacing (32px scaled up for 512 canvas)
+    const grid = document.getElementById('grid');
+    const spacing = 45;
+    const count = Math.ceil(512 / spacing) + 1;
+    for (let i = 0; i < count; i++) {
+      const h = document.createElement('div');
+      h.className = 'h';
+      h.style.top = (i * spacing) + 'px';
+      grid.appendChild(h);
+
+      const v = document.createElement('div');
+      v.className = 'v';
+      v.style.left = (i * spacing) + 'px';
+      grid.appendChild(v);
+    }
+  </script>
+</body>
+</html>

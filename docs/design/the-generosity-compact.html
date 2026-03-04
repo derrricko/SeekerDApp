@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Generosity Compact</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --purple: #5b5bd6;
+  --purple-glow: rgba(91, 91, 214, 0.35);
+  --bg: #f0e9ff;
+  --grid: rgba(91, 91, 214, 0.12);
+  --ink: #1a1a2e;
+  --white: #ffffff;
+  --black: #000000;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: 'Space Mono', monospace;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+  color: var(--ink);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ── Purple Border Frame (from stream overlay) ───── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  border: 12px solid var(--purple);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* ── Corner Accents (from stream overlay) ────────── */
+.corner {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  z-index: 1001;
+  pointer-events: none;
+}
+.corner::before, .corner::after {
+  content: '';
+  position: absolute;
+  background: var(--purple);
+}
+.corner-tl { top: 12px; left: 12px; }
+.corner-tl::before { top: 0; left: 0; width: 60px; height: 4px; }
+.corner-tl::after  { top: 0; left: 0; width: 4px; height: 60px; }
+
+.corner-tr { top: 12px; right: 12px; }
+.corner-tr::before { top: 0; right: 0; width: 60px; height: 4px; }
+.corner-tr::after  { top: 0; right: 0; width: 4px; height: 60px; }
+
+.corner-bl { bottom: 12px; left: 12px; }
+.corner-bl::before { bottom: 0; left: 0; width: 60px; height: 4px; }
+.corner-bl::after  { bottom: 0; left: 0; width: 4px; height: 60px; }
+
+.corner-br { bottom: 12px; right: 12px; }
+.corner-br::before { bottom: 0; right: 0; width: 60px; height: 4px; }
+.corner-br::after  { bottom: 0; right: 0; width: 4px; height: 60px; }
+
+/* ── Scanline (from stream overlay) ──────────────── */
+.scanline {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--purple-glow), transparent);
+  animation: scan 6s ease-in-out infinite;
+  opacity: 0.4;
+  z-index: 999;
+  pointer-events: none;
+}
+
+@keyframes scan {
+  0%   { top: 12px; }
+  50%  { top: calc(100vh - 15px); }
+  100% { top: 12px; }
+}
+
+/* ── Layout ──────────────────────────────────────── */
+.container {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+section {
+  padding: 80px 0;
+}
+
+/* ── Section Dividers (stream overlay banner style) ─ */
+.section-bar {
+  background: var(--purple);
+  color: var(--white);
+  padding: 14px 32px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  box-shadow: 10px 10px 0 var(--black);
+  margin-bottom: 48px;
+  display: inline-block;
+}
+
+/* ── Typography ──────────────────────────────────── */
+h1, h2, h3 {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: clamp(2.6rem, 7vw, 5.5rem);
+  font-weight: 700;
+  position: relative;
+  display: inline-block;
+}
+
+/* Purple underline on logo (from stream overlay) */
+h1::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: var(--purple);
+}
+
+h3 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin-bottom: 12px;
+}
+
+p {
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+  max-width: 65ch;
+}
+
+p:last-child { margin-bottom: 0; }
+
+strong { font-weight: 700; }
+
+.label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--purple);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+/* Pulsing dot (from stream overlay LIVE indicator) */
+.label::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--purple);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Tag Pill (from stream overlay) ──────────────── */
+.tag {
+  display: inline-block;
+  border: 3px solid var(--purple);
+  padding: 6px 18px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--purple);
+  text-transform: uppercase;
+}
+
+/* ── Hero ────────────────────────────────────────── */
+.hero {
+  padding: 100px 0 80px;
+}
+
+.hero .tag {
+  margin-bottom: 32px;
+}
+
+.hero h1 {
+  margin-bottom: 32px;
+}
+
+.hero-tagline {
+  font-size: 1rem;
+  font-style: italic;
+  opacity: 0.55;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  max-width: 52ch;
+  margin-bottom: 40px;
+}
+
+.hero-meta {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.4;
+}
+
+/* ── Callout Box (stream overlay announcement style) */
+.callout {
+  background: var(--white);
+  border: 6px solid var(--black);
+  box-shadow: 10px 10px 0 var(--black);
+  padding: 28px 32px;
+  margin: 32px 0;
+}
+
+.callout p { margin-bottom: 0; font-size: 0.9rem; }
+
+.callout-purple {
+  background: var(--purple);
+  color: var(--white);
+  border: 6px solid var(--black);
+  box-shadow: 10px 10px 0 var(--black);
+}
+
+.callout-purple p { color: var(--white); }
+.callout-purple .label { color: var(--white); opacity: 0.7; }
+.callout-purple .label::before { background: var(--white); }
+
+/* ── Entity Cards (stream overlay phone frame style) */
+.entity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 32px 0;
+}
+
+@media (max-width: 640px) {
+  .entity-grid { grid-template-columns: 1fr; }
+}
+
+.entity-card {
+  background: var(--white);
+  border: 6px solid var(--black);
+  padding: 28px 24px;
+}
+
+/* Purple box-shadow offset (from stream overlay phone frame) */
+.entity-card.foundation {
+  box-shadow: 10px 10px 0 var(--purple);
+}
+
+.entity-card.pbc {
+  box-shadow: 10px 10px 0 var(--black);
+}
+
+.entity-card h3 { margin-bottom: 4px; }
+
+.entity-card .entity-type {
+  font-size: 0.72rem;
+  font-style: italic;
+  opacity: 0.5;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.entity-card ul { list-style: none; padding: 0; }
+
+.entity-card li {
+  font-size: 0.82rem;
+  padding: 8px 0;
+  border-top: 1px solid var(--grid);
+}
+
+.entity-card li:first-child { border-top: none; }
+
+/* ── Flow Diagram ────────────────────────────────── */
+.flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 32px 0;
+  align-items: stretch;
+}
+
+.flow-step {
+  flex: 1;
+  min-width: 130px;
+  background: var(--white);
+  border: 4px solid var(--black);
+  padding: 16px 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flow-step:not(:last-child)::after {
+  content: '\2192';
+  position: absolute;
+  right: -14px;
+  font-size: 1.2rem;
+  color: var(--purple);
+  z-index: 2;
+}
+
+.flow-step:nth-child(odd) {
+  background: var(--purple);
+  color: var(--white);
+  border-color: var(--purple);
+}
+
+@media (max-width: 640px) {
+  .flow { flex-direction: column; }
+  .flow-step:not(:last-child)::after {
+    content: '\2193';
+    right: auto; bottom: -18px; left: 50%;
+    transform: translateX(-50%); top: auto;
+  }
+}
+
+/* ── Token Distribution Bar ──────────────────────── */
+.dist-bar {
+  display: flex;
+  height: 52px;
+  border: 6px solid var(--black);
+  box-shadow: 10px 10px 0 var(--black);
+  margin: 28px 0;
+  overflow: hidden;
+}
+
+.dist-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0 12px;
+}
+
+.dist-community { flex: 85; background: var(--purple); color: var(--white); }
+.dist-holders { flex: 10; background: var(--ink); color: var(--white); border-left: 3px solid var(--white); }
+.dist-company { flex: 5; background: var(--white); color: var(--ink); border-left: 3px solid var(--ink); }
+
+@media (max-width: 480px) { .dist-segment { font-size: 0.55rem; padding: 0 4px; } }
+
+.dist-legend {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.dist-legend span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dist-legend .dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border: 3px solid var(--black);
+}
+
+/* ── Roadmap ─────────────────────────────────────── */
+.roadmap { margin: 32px 0; }
+
+.roadmap-item {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 24px;
+  padding: 24px 0;
+  border-bottom: 3px solid var(--grid);
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .roadmap-item { grid-template-columns: 1fr; gap: 8px; }
+}
+
+.roadmap-item:last-child { border-bottom: none; }
+
+.roadmap-phase {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--purple);
+  padding-top: 2px;
+}
+
+.roadmap-desc { font-size: 0.88rem; }
+
+.roadmap-desc strong {
+  display: block;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.82rem;
+}
+
+/* ── Key Point Badge ─────────────────────────────── */
+.key-point {
+  background: var(--purple);
+  color: var(--white);
+  padding: 6px 14px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: inline-block;
+  margin-bottom: 16px;
+  box-shadow: 6px 6px 0 var(--black);
+}
+
+/* ── Separator ───────────────────────────────────── */
+.sep {
+  width: 60px;
+  height: 6px;
+  background: var(--purple);
+  margin: 40px 0;
+}
+
+/* ── CTA Section ─────────────────────────────────── */
+.cta-section { text-align: center; padding: 100px 0 80px; }
+
+.cta-section .section-bar {
+  display: inline-block;
+  margin-bottom: 32px;
+}
+
+.cta-section p {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.cta-links {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 40px;
+}
+
+.cta-link {
+  display: inline-block;
+  background: var(--ink);
+  color: var(--white);
+  text-decoration: none;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 14px 28px;
+  border: 4px solid var(--black);
+  box-shadow: 6px 6px 0 var(--purple);
+  transition: all 0.15s ease;
+}
+
+.cta-link:hover {
+  background: var(--purple);
+  border-color: var(--purple);
+  transform: translate(-3px, -3px);
+  box-shadow: 9px 9px 0 var(--black);
+}
+
+.cta-link.outline {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: 6px 6px 0 var(--black);
+}
+
+.cta-link.outline:hover {
+  background: var(--purple);
+  color: var(--white);
+  border-color: var(--purple);
+}
+
+/* ── Bottom Ticker (from stream overlay) ─────────── */
+.ticker {
+  position: relative;
+  left: 0;
+  right: 0;
+  height: 36px;
+  background: var(--purple);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  margin: 0 -32px;
+}
+
+.ticker-content {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  white-space: nowrap;
+  animation: scroll-ticker 30s linear infinite;
+  color: var(--white);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ticker-content span { opacity: 0.5; }
+
+@keyframes scroll-ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── Footer ──────────────────────────────────────── */
+footer {
+  text-align: center;
+  padding: 40px 32px;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.4;
+}
+
+/* ── Print ───────────────────────────────────────── */
+@media print {
+  body { background: white; background-image: none; }
+  body::before, .corner, .scanline, .ticker { display: none; }
+  section { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+<div class="scanline"></div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- 1. HERO                                         -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="container">
+    <div class="tag">Glimpse</div>
+    <h1>THE GENEROSITY COMPACT</h1>
+    <p class="hero-tagline">Generosity is contagious &mdash; real impact, real connections, permanent on-chain proof.</p>
+    <div class="sep"></div>
+    <p>Glimpse is building the infrastructure that makes generosity as efficient as commerce. Zero fees to donors. Every donation verified on Solana. Every dollar accounted for, permanently.</p>
+    <p>This compact sets forth how Glimpse operates, how it is governed, and what it owes to every person who participates. It is the public record and founding agreement of the Glimpse community.</p>
+    <p class="hero-meta">Ratified March 2026 &mdash; Solana</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- 2. THE PROBLEM                                  -->
+<!-- ════════════════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <div class="section-bar">01 &mdash; The Problem</div>
+    <p>Billions of dollars flow into charitable giving every year. The system that moves it is slow, opaque, and disconnected from the people it claims to serve.</p>
+    <p>Donors give once and disappear &mdash; not because they stopped caring, but because nobody showed them what happened next. Nonprofits are forced to perform instead of doing the work they set out to do. The best marketers take money from less savvy founders who only focus on solving problems.</p>
+    <p>There is no permanent record. No verifiable proof. No connection between the person who gave and the person whose life changed.</p>
+    <div class="callout-purple callout">
+      <p>What would keep someone giving again? The connection piece. Not a templated email blast &mdash; something real.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- 3. THE SOLUTION                                 -->
+<!-- ════════════════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <div class="section-bar">02 &mdash; The Solution</div>
+    <p>Glimpse is a global network of hubs &mdash; creator-operators contracted like athletes, compensated by performance &mdash; who identify recipients, move donor dollars on-chain, and generate permanent proof of impact.</p>
+    <div class="callout-purple callout" style="margin: 32px 0;">
+      <p style="font-size:1.05rem; letter-spacing:0.06em;">Speed, trust, and on-chain record. Every time. Everywhere.</p>
+    </div>
+    <p>This is only possible because of <strong>Solana</strong> &mdash; the only chain fast enough and cheap enough to make micro-donations viable at global scale &mdash; and <strong>Solana Seeker</strong> &mdash; a mobile device built for exactly this: putting the giving infrastructure in the hands of hub operators and donors on the ground.</p>
+    <p>The tech is not incidental. Solana is the reason the north star is achievable.</p>
+    <div class="sep"></div>
+    <div class="callout">
+      <div class="label">How It Works</div>
+      <p>Donor gives USDC through the Glimpse app. The Foundation receives and routes 100% of the donation. An on-chain receipt is created permanently on Solana. A conversation opens between the donor and the Glimpse team, who relay impact updates from the recipient. Zero fees. Full transparency.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- 4. TWO ENTITIES                                 -->
+<!-- ════════════════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <div class="section-bar">03 &mdash; Two Entities, One Mission</div>
+    <p>Glimpse operates through two legally separate but mission-aligned entities. This separation is load-bearing for both tax-exempt status and regulatory compliance.</p>
+
+    <div class="entity-grid">
+      <div class="entity-card foundation">
+        <h3>Glimpse Foundation</h3>
+        <span class="entity-type">501(c)(3) Nonprofit</span>
+        <ul>
+          <li>Receives and routes 100% of donations</li>
+          <li>Vets recipients &mdash; no prior donor connection</li>
+          <li>Issues on-chain receipts for all transactions</li>
+          <li>Operates lean &mdash; zero fee to donors</li>
+          <li>Tax-deductible status pending 501(c)(3) approval</li>
+        </ul>
+      </div>
+      <div class="entity-card pbc">
+        <h3>Glimpse PBC</h3>
+        <span class="entity-type">Public Benefit Corporation (For-Profit)</span>
+        <ul>
+          <li>Builds and owns the app and technology</li>
+          <li>Stated public benefit = supporting the Foundation</li>
+          <li>Monetizes via cause marketing with local businesses</li>
+          <li>Owns all content produced from campaigns (with consent)</li>
+          <li>Can legally donate to Foundation</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="label">Key</div>
+      <p>These entities operate independently with arm's-length contracts. The PBC cannot control the Foundation. The Foundation cannot distribute profits to the PBC. Separate boards, separate EINs. No single person controls both sides &mdash; the Foundation will have an independent board as required by the IRS.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- 5. REVENUE MODEL                                -->
+<!-- ════════════════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <div class="section-bar">04 &mdash; Revenue Model</div>
+    <p>Donors pay nothing. The Foundation's operational costs are covered campaign-by-campaign through sponsor restricted gifts. The Foundation does not rely on grants.</p>
+    <p>The PBC operates as a <strong>cause marketing agency</strong> for local and regional businesses &mdash; restaurants, roofers, home services, any business that wants to invest in their community and get credit for it.</p>
+
+    <div class="callout">
+      <div class="label">What Partners Receive</div>
+      <p><strong>Engagement:</strong> 3&ndash;6 month retainers and project-based contracts.<br><br>
+      <strong>Deliverables:</strong> Campaign strategy tied to real charitable impact in their community. Content creation &mdash; donation moments, recipient stories, impact proof. Social distribution on Glimpse channels. Crafted offers and discounts explaining why the company invested and what it means to them.<br><br>
+      <strong>Value:</strong> Positive brand awareness backed by on-chain proof of real impact, plus lead and revenue generation. This replaces ineffective local ad spend with story-driven marketing tied to verified community outcomes.</p>
+    </div>
+
+    <div class="sep"></div>
+    <div class="label">Content Flow</div>
+    <div class="flow">
+      <div class="flow-step">Donor Donates</div>
+      <div class="flow-step">Foundation Routes</div>
+      <div class="flow-step">PBC Documents</div>
+      <div class="flow-step">Partner Campaigns</div>
+      <div class="flow-step">Revenue</div>
+    </div>
+    <p style="font-size:0.75rem; opacity:0.45; margin-top:20px; letter-spacing:0.08em; text-transform:uppercase;">The Foundation handles the money. The PBC handles the storytelling. They stay separate.</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- 6. THE TOKEN                                    -->
+<!-- ════════════════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <div class="section-bar">05 &mdash; $Glimpse Token</div>
+
+    <div class="key-point">Fair Launch on Pump.fun</div>
+    <p>$GLIMPSE was launched on Pump.fun as a truly fair launch token on Solana. No pre-sale. No insider allocation. The community holds the majority of the supply.</p>
+
+    <div class="label">Distribution</div>
+    <div class="dist-bar">
+      <div class="dist-segment dist-community">Community</div>
+      <div class="dist-segment dist-holders">Holders</div>
+      <div class="dist-segment dist-company">Co.</div>
+    </div>
+    <div class="dist-legend">
+      <span><span class="dot" style="background:var(--purple);"></span>85% Community-Held</span>
+      <span><span class="dot" style="background:var(--ink);"></span>10% Back to Holders</span>
+      <span><span class="dot" style="background:var(--white);"></span>5% Glimpse Company</span>
+    </div>
+
+    <div class="sep"></div>
+
+    <p>Donors who give through Glimpse are recognized on-chain and rewarded for their participation. The token model is designed so that real giving creates real value &mdash; not speculation.</p>
+    <p>Token holders &mdash; not the founding team &mdash; will govern how community allocations are deployed. The structure aligns incentives: when the ecosystem grows through real donations and real impact, everyone who participated benefits.</p>
+
+    <div class="callout">
+      <div class="label">On Tokenomics</div>
+      <p>The exact mechanics of distribution, donor rewards, and governance are being finalized with legal counsel to ensure full regulatory compliance. Glimpse is committed to doing this right. Detailed tokenomics will be published after attorney review is complete.</p>
+    </div>
+
+    <p>Tokens are earned retroactively based on participation &mdash; not promised upfront. Buybacks are funded by real PBC revenue from city partner contracts. This gives the token fundamental support tied to business performance, not hype.</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- 7. ROADMAP                                      -->
+<!-- ════════════════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <div class="section-bar">06 &mdash; Roadmap</div>
+    <p>Glimpse is being built deliberately. <a href="https://x.com/DerrickWKing" style="color:var(--purple); font-weight:700;">Derrick Woepking</a> is committed to growing at the right pace. A single misappropriated donation ruins the entire project.</p>
+
+    <div class="roadmap">
+      <div class="roadmap-item">
+        <div class="roadmap-phase">Season 1<br>Now &ndash; June 2026</div>
+        <div class="roadmap-desc">
+          <strong>Proof of Concept &mdash; <a href="https://x.com/DerrickWKing" style="color:var(--purple); text-decoration:none;">Derrick Woepking</a> in SE Iowa</strong>
+          Season 1 is self-funded by <a href="https://x.com/DerrickWKing" style="color:var(--purple);">Derrick Woepking</a>, who is the first hub operator. All infrastructure costs are personally funded. App live on Solana mainnet. Competing in the Pump.fun / Solana hackathon. Actively raising investment. Donations accepted in USDC with on-chain receipts. Derrick acts as moderator on the recipient side of every conversation, protecting recipients while delivering real human connection to donors.
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-phase">Season 2<br>June 2026+</div>
+        <div class="roadmap-desc">
+          <strong>Expand to Locations 2&ndash;5</strong>
+          Add a small number of new locations to test the model outside SE Iowa. The exact format &mdash; hub operators, city partners, or a hybrid &mdash; will be determined by what Season 1 teaches us. The Foundation works closely with each new location at launch. Revenue model begins activating.
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-phase">2027</div>
+        <div class="roadmap-desc">
+          <strong>Targeted Scale Campaign</strong>
+          By 2027, Glimpse will have run three full campaigns across multiple locations. That data determines long-term strategy. Token holder governance activates &mdash; the community decides together whether to scale aggressively, adjust the model, or refine what&rsquo;s working. No premature commitments. The group decides.
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="label">Filing Roadmap</div>
+      <p><strong>Immediate:</strong> File Glimpse PBC in Delaware. Open business accounts.<br>
+      <strong>Month 1&ndash;2:</strong> Launch donations. File Glimpse Foundation 501(c)(3).<br>
+      <strong>Before Token Launch:</strong> Crypto securities attorney consult.<br>
+      <strong>Before First Campaign:</strong> Nonprofit attorney &mdash; sponsor acknowledgment templates.<br>
+      <strong>Month 4&ndash;8:</strong> IRS 501(c)(3) approval (3&ndash;6 month process).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- 8. JOIN GLIMPSE                                 -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="cta-section">
+  <div class="container">
+    <div class="section-bar">Join Glimpse</div>
+    <p>Glimpse is looking for partners &mdash; financial backers who believe in the mission and content creators who want to become hub operators in their city.</p>
+    <p>If you want to be part of building the infrastructure that makes generosity as efficient as commerce, reach out.</p>
+
+    <div class="cta-links">
+      <a href="https://giveglimpse.com" class="cta-link">Visit Website</a>
+      <a href="https://x.com/GiveGlimpse" class="cta-link outline">@GiveGlimpse</a>
+      <a href="https://x.com/DerrickWKing" class="cta-link outline">@DerrickWKing</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Bottom Ticker (from stream overlay) ────────── -->
+<div class="ticker">
+  <div class="ticker-content">
+    Glimpse <span>&#x2022;</span> Zero Fees <span>&#x2022;</span> Direct Giving <span>&#x2022;</span> On-Chain Receipts <span>&#x2022;</span> Built on Solana <span>&#x2022;</span> Proof of Impact <span>&#x2022;</span> The Trust Layer for Giving <span>&#x2022;</span>
+    Glimpse <span>&#x2022;</span> Zero Fees <span>&#x2022;</span> Direct Giving <span>&#x2022;</span> On-Chain Receipts <span>&#x2022;</span> Built on Solana <span>&#x2022;</span> Proof of Impact <span>&#x2022;</span> The Trust Layer for Giving <span>&#x2022;</span>
+  </div>
+</div>
+
+<footer>
+  The Generosity Compact &mdash; Ratified March 2026 &mdash; Documenting Kindness, Creating Connections
+</footer>
+
+</body>
+</html>
