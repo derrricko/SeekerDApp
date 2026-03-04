@@ -295,55 +295,6 @@ strong { font-weight: 700; }
 
 .entity-card li:first-child { border-top: none; }
 
-/* ── Flow Diagram ────────────────────────────────── */
-.flow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0;
-  margin: 32px 0;
-  align-items: stretch;
-}
-
-.flow-step {
-  flex: 1;
-  min-width: 130px;
-  background: var(--white);
-  border: 4px solid var(--black);
-  padding: 16px 12px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  text-align: center;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.flow-step:not(:last-child)::after {
-  content: '\2192';
-  position: absolute;
-  right: -14px;
-  font-size: 1.2rem;
-  color: var(--purple);
-  z-index: 2;
-}
-
-.flow-step:nth-child(odd) {
-  background: var(--purple);
-  color: var(--white);
-  border-color: var(--purple);
-}
-
-@media (max-width: 640px) {
-  .flow { flex-direction: column; }
-  .flow-step:not(:last-child)::after {
-    content: '\2193';
-    right: auto; bottom: -18px; left: 50%;
-    transform: translateX(-50%); top: auto;
-  }
-}
 
 /* ── Token Distribution Bar ──────────────────────── */
 .dist-bar {
@@ -607,16 +558,18 @@ footer {
 <section>
   <div class="container">
     <div class="section-bar">02 &mdash; The Solution</div>
-    <p>Glimpse is a global network of hubs &mdash; creator-operators contracted like athletes, compensated by performance &mdash; who identify recipients, move donor dollars on-chain, and generate permanent proof of impact.</p>
+    <p>Glimpse is the infrastructure that makes generosity as efficient as commerce. Every donation moves on-chain, every dollar is accounted for, and every outcome is documented permanently.</p>
     <div class="callout-purple callout" style="margin: 32px 0;">
       <p style="font-size:1.05rem; letter-spacing:0.06em;">Speed, trust, and on-chain record. Every time. Everywhere.</p>
     </div>
-    <p>This is only possible because of <strong>Solana</strong> &mdash; the only chain fast enough and cheap enough to make micro-donations viable at global scale &mdash; and <strong>Solana Seeker</strong> &mdash; a mobile device built for exactly this: putting the giving infrastructure in the hands of hub operators and donors on the ground.</p>
-    <p>The tech is not incidental. Solana is the reason the north star is achievable.</p>
+    <div style="margin-top: 24px; display: flex; gap: 16px; flex-wrap: wrap;">
+      <span style="display:inline-block; background:var(--ink); color:var(--white); padding:10px 22px; font-size:0.8rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; box-shadow:6px 6px 0 var(--purple);">Designed Exclusively for Seeker</span>
+      <span style="display:inline-block; border:3px solid var(--purple); padding:10px 22px; font-size:0.8rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--purple);">Only Possible on Solana</span>
+    </div>
     <div class="sep"></div>
     <div class="callout">
       <div class="label">How It Works</div>
-      <p>Donor gives USDC through the Glimpse app. The Foundation receives and routes 100% of the donation. An on-chain receipt is created permanently on Solana. A conversation opens between the donor and the Glimpse team, who relay impact updates from the recipient. Zero fees. Full transparency.</p>
+      <p>Donor gives USDC through the Glimpse app. Give Glimpse receives and routes 100% of the donation. An on-chain receipt is created permanently on Solana. A conversation opens between the donor and the Glimpse team, who relay impact updates from the recipient. Zero fees. Full transparency.</p>
     </div>
   </div>
 </section>
@@ -631,7 +584,7 @@ footer {
 
     <div class="entity-grid">
       <div class="entity-card foundation">
-        <h3>Glimpse Foundation</h3>
+        <h3>Give Glimpse</h3>
         <span class="entity-type">501(c)(3) Nonprofit</span>
         <ul>
           <li>Receives and routes 100% of donations</li>
@@ -642,21 +595,21 @@ footer {
         </ul>
       </div>
       <div class="entity-card pbc">
-        <h3>Glimpse PBC</h3>
+        <h3>Glimpse</h3>
         <span class="entity-type">Public Benefit Corporation (For-Profit)</span>
         <ul>
           <li>Builds and owns the app and technology</li>
-          <li>Stated public benefit = supporting the Foundation</li>
+          <li>Stated public benefit = supporting Give Glimpse</li>
           <li>Monetizes via cause marketing with local businesses</li>
           <li>Owns all content produced from campaigns (with consent)</li>
-          <li>Can legally donate to Foundation</li>
+          <li>Can legally donate to Give Glimpse</li>
         </ul>
       </div>
     </div>
 
     <div class="callout">
       <div class="label">Key</div>
-      <p>These entities operate independently with arm's-length contracts. The PBC cannot control the Foundation. The Foundation cannot distribute profits to the PBC. Separate boards, separate EINs. No single person controls both sides &mdash; the Foundation will have an independent board as required by the IRS.</p>
+      <p>These entities operate independently with arm&rsquo;s-length contracts. Glimpse cannot control Give Glimpse. Give Glimpse cannot distribute profits to Glimpse. Separate boards, separate EINs. No single person controls both sides &mdash; Give Glimpse will have an independent board as required by the IRS.</p>
     </div>
   </div>
 </section>
@@ -667,8 +620,8 @@ footer {
 <section>
   <div class="container">
     <div class="section-bar">04 &mdash; Revenue Model</div>
-    <p>Donors pay nothing. The Foundation's operational costs are covered campaign-by-campaign through sponsor restricted gifts. The Foundation does not rely on grants.</p>
-    <p>The PBC operates as a <strong>cause marketing agency</strong> for local and regional businesses &mdash; restaurants, roofers, home services, any business that wants to invest in their community and get credit for it.</p>
+    <p>Donors pay nothing. Give Glimpse&rsquo;s operational costs are covered campaign-by-campaign through sponsor restricted gifts. Give Glimpse does not rely on grants.</p>
+    <p>Glimpse operates as a <strong>cause marketing agency</strong> for local and regional businesses &mdash; restaurants, roofers, home services, any business that wants to invest in their community and get credit for it.</p>
 
     <div class="callout">
       <div class="label">What Partners Receive</div>
@@ -677,16 +630,6 @@ footer {
       <strong>Value:</strong> Positive brand awareness backed by on-chain proof of real impact, plus lead and revenue generation. This replaces ineffective local ad spend with story-driven marketing tied to verified community outcomes.</p>
     </div>
 
-    <div class="sep"></div>
-    <div class="label">Content Flow</div>
-    <div class="flow">
-      <div class="flow-step">Donor Donates</div>
-      <div class="flow-step">Foundation Routes</div>
-      <div class="flow-step">PBC Documents</div>
-      <div class="flow-step">Partner Campaigns</div>
-      <div class="flow-step">Revenue</div>
-    </div>
-    <p style="font-size:0.75rem; opacity:0.45; margin-top:20px; letter-spacing:0.08em; text-transform:uppercase;">The Foundation handles the money. The PBC handles the storytelling. They stay separate.</p>
   </div>
 </section>
 
@@ -708,21 +651,23 @@ footer {
     </div>
     <div class="dist-legend">
       <span><span class="dot" style="background:var(--purple);"></span>85% Community-Held</span>
-      <span><span class="dot" style="background:var(--ink);"></span>10% Back to Holders</span>
+      <span><span class="dot" style="background:var(--ink);"></span>10% Donor Airdrops</span>
       <span><span class="dot" style="background:var(--white);"></span>5% Glimpse Company</span>
     </div>
 
     <div class="sep"></div>
 
-    <p>Donors who give through Glimpse are recognized on-chain and rewarded for their participation. The token model is designed so that real giving creates real value &mdash; not speculation.</p>
-    <p>Token holders &mdash; not the founding team &mdash; will govern how community allocations are deployed. The structure aligns incentives: when the ecosystem grows through real donations and real impact, everyone who participated benefits.</p>
+    <div class="label">Donor Airdrop Mechanic</div>
+    <p>0.5% of total supply is released every six months to donors who gave during that period. Each donor receives a proportional share based on their share of total donations. Allocation resets each period &mdash; new campaign, new competition. Whale donors are a feature, not a bug: large donations drive up campaign volume, which means more impact for recipients and more incentive for others to participate.</p>
+
+    <p style="margin-top:20px;">Token holders &mdash; not the founding team &mdash; govern how the community pool is deployed. The structure aligns incentives: real giving creates real value, not speculation.</p>
 
     <div class="callout">
       <div class="label">On Tokenomics</div>
       <p>The exact mechanics of distribution, donor rewards, and governance are being finalized with legal counsel to ensure full regulatory compliance. Glimpse is committed to doing this right. Detailed tokenomics will be published after attorney review is complete.</p>
     </div>
 
-    <p>Tokens are earned retroactively based on participation &mdash; not promised upfront. Buybacks are funded by real PBC revenue from city partner contracts. This gives the token fundamental support tied to business performance, not hype.</p>
+    <p>Tokens are earned retroactively based on participation &mdash; not promised upfront. Buybacks are funded by real Glimpse revenue from city partner contracts. This gives the token fundamental support tied to business performance, not hype.</p>
   </div>
 </section>
 
@@ -738,34 +683,26 @@ footer {
       <div class="roadmap-item">
         <div class="roadmap-phase">Season 1<br>Now &ndash; June 2026</div>
         <div class="roadmap-desc">
-          <strong>Proof of Concept &mdash; <a href="https://x.com/DerrickWKing" style="color:var(--purple); text-decoration:none;">Derrick Woepking</a> in SE Iowa</strong>
-          Season 1 is self-funded by <a href="https://x.com/DerrickWKing" style="color:var(--purple);">Derrick Woepking</a>, who is the first hub operator. All infrastructure costs are personally funded. App live on Solana mainnet. Competing in the Pump.fun / Solana hackathon. Actively raising investment. Donations accepted in USDC with on-chain receipts. Derrick acts as moderator on the recipient side of every conversation, protecting recipients while delivering real human connection to donors.
+          <strong>Build the Foundation</strong>
+          Self-funded by <a href="https://x.com/DerrickWKing" style="color:var(--purple); text-decoration:none;">Derrick Woepking</a>. App live on Solana mainnet. First campaigns running. Proving the model works.
         </div>
       </div>
       <div class="roadmap-item">
         <div class="roadmap-phase">Season 2<br>June 2026+</div>
         <div class="roadmap-desc">
-          <strong>Expand to Locations 2&ndash;5</strong>
-          Add a small number of new locations to test the model outside SE Iowa. The exact format &mdash; hub operators, city partners, or a hybrid &mdash; will be determined by what Season 1 teaches us. The Foundation works closely with each new location at launch. Revenue model begins activating.
+          <strong>Expand the Network</strong>
+          New locations. New operators. The model leaves its first city and begins to replicate. Revenue activates.
         </div>
       </div>
       <div class="roadmap-item">
         <div class="roadmap-phase">2027</div>
         <div class="roadmap-desc">
-          <strong>Targeted Scale Campaign</strong>
-          By 2027, Glimpse will have run three full campaigns across multiple locations. That data determines long-term strategy. Token holder governance activates &mdash; the community decides together whether to scale aggressively, adjust the model, or refine what&rsquo;s working. No premature commitments. The group decides.
+          <strong>Community Decides</strong>
+          Multiple campaigns complete. Real data. The token holders govern what comes next &mdash; together.
         </div>
       </div>
     </div>
 
-    <div class="callout">
-      <div class="label">Filing Roadmap</div>
-      <p><strong>Immediate:</strong> File Glimpse PBC in Delaware. Open business accounts.<br>
-      <strong>Month 1&ndash;2:</strong> Launch donations. File Glimpse Foundation 501(c)(3).<br>
-      <strong>Before Token Launch:</strong> Crypto securities attorney consult.<br>
-      <strong>Before First Campaign:</strong> Nonprofit attorney &mdash; sponsor acknowledgment templates.<br>
-      <strong>Month 4&ndash;8:</strong> IRS 501(c)(3) approval (3&ndash;6 month process).</p>
-    </div>
   </div>
 </section>
 
