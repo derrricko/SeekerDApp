@@ -1,7 +1,6 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
-  Linking,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,14 +12,10 @@ import {useTheme} from '../theme/Theme';
 import AppHeader from '../ui/AppHeader';
 import ScreenContainer from '../ui/ScreenContainer';
 import SurfaceCard from '../ui/SurfaceCard';
+import ProofCard from '../ui/ProofCard';
 import {
-  getRecipientLabel,
-  DONATION_STATUS_LABELS,
-} from '../data/donationConfig';
-import {getExplorerUrl} from '../utils/explorer';
-import {
-  fetchDonationHistory,
   fetchAllDonations,
+  fetchDonationHistory,
   type DonationHistoryItem,
 } from '../services/chat';
 import {
@@ -38,13 +33,11 @@ export default function CampaignsScreen() {
   const {publicKey, connect} = useWallet();
   const [viewMode, setViewMode] = useState<ViewMode>('feed');
 
-  // Feed state (all donations)
   const [feedDonations, setFeedDonations] = useState<DonationHistoryItem[]>([]);
   const [feedLoading, setFeedLoading] = useState(false);
   const [feedError, setFeedError] = useState<string | null>(null);
   const lastFeedFetchAt = useRef(0);
 
-  // My Glimpses state (user's donations)
   const [donationHistory, setDonationHistory] = useState<DonationHistoryItem[]>(
     [],
   );
@@ -53,14 +46,13 @@ export default function CampaignsScreen() {
   const lastHistoryFetchAtByWallet = useRef<Record<string, number>>({});
   const previousWalletRef = useRef<string | null>(null);
 
-  // Enhanced on-chain verification data (Helius)
   const [enhancedData, setEnhancedData] = useState<
     Map<string, EnhancedDonation>
   >(new Map());
+  const [enhancedFetching, setEnhancedFetching] = useState(false);
 
   const walletAddress = publicKey?.toBase58() ?? null;
 
-  // Feed tab — all donations
   useEffect(() => {
     if (viewMode !== 'feed') {
       return;
@@ -77,7 +69,7 @@ export default function CampaignsScreen() {
     setFeedLoading(true);
     setFeedError(null);
 
-    fetchAllDonations(50)
+    fetchAllDonations(60)
       .then(rows => {
         if (!cancelled) {
           setFeedDonations(rows);
@@ -101,30 +93,6 @@ export default function CampaignsScreen() {
     };
   }, [viewMode]);
 
-  // Fetch enhanced on-chain data for feed donations
-  useEffect(() => {
-    const signatures = feedDonations.map(d => d.tx_signature).filter(Boolean);
-
-    if (signatures.length === 0) {
-      return;
-    }
-
-    let cancelled = false;
-    fetchEnhancedTransactions(signatures)
-      .then(data => {
-        if (!cancelled) {
-          setEnhancedData(data);
-        }
-      })
-      .catch(() => {
-        // Non-fatal — feed works without enhanced data
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [feedDonations]);
-
   useEffect(() => {
     if (walletAddress !== previousWalletRef.current) {
       previousWalletRef.current = walletAddress;
@@ -134,11 +102,11 @@ export default function CampaignsScreen() {
     }
   }, [walletAddress]);
 
-  // My Glimpses tab — user's donations
   useEffect(() => {
     if (viewMode !== 'my_glimpses') {
       return;
     }
+
     if (!walletAddress) {
       setDonationHistory([]);
       setHistoryLoading(false);
@@ -179,6 +147,54 @@ export default function CampaignsScreen() {
     };
   }, [viewMode, walletAddress]);
 
+  const signatures = useMemo(() => {
+    const allRows = [...feedDonations, ...donationHistory];
+    const unique = new Set<string>();
+
+    for (const row of allRows) {
+      if (row.tx_signature) {
+        unique.add(row.tx_signature);
+      }
+    }
+
+    return [...unique];
+  }, [donationHistory, feedDonations]);
+
+  useEffect(() => {
+    if (signatures.length === 0) {
+      setEnhancedData(new Map());
+      return;
+    }
+
+    let cancelled = false;
+    setEnhancedFetching(true);
+
+    fetchEnhancedTransactions(signatures)
+      .then(data => {
+        if (!cancelled) {
+          setEnhancedData(data);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setEnhancedData(new Map());
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setEnhancedFetching(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [signatures]);
+
+  const activeRows = viewMode === 'feed' ? feedDonations : donationHistory;
+  const activeLoading = viewMode === 'feed' ? feedLoading : historyLoading;
+  const activeError = viewMode === 'feed' ? feedError : historyError;
+
   return (
     <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
       <AppHeader title="Glimpses" />
@@ -188,16 +204,19 @@ export default function CampaignsScreen() {
             style={[
               styles.toggle,
               {
-                borderColor: theme.colors.border,
-                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.borderMuted,
+                backgroundColor: theme.colors.surfaceMuted,
               },
             ]}>
             <TouchableOpacity
               style={[
                 styles.togglePill,
                 {
+                  borderRadius: theme.radius.md,
                   backgroundColor:
-                    viewMode === 'feed' ? theme.colors.accent : 'transparent',
+                    viewMode === 'feed'
+                      ? theme.colors.surfaceAlt
+                      : 'transparent',
                 },
               ]}
               onPress={() => setViewMode('feed')}
@@ -208,7 +227,7 @@ export default function CampaignsScreen() {
                   {
                     color:
                       viewMode === 'feed'
-                        ? '#F3EFFF'
+                        ? theme.colors.textPrimary
                         : theme.colors.textSecondary,
                     fontFamily: theme.typography.brand,
                   },
@@ -216,13 +235,15 @@ export default function CampaignsScreen() {
                 FEED
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={[
                 styles.togglePill,
                 {
+                  borderRadius: theme.radius.md,
                   backgroundColor:
                     viewMode === 'my_glimpses'
-                      ? theme.colors.accent
+                      ? theme.colors.surfaceAlt
                       : 'transparent',
                 },
               ]}
@@ -234,7 +255,7 @@ export default function CampaignsScreen() {
                   {
                     color:
                       viewMode === 'my_glimpses'
-                        ? '#F3EFFF'
+                        ? theme.colors.textPrimary
                         : theme.colors.textSecondary,
                     fontFamily: theme.typography.brand,
                   },
@@ -244,39 +265,25 @@ export default function CampaignsScreen() {
             </TouchableOpacity>
           </View>
 
-          <View
-            style={[
-              styles.panelRule,
-              {backgroundColor: theme.colors.borderMuted},
-            ]}
-          />
-
-          {viewMode === 'feed'
-            ? renderDonationList({
-                requiresWallet: false,
-                walletConnected: !!walletAddress,
-                loading: feedLoading,
-                error: feedError,
-                rows: feedDonations,
-                navigation,
-                theme,
-                emptyText: 'No donations yet. Be the first to give a glimpse.',
-                showDonorWallet: true,
-                enhancedData,
-              })
-            : renderDonationList({
-                requiresWallet: true,
-                walletConnected: !!walletAddress,
-                loading: historyLoading,
-                error: historyError,
-                rows: donationHistory,
-                navigation,
-                theme,
-                emptyText: 'No donations recorded for this wallet yet.',
-                showDonorWallet: false,
-                onConnect: connect,
-                enhancedData,
-              })}
+          <View style={styles.listWrap}>
+            {renderDonationList({
+              requiresWallet: viewMode === 'my_glimpses',
+              walletConnected: !!walletAddress,
+              loading: activeLoading,
+              error: activeError,
+              rows: activeRows,
+              navigation,
+              theme,
+              emptyText:
+                viewMode === 'feed'
+                  ? 'No donations yet. Be the first to give a glimpse.'
+                  : 'No donations recorded for this wallet yet.',
+              showDonorWallet: viewMode === 'feed',
+              onConnect: () => connect().catch(() => {}),
+              enhancedData,
+              enhancedFetching,
+            })}
+          </View>
         </SurfaceCard>
       </ScreenContainer>
     </View>
@@ -295,6 +302,7 @@ function renderDonationList({
   showDonorWallet,
   onConnect,
   enhancedData,
+  enhancedFetching,
 }: {
   requiresWallet: boolean;
   walletConnected: boolean;
@@ -307,6 +315,7 @@ function renderDonationList({
   showDonorWallet: boolean;
   onConnect?: () => void;
   enhancedData?: Map<string, EnhancedDonation>;
+  enhancedFetching: boolean;
 }) {
   if (requiresWallet && !walletConnected) {
     return (
@@ -315,7 +324,6 @@ function renderDonationList({
         onPress={() => onConnect?.()}
         style={[
           styles.stateCard,
-          styles.centeredState,
           {
             borderColor: theme.colors.borderMuted,
             backgroundColor: theme.colors.surfaceMuted,
@@ -350,7 +358,6 @@ function renderDonationList({
       <View
         style={[
           styles.stateCard,
-          styles.centeredState,
           {
             borderColor: theme.colors.borderMuted,
             backgroundColor: theme.colors.surfaceMuted,
@@ -366,7 +373,6 @@ function renderDonationList({
       <View
         style={[
           styles.stateCard,
-          styles.centeredState,
           {
             borderColor: theme.colors.borderMuted,
             backgroundColor: theme.colors.surfaceMuted,
@@ -384,7 +390,6 @@ function renderDonationList({
       <View
         style={[
           styles.stateCard,
-          styles.centeredState,
           {
             borderColor: theme.colors.borderMuted,
             backgroundColor: theme.colors.surfaceMuted,
@@ -400,183 +405,38 @@ function renderDonationList({
   return (
     <View style={styles.historyWrap}>
       {rows.map(item => {
-        const recipient = getRecipientLabel(item.recipient_id);
-        const statusLabel = DONATION_STATUS_LABELS[item.status] ?? 'CONFIRMED';
-        const statusColor =
-          item.status === 'completed'
-            ? theme.colors.success
-            : theme.colors.accent;
-        const truncatedWallet = item.donor_wallet
-          ? `${item.donor_wallet.slice(0, 4)}...${item.donor_wallet.slice(-4)}`
-          : '';
-        const enhanced = enhancedData?.get(item.tx_signature);
-        const isVerified = enhanced?.verified === true;
-        const cardContent = (
-          <>
-            <View style={styles.historyTopRow}>
-              <Text
-                style={[
-                  styles.historyAmount,
-                  {color: theme.colors.textPrimary},
-                ]}>
-                ${item.amount_usdc.toFixed(2)} USDC
-              </Text>
-              <View style={styles.statusRow}>
-                {isVerified && (
-                  <View
-                    style={[
-                      styles.verifiedBadge,
-                      {
-                        backgroundColor: theme.colors.teal + '14',
-                        borderColor: theme.colors.teal + '40',
-                      },
-                    ]}>
-                    <View style={styles.verifiedShield}>
-                      <View
-                        style={[
-                          styles.verifiedShieldBody,
-                          {backgroundColor: theme.colors.teal},
-                        ]}
-                      />
-                      <View
-                        style={[
-                          styles.verifiedShieldPoint,
-                          {borderTopColor: theme.colors.teal},
-                        ]}
-                      />
-                      <Text
-                        style={[
-                          styles.verifiedShieldLetter,
-                          {
-                            color: '#F3EFFF',
-                            fontFamily: theme.typography.brand,
-                          },
-                        ]}>
-                        G
-                      </Text>
-                    </View>
-                    <Text
-                      style={[
-                        styles.verifiedText,
-                        {
-                          color: theme.colors.teal,
-                          fontFamily: theme.typography.brand,
-                        },
-                      ]}>
-                      VERIFIED ON-CHAIN
-                    </Text>
-                  </View>
-                )}
-                <Text
-                  style={[
-                    styles.historyStatus,
-                    {color: statusColor, fontFamily: theme.typography.brand},
-                  ]}>
-                  {statusLabel}
-                </Text>
-              </View>
-            </View>
-            {showDonorWallet && truncatedWallet ? (
-              <Text
-                style={[
-                  styles.historyMeta,
-                  {color: theme.colors.textSecondary},
-                ]}>
-                {truncatedWallet} - {recipient}
-              </Text>
-            ) : (
-              <Text
-                style={[
-                  styles.historyMeta,
-                  {color: theme.colors.textSecondary},
-                ]}>
-                {recipient} - {new Date(item.created_at).toLocaleDateString()}
-              </Text>
-            )}
-          </>
-        );
+        const enhanced = item.tx_signature
+          ? enhancedData?.get(item.tx_signature)
+          : undefined;
 
-        if (showDonorWallet) {
-          return (
-            <View
-              key={item.id}
-              style={[
-                styles.historyCard,
-                {
-                  backgroundColor: theme.colors.surfaceMuted,
-                  borderColor: theme.colors.borderMuted,
-                },
-              ]}>
-              {cardContent}
-              {item.tx_signature ? (
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() =>
-                    Linking.openURL(getExplorerUrl(item.tx_signature))
-                  }>
-                  <Text
-                    style={[
-                      styles.explorerLink,
-                      {color: theme.colors.textTertiary},
-                    ]}>
-                    View on Explorer {'\u2197'}
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          );
-        }
+        const openThread = () => {
+          if (item.conversation_id) {
+            navigation.navigate('Messages', {
+              conversationId: item.conversation_id,
+            });
+            return;
+          }
+          navigation.navigate('Messages');
+        };
 
         return (
-          <TouchableOpacity
+          <ProofCard
             key={item.id}
-            activeOpacity={0.84}
-            onPress={() => {
-              if (item.conversation_id) {
-                navigation.navigate('Messages', {
-                  conversationId: item.conversation_id,
-                });
-              } else {
-                navigation.navigate('Messages');
-              }
-            }}
-            style={[
-              styles.historyCard,
-              {
-                backgroundColor: theme.colors.surfaceMuted,
-                borderColor: theme.colors.borderMuted,
-              },
-            ]}>
-            {cardContent}
-            <View style={styles.historyActions}>
-              {item.tx_signature ? (
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={e => {
-                    e.stopPropagation();
-                    Linking.openURL(getExplorerUrl(item.tx_signature));
-                  }}>
-                  <Text
-                    style={[
-                      styles.explorerLink,
-                      {color: theme.colors.textTertiary},
-                    ]}>
-                    View on Explorer {'\u2197'}
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-              <Text
-                style={[
-                  styles.historyThreadLink,
-                  {
-                    color: theme.colors.accent,
-                    fontFamily: theme.typography.brand,
-                  },
-                ]}>
-                {item.conversation_id ? 'VIEW THREAD \u2192' : 'PROCESSING...'}
-              </Text>
-            </View>
-          </TouchableOpacity>
+            amountUsdc={item.amount_usdc}
+            recipientId={item.recipient_id ?? 'general'}
+            createdAt={item.created_at}
+            txSignature={item.tx_signature}
+            donorWallet={showDonorWallet ? item.donor_wallet : undefined}
+            status={item.status}
+            enhanced={enhanced}
+            enhancedLoading={enhancedFetching}
+            action={
+              showDonorWallet
+                ? undefined
+                : {label: 'VIEW THREAD \u2192', onPress: openThread}
+            }
+            onPress={showDonorWallet ? undefined : openThread}
+          />
         );
       })}
     </View>
@@ -588,72 +448,43 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   panel: {
-    marginBottom: 18,
-    borderRadius: 16,
-    borderWidth: 2,
-    paddingTop: 14,
+    marginBottom: 20,
+    borderRadius: 18,
+    paddingTop: 10,
     paddingHorizontal: 12,
     paddingBottom: 12,
+    gap: 10,
   },
   toggle: {
-    borderWidth: 2,
-    borderRadius: 0,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 4,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
   togglePill: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-  },
-  toggleText: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  panelRule: {
-    height: 1,
-    marginTop: 12,
-    marginBottom: 10,
-  },
-  historyWrap: {
-    gap: 8,
-  },
-  historyCard: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 10,
     paddingVertical: 9,
   },
-  historyTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  historyAmount: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '700',
-  },
-  historyStatus: {
-    fontSize: 9,
+  toggleText: {
+    fontSize: 10,
     lineHeight: 12,
-    letterSpacing: 0.7,
     fontWeight: '700',
+    letterSpacing: 0.9,
   },
-  historyMeta: {
-    fontSize: 12,
-    lineHeight: 16,
+  listWrap: {
+    marginTop: 2,
+  },
+  historyWrap: {
+    gap: 9,
   },
   stateCard: {
-    borderRadius: 10,
+    minHeight: 94,
+    borderRadius: 12,
     borderWidth: 1,
-  },
-  centeredState: {
-    minHeight: 90,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
@@ -664,77 +495,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   stateLink: {
-    fontSize: 10,
-    lineHeight: 14,
-    letterSpacing: 0.8,
-    fontWeight: '700',
     marginTop: 10,
-  },
-  historyThreadLink: {
     fontSize: 10,
-    lineHeight: 14,
+    lineHeight: 13,
     letterSpacing: 0.8,
-    fontWeight: '700',
-  },
-  historyActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 6,
-  },
-  explorerLink: {
-    fontSize: 10,
-    lineHeight: 14,
-    letterSpacing: 0.3,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  verifiedBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 3,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  verifiedShield: {
-    width: 13,
-    height: 14,
-    position: 'relative',
-    alignItems: 'center',
-  },
-  verifiedShieldBody: {
-    width: 11,
-    height: 8,
-    borderTopLeftRadius: 3,
-    borderTopRightRadius: 3,
-  },
-  verifiedShieldPoint: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 5.5,
-    borderRightWidth: 5.5,
-    borderTopWidth: 5,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    marginTop: -1,
-  },
-  verifiedShieldLetter: {
-    position: 'absolute',
-    top: 0,
-    fontSize: 6,
-    lineHeight: 8,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  verifiedText: {
-    fontSize: 8,
-    lineHeight: 11,
-    letterSpacing: 0.6,
     fontWeight: '700',
   },
 });
