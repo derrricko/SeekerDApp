@@ -26,6 +26,7 @@ import SurfaceCard from '../ui/SurfaceCard';
 
 type Step = 'form' | 'confirm' | 'processing';
 const DROPDOWN_ITEM_HEIGHT = 60;
+const QUICK_AMOUNTS = [5, 10, 25, 50] as const;
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
 
@@ -51,10 +52,12 @@ export default function GiveScreen() {
   const [campaignOpen, setCampaignOpen] = useState(false);
   const [matchContext, setMatchContext] = useState('');
   const [recipientNote, setRecipientNote] = useState('');
+  const [showOptionalFields, setShowOptionalFields] = useState(false);
   const [step, setStep] = useState<Step>('form');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [processingTxSig, setProcessingTxSig] = useState('');
+  const [processingConversationId, setProcessingConversationId] = useState('');
   const stepMotion = useRef(new Animated.Value(1)).current;
   const campaignMenuMotion = useRef(new Animated.Value(0)).current;
   const [campaignMenuVisible, setCampaignMenuVisible] = useState(false);
@@ -125,6 +128,7 @@ export default function GiveScreen() {
     setCampaignOpen(false);
     setCampaignMenuVisible(false);
     campaignMenuMotion.setValue(0);
+    setShowOptionalFields(false);
     amountFocusMotion.setValue(0);
     campaignFocusMotion.setValue(0);
     matchFocusMotion.setValue(0);
@@ -134,6 +138,7 @@ export default function GiveScreen() {
     setStep('form');
     setError('');
     setProcessingTxSig('');
+    setProcessingConversationId('');
   };
 
   const validateForm = () => {
@@ -293,6 +298,8 @@ export default function GiveScreen() {
         }
       }
 
+      setProcessingConversationId(conversationId || '');
+
       if (conversationId) {
         reset();
         navigation.navigate('Messages', {conversationId});
@@ -360,7 +367,7 @@ export default function GiveScreen() {
                       styles.amountPrefix,
                       {
                         color: theme.colors.textPrimary,
-                        fontFamily: theme.typography.brand,
+                        fontFamily: theme.typography.displayRegular,
                       },
                     ]}>
                     $
@@ -379,11 +386,47 @@ export default function GiveScreen() {
                       styles.amountInput,
                       {
                         color: theme.colors.textPrimary,
-                        fontFamily: theme.typography.brand,
+                        fontFamily: theme.typography.display,
                       },
                     ]}
                   />
                 </Animated.View>
+
+                <View style={styles.quickPills}>
+                  {QUICK_AMOUNTS.map(amt => {
+                    const active = amount === amt;
+                    return (
+                      <Pressable
+                        key={amt}
+                        onPress={() => setAmountInput(String(amt))}
+                        style={[
+                          styles.quickPill,
+                          {
+                            backgroundColor: active
+                              ? theme.colors.accent + '18'
+                              : theme.colors.surfaceMuted,
+                            borderColor: active
+                              ? theme.colors.accent
+                              : theme.colors.borderMuted,
+                            borderRadius: theme.radius.sm,
+                          },
+                        ]}>
+                        <Text
+                          style={[
+                            styles.quickPillText,
+                            {
+                              color: active
+                                ? theme.colors.accent
+                                : theme.colors.textSecondary,
+                              fontFamily: theme.typography.brand,
+                            },
+                          ]}>
+                          ${amt}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </View>
 
               <View style={styles.fieldBlock}>
@@ -500,7 +543,10 @@ export default function GiveScreen() {
                 ) : null}
               </View>
 
-              <View style={styles.optionalDivider}>
+              <TouchableOpacity
+                onPress={() => setShowOptionalFields(v => !v)}
+                style={styles.optionalToggle}
+                activeOpacity={0.8}>
                 <View
                   style={[
                     styles.optionalDividerLine,
@@ -515,73 +561,79 @@ export default function GiveScreen() {
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
-                  OPTIONAL
+                  {showOptionalFields
+                    ? 'HIDE OPTIONS \u25B4'
+                    : 'ADD A NOTE \u25BE'}
                 </Text>
-              </View>
+              </TouchableOpacity>
 
-              <View style={styles.fieldBlock}>
-                <Text
-                  style={[
-                    styles.fieldLabel,
-                    {
-                      color: theme.colors.textTertiary,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  MATCH CONTEXT
-                  <Text style={styles.optionalLabel}> (optional)</Text>
-                </Text>
-                <AnimatedTextInput
-                  value={matchContext}
-                  onChangeText={setMatchContext}
-                  onFocus={() => animateFieldFocus(matchFocusMotion, 1)}
-                  onBlur={() => animateFieldFocus(matchFocusMotion, 0)}
-                  placeholder="Any details that help us match your donation to a cause or person."
-                  placeholderTextColor={theme.colors.textTertiary}
-                  multiline
-                  textAlignVertical="top"
-                  style={[
-                    styles.multilineInput,
-                    {
-                      backgroundColor: inputSurface,
-                      color: theme.colors.textPrimary,
-                    },
-                    createFieldAnimatedStyle(matchFocusMotion),
-                  ]}
-                />
-              </View>
+              {showOptionalFields ? (
+                <>
+                  <View style={styles.fieldBlock}>
+                    <Text
+                      style={[
+                        styles.fieldLabel,
+                        {
+                          color: theme.colors.textTertiary,
+                          fontFamily: theme.typography.brand,
+                        },
+                      ]}>
+                      MATCH CONTEXT
+                      <Text style={styles.optionalLabel}> (optional)</Text>
+                    </Text>
+                    <AnimatedTextInput
+                      value={matchContext}
+                      onChangeText={setMatchContext}
+                      onFocus={() => animateFieldFocus(matchFocusMotion, 1)}
+                      onBlur={() => animateFieldFocus(matchFocusMotion, 0)}
+                      placeholder="Any details that help us match your donation to a cause or person."
+                      placeholderTextColor={theme.colors.textTertiary}
+                      multiline
+                      textAlignVertical="top"
+                      style={[
+                        styles.multilineInput,
+                        {
+                          backgroundColor: inputSurface,
+                          color: theme.colors.textPrimary,
+                        },
+                        createFieldAnimatedStyle(matchFocusMotion),
+                      ]}
+                    />
+                  </View>
 
-              <View style={styles.fieldBlock}>
-                <Text
-                  style={[
-                    styles.fieldLabel,
-                    {
-                      color: theme.colors.textTertiary,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  NOTE FOR RECIPIENT
-                  <Text style={styles.optionalLabel}> (optional)</Text>
-                </Text>
-                <AnimatedTextInput
-                  value={recipientNote}
-                  onChangeText={setRecipientNote}
-                  onFocus={() => animateFieldFocus(noteFocusMotion, 1)}
-                  onBlur={() => animateFieldFocus(noteFocusMotion, 0)}
-                  placeholder="Leave a note for the recipient."
-                  placeholderTextColor={theme.colors.textTertiary}
-                  multiline
-                  textAlignVertical="top"
-                  style={[
-                    styles.multilineInput,
-                    {
-                      backgroundColor: inputSurface,
-                      color: theme.colors.textPrimary,
-                    },
-                    createFieldAnimatedStyle(noteFocusMotion),
-                  ]}
-                />
-              </View>
+                  <View style={styles.fieldBlock}>
+                    <Text
+                      style={[
+                        styles.fieldLabel,
+                        {
+                          color: theme.colors.textTertiary,
+                          fontFamily: theme.typography.brand,
+                        },
+                      ]}>
+                      NOTE FOR RECIPIENT
+                      <Text style={styles.optionalLabel}> (optional)</Text>
+                    </Text>
+                    <AnimatedTextInput
+                      value={recipientNote}
+                      onChangeText={setRecipientNote}
+                      onFocus={() => animateFieldFocus(noteFocusMotion, 1)}
+                      onBlur={() => animateFieldFocus(noteFocusMotion, 0)}
+                      placeholder="Leave a note for the recipient."
+                      placeholderTextColor={theme.colors.textTertiary}
+                      multiline
+                      textAlignVertical="top"
+                      style={[
+                        styles.multilineInput,
+                        {
+                          backgroundColor: inputSurface,
+                          color: theme.colors.textPrimary,
+                        },
+                        createFieldAnimatedStyle(noteFocusMotion),
+                      ]}
+                    />
+                  </View>
+                </>
+              ) : null}
 
               {!!error && (
                 <Text style={[styles.error, {color: theme.colors.danger}]}>
@@ -619,7 +671,10 @@ export default function GiveScreen() {
                   <Text
                     style={[
                       styles.reviewValue,
-                      {color: theme.colors.textPrimary},
+                      {
+                        color: theme.colors.textPrimary,
+                        fontFamily: theme.typography.display,
+                      },
                     ]}>
                     {formattedAmount} USDC
                   </Text>
@@ -646,7 +701,10 @@ export default function GiveScreen() {
                   <Text
                     style={[
                       styles.reviewCampaign,
-                      {color: theme.colors.textPrimary},
+                      {
+                        color: theme.colors.textPrimary,
+                        fontFamily: theme.typography.displayRegular,
+                      },
                     ]}>
                     {selectedCampaign?.label || '-'}
                   </Text>
@@ -819,7 +877,7 @@ export default function GiveScreen() {
                     styles.processingAmount,
                     {
                       color: theme.colors.accent,
-                      fontFamily: theme.typography.brand,
+                      fontFamily: theme.typography.display,
                     },
                   ]}>
                   {formattedAmount} USDC
@@ -863,13 +921,26 @@ export default function GiveScreen() {
                 </TouchableOpacity>
               )}
 
+              {!!processingConversationId && (
+                <PrimaryButton
+                  label="View Your Thread"
+                  onPress={() => {
+                    const convId = processingConversationId;
+                    reset();
+                    navigation.navigate('Messages', {conversationId: convId});
+                  }}
+                  style={styles.reviewButton}
+                />
+              )}
+
               <PrimaryButton
                 label="Done"
+                variant="secondary"
                 onPress={() => {
                   reset();
-                  navigation.navigate('Messages');
+                  navigation.navigate('Glimpses');
                 }}
-                style={styles.reviewButton}
+                style={{marginTop: 8}}
               />
             </View>
           ) : null}
@@ -913,27 +984,47 @@ const styles = StyleSheet.create<
     fontSize: 11,
   },
   amountWrap: {
-    borderWidth: 2,
-    minHeight: 62,
+    borderWidth: 1.5,
+    borderRadius: 10,
+    minHeight: 66,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
   },
   amountPrefix: {
-    fontSize: 28,
-    lineHeight: 32,
-    fontWeight: '700',
+    fontSize: 36,
+    lineHeight: 40,
+    fontWeight: '300',
     marginRight: 6,
   },
   amountInput: {
     flex: 1,
-    fontSize: 34,
-    lineHeight: 40,
-    fontWeight: '700',
+    fontSize: 40,
+    lineHeight: 44,
+    fontWeight: '300',
     paddingVertical: 8,
   },
+  quickPills: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  quickPill: {
+    flex: 1,
+    borderWidth: 1,
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickPillText: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
   dropdownTrigger: {
-    borderWidth: 2,
+    borderWidth: 1.5,
+    borderRadius: 10,
     minHeight: 68,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -954,7 +1045,9 @@ const styles = StyleSheet.create<
   },
   dropdownList: {
     marginTop: 6,
-    borderWidth: 2,
+    borderWidth: 1.5,
+    borderRadius: 10,
+    overflow: 'hidden',
   },
   dropdownItem: {
     paddingHorizontal: 12,
@@ -972,7 +1065,8 @@ const styles = StyleSheet.create<
     lineHeight: 20,
   },
   multilineInput: {
-    borderWidth: 2,
+    borderWidth: 1.5,
+    borderRadius: 10,
     minHeight: 84,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -992,7 +1086,8 @@ const styles = StyleSheet.create<
     gap: 10,
   },
   reviewRow: {
-    borderWidth: 2,
+    borderWidth: 1.5,
+    borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
@@ -1002,14 +1097,14 @@ const styles = StyleSheet.create<
     marginBottom: 4,
   },
   reviewValue: {
-    fontSize: 31,
-    lineHeight: 36,
-    fontWeight: '700',
+    fontSize: 36,
+    lineHeight: 40,
+    fontWeight: '400',
   },
   reviewCampaign: {
-    fontSize: 18,
-    lineHeight: 24,
-    fontWeight: '700',
+    fontSize: 22,
+    lineHeight: 26,
+    fontWeight: '400',
   },
   reviewBody: {
     fontSize: 15,
@@ -1027,7 +1122,8 @@ const styles = StyleSheet.create<
     marginTop: 14,
     width: '100%',
     height: 48,
-    borderWidth: 2,
+    borderWidth: 1.5,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1040,27 +1136,27 @@ const styles = StyleSheet.create<
   confirmButton: {
     marginTop: 10,
     width: '100%',
-    minHeight: 64,
-    borderWidth: 3,
-    borderRadius: 0,
+    minHeight: 56,
+    borderWidth: 1.5,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#1A1125',
-    shadowOpacity: 0.3,
-    shadowRadius: 0,
-    shadowOffset: {width: 2, height: 2},
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    shadowOffset: {width: 0, height: 4},
     elevation: 5,
   },
   confirmButtonText: {
     color: '#FFFFFF',
-    fontSize: 20,
-    lineHeight: 24,
+    fontSize: 14,
+    lineHeight: 16,
     fontWeight: '700',
-    letterSpacing: 1.2,
+    letterSpacing: 1.1,
   },
   processingCard: {
     marginBottom: 16,
-    borderRadius: 0,
+    borderRadius: 12,
   },
   processingTitle: {
     fontSize: 18,
@@ -1070,9 +1166,9 @@ const styles = StyleSheet.create<
     marginBottom: 12,
   },
   processingAmount: {
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: '700',
+    fontSize: 36,
+    lineHeight: 40,
+    fontWeight: '400',
     marginBottom: 12,
   },
   processingBody: {
@@ -1081,7 +1177,7 @@ const styles = StyleSheet.create<
     marginBottom: 16,
   },
   explorerLink: {
-    borderWidth: 2,
+    borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -1092,7 +1188,7 @@ const styles = StyleSheet.create<
     fontSize: 14,
     fontWeight: '700',
   },
-  optionalDivider: {
+  optionalToggle: {
     marginTop: 4,
     marginBottom: 14,
   },
