@@ -140,25 +140,10 @@ function AppTabBar({
         styles.wrap,
         {
           backgroundColor: theme.colors.surface,
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.borderMuted,
         },
       ]}>
-      <View
-        style={[
-          styles.topFill,
-          {
-            backgroundColor: theme.colors.surface,
-          },
-        ]}
-      />
-      <View
-        style={[
-          styles.topRail,
-          {
-            backgroundColor: theme.colors.border,
-          },
-        ]}
-      />
-
       <TouchableOpacity
         onPress={() => navigation.navigate('Glimpses')}
         style={styles.sideButton}
@@ -171,7 +156,7 @@ function AppTabBar({
             style={[
               styles.sideActiveIndicator,
               {
-                backgroundColor: theme.colors.accent,
+                backgroundColor: theme.colors.teal,
               },
               buildIndicatorStyle(glimpsesIndicator),
             ]}
@@ -187,7 +172,7 @@ function AppTabBar({
             backgroundColor: isGiveTab
               ? theme.colors.accentPressed
               : theme.colors.accent,
-            borderColor: theme.colors.border,
+            borderColor: theme.colors.accentPressed,
           },
         ]}
         activeOpacity={0.9}>
@@ -222,7 +207,7 @@ function AppTabBar({
             style={[
               styles.sideActiveIndicator,
               {
-                backgroundColor: theme.colors.accent,
+                backgroundColor: theme.colors.teal,
               },
               buildIndicatorStyle(messagesIndicator),
             ]}
@@ -360,10 +345,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 84,
-    paddingHorizontal: 18,
-    paddingBottom: 10,
-    marginBottom: 18,
+    height: 64,
+    paddingHorizontal: 24,
+    paddingBottom: 8,
+    marginBottom: 12,
     position: 'relative',
     overflow: 'visible',
   },
@@ -371,22 +356,8 @@ const styles = StyleSheet.create({
     height: 0,
     marginBottom: 0,
   },
-  topFill: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: -14,
-    height: 14,
-  },
-  topRail: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: -14,
-    height: 3,
-  },
   sideButton: {
-    minWidth: 92,
+    minWidth: 72,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 0,
@@ -396,16 +367,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sideIconWrap: {
-    width: 66,
-    height: 56,
+    width: 52,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sideActiveIndicator: {
-    width: 18,
-    height: 3,
-    borderRadius: 3,
-    marginTop: -3,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 2,
   },
   glimpseIconFrame: {
     width: 35,
@@ -458,49 +429,43 @@ const styles = StyleSheet.create({
   },
   unreadBadge: {
     position: 'absolute',
-    top: -4,
-    right: -7,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    top: -2,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     paddingHorizontal: 4,
-    borderWidth: 1.5,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   unreadBadgeText: {
     color: '#fff',
-    fontSize: 10,
-    lineHeight: 11,
+    fontSize: 9,
+    lineHeight: 10,
     fontWeight: '700',
   },
   centerButton: {
-    width: 132,
-    height: 132,
-    borderRadius: 66,
-    borderWidth: 3,
-    marginTop: -62,
+    paddingHorizontal: 20,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#1A1125',
-    shadowOpacity: 0.3,
-    shadowRadius: 0,
-    shadowOffset: {width: 2, height: 2},
-    elevation: 4,
   },
   centerText: {
     color: '#F3EFFF',
-    fontSize: 19,
+    fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
   },
   topHelpButton: {
     position: 'absolute',
     right: 12,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 30,
@@ -511,8 +476,8 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 1},
   },
   topHelpText: {
-    fontSize: 22,
-    lineHeight: 24,
+    fontSize: 18,
+    lineHeight: 20,
     fontWeight: '700',
   },
   loadingRoot: {

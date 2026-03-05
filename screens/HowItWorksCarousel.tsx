@@ -155,7 +155,15 @@ export default function HowItWorksCarousel({
               ]}>
               {activeStep.label}
             </Text>
-            <Text style={[styles.headline, {color: theme.colors.textPrimary}]}>
+            <Text
+              style={[
+                styles.headline,
+                {
+                  color: theme.colors.textPrimary,
+                  fontFamily: theme.typography.display,
+                  fontWeight: '300',
+                },
+              ]}>
               {activeStep.headline}
             </Text>
             <Text style={[styles.body, {color: theme.colors.textSecondary}]}>
@@ -341,7 +349,7 @@ const styles = StyleSheet.create({
   headline: {
     fontSize: 23,
     lineHeight: 29,
-    fontWeight: '600',
+    fontWeight: '300',
     marginBottom: 9,
   },
   body: {
@@ -369,9 +377,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   primaryButton: {
-    borderWidth: 2,
-    borderRadius: 11,
-    minHeight: 46,
+    borderWidth: 1.5,
+    borderRadius: 10,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -387,9 +395,9 @@ const styles = StyleSheet.create({
   },
   navButton: {
     flex: 1,
-    minHeight: 36,
+    minHeight: 34,
     borderWidth: 1,
-    borderRadius: 9,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
