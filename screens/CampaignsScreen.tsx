@@ -212,7 +212,6 @@ export default function CampaignsScreen() {
               style={[
                 styles.togglePill,
                 {
-                  borderRadius: theme.radius.md,
                   backgroundColor:
                     viewMode === 'feed'
                       ? theme.colors.surfaceAlt
@@ -240,7 +239,6 @@ export default function CampaignsScreen() {
               style={[
                 styles.togglePill,
                 {
-                  borderRadius: theme.radius.md,
                   backgroundColor:
                     viewMode === 'my_glimpses'
                       ? theme.colors.surfaceAlt
@@ -433,7 +431,9 @@ function renderDonationList({
             action={
               showDonorWallet
                 ? undefined
-                : {label: 'VIEW THREAD \u2192', onPress: openThread}
+                : item.conversation_id
+                ? {label: 'VIEW THREAD \u2192', onPress: openThread}
+                : undefined
             }
             onPress={showDonorWallet ? undefined : openThread}
           />
@@ -448,26 +448,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   panel: {
-    marginBottom: 20,
-    borderRadius: 18,
-    paddingTop: 10,
+    marginBottom: 18,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingTop: 14,
     paddingHorizontal: 12,
     paddingBottom: 12,
     gap: 10,
   },
   toggle: {
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 4,
+    borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    overflow: 'hidden',
   },
   togglePill: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 9,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginHorizontal: 2,
+    marginVertical: 2,
   },
   toggleText: {
     fontSize: 10,
