@@ -15,7 +15,7 @@ export default function AppHeader({title}: {title: string}) {
           paddingTop: insets.top + theme.spacing.md,
           paddingHorizontal: theme.spacing.lg,
           paddingBottom: theme.spacing.sm,
-          borderBottomColor: theme.colors.textPrimary,
+          borderBottomColor: theme.colors.borderMuted,
           backgroundColor: theme.colors.background,
         },
       ]}>
@@ -24,14 +24,14 @@ export default function AppHeader({title}: {title: string}) {
           styles.title,
           {
             color: theme.colors.textPrimary,
-            letterSpacing: 8,
-            fontFamily: theme.typography.brand,
+            letterSpacing: 4,
+            fontFamily: theme.typography.display,
           },
         ]}>
         {title}
       </Text>
       <View
-        style={[styles.rule, {backgroundColor: theme.colors.textPrimary}]}
+        style={[styles.rule, {backgroundColor: theme.colors.borderMuted}]}
       />
     </View>
   );
@@ -43,14 +43,14 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   title: {
-    fontSize: 44,
-    fontWeight: '700',
-    lineHeight: 52,
+    fontSize: 28,
+    fontWeight: '600',
+    lineHeight: 34,
     textTransform: 'uppercase',
   },
   rule: {
-    marginTop: 8,
+    marginTop: 6,
     width: '100%',
-    height: 3,
+    height: 2,
   },
 });
