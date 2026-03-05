@@ -426,8 +426,35 @@ function renderDonationList({
                   <View
                     style={[
                       styles.verifiedBadge,
-                      {backgroundColor: theme.colors.teal + '18'},
+                      {
+                        backgroundColor: theme.colors.teal + '14',
+                        borderColor: theme.colors.teal + '40',
+                      },
                     ]}>
+                    <View style={styles.verifiedShield}>
+                      <View
+                        style={[
+                          styles.verifiedShieldBody,
+                          {backgroundColor: theme.colors.teal},
+                        ]}
+                      />
+                      <View
+                        style={[
+                          styles.verifiedShieldPoint,
+                          {borderTopColor: theme.colors.teal},
+                        ]}
+                      />
+                      <Text
+                        style={[
+                          styles.verifiedShieldLetter,
+                          {
+                            color: '#F3EFFF',
+                            fontFamily: theme.typography.brand,
+                          },
+                        ]}>
+                        G
+                      </Text>
+                    </View>
                     <Text
                       style={[
                         styles.verifiedText,
@@ -436,7 +463,7 @@ function renderDonationList({
                           fontFamily: theme.typography.brand,
                         },
                       ]}>
-                      VERIFIED
+                      VERIFIED ON-CHAIN
                     </Text>
                   </View>
                 )}
@@ -669,11 +696,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 3,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  verifiedShield: {
+    width: 13,
+    height: 14,
+    position: 'relative',
+    alignItems: 'center',
+  },
+  verifiedShieldBody: {
+    width: 11,
+    height: 8,
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+  },
+  verifiedShieldPoint: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 5.5,
+    borderRightWidth: 5.5,
+    borderTopWidth: 5,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    marginTop: -1,
+  },
+  verifiedShieldLetter: {
+    position: 'absolute',
+    top: 0,
+    fontSize: 6,
+    lineHeight: 8,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
   verifiedText: {
     fontSize: 8,
     lineHeight: 11,
-    letterSpacing: 0.8,
+    letterSpacing: 0.6,
     fontWeight: '700',
   },
 });

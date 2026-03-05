@@ -563,41 +563,34 @@ const handlePressOut = () => {
 
 ```
 SeekerDApp/
-├── assets/
-│   ├── brand/
-│   │   ├── g-mark.svg            # G lettermark SVG
-│   │   ├── g-mark-light.svg      # Light mode variant
-│   │   ├── g-mark-gradient.svg   # White on gradient variant
-│   │   ├── wordmark.svg          # GLIMPSE wordmark
-│   │   └── lockup.svg            # Full lockup (mark + line + wordmark)
-│   ├── icons/
-│   │   ├── heart.svg
-│   │   ├── gallery.svg
-│   │   ├── activity.svg
-│   │   └── ...
-│   └── social/
-│       ├── profile-400.png
-│       ├── banner-x-1500x500.png
-│       ├── banner-linkedin-1584x396.png
-│       ├── og-image-1200x630.png
-│       └── templates/
-│           ├── impact-stat.png
-│           ├── quote-mission.png
-│           └── feature-highlight.png
-├── components/
-│   ├── theme/
-│   │   ├── index.ts              # useTheme hook
-│   │   ├── colors.ts             # Color tokens
-│   │   ├── typography.ts         # Font tokens
-│   │   └── spacing.ts            # Spacing/radius tokens
-│   ├── GlassCard.tsx
-│   ├── GlassButton.tsx
-│   └── ...
-├── brand-identity.html           # Brand identity presentation
-├── social-media-kit.html         # Social media kit presentation
-├── BRAND-GUIDE.md                # This file
-└── CLAUDE.md                     # Development guide
+├── docs/design/
+│   ├── brand-guide.md                          # This file
+│   ├── wireframes.html                         # App wireframes
+│   ├── glimpse-one-pager.html                  # One-pager
+│   ├── how-it-works.html                       # How It Works page
+│   ├── the-generosity-compact.html             # Generosity Compact
+│   ├── pitch-deck-monolith-2026.html           # Monolith pitch deck
+│   ├── streamcast*.html                        # Livestream overlay assets
+│   ├── slides-2026-03-04-token-revenue.html    # Token revenue slides
+│   ├── social/
+│   │   ├── pfp-final.html / .png               # Profile picture (final)
+│   │   ├── pfp-filled.html / .png              # Profile picture (filled)
+│   │   ├── pfp-options.html / .png             # Profile picture options
+│   │   ├── pfp-refined.html / .png             # Profile picture (refined)
+│   │   ├── pfp-give-buttons.html               # Give-button PFP variant
+│   │   ├── x-banner.html / .png                # X/Twitter banner
+│   │   └── x-banner-glimpse.html / .png        # X/Twitter banner (Glimpse)
+│   ├── web-mockups/
+│   │   ├── brand-identity.html                 # Brand identity presentation
+│   │   ├── social-media-kit.html               # Social media kit presentation
+│   │   ├── glimpse-home.html                   # Home page mockup
+│   │   ├── glimpse-welcome-v2.html             # Welcome page mockup
+│   │   └── demo.html                           # Interactive demo
+│   └── reference/                              # Archived reference components
+└── CLAUDE.md                                   # Development guide
 ```
+
+Theme tokens (colors, typography, spacing) are documented in this file under [Theme Tokens (TypeScript)](#theme-tokens-typescript).
 
 ---
 

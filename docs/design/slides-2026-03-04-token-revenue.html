@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glimpse — How the Token Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --purple: #5b5bd6;
+  --purple-glow: rgba(91, 91, 214, 0.35);
+  --purple-soft: rgba(91, 91, 214, 0.10);
+  --bg: #f0e9ff;
+  --grid: rgba(91, 91, 214, 0.12);
+  --ink: #1a1a2e;
+  --white: #ffffff;
+  --black: #000000;
+  --muted: rgba(26, 26, 46, 0.55);
+}
+
+html {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  transform-origin: top left;
+  font-family: 'Space Mono', monospace;
+  background-color: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Purple Border Frame ────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  border: 16px solid var(--purple);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* ── Corner Accents ─────────────────────────── */
+.corner {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  z-index: 1001;
+  pointer-events: none;
+}
+.corner::before, .corner::after {
+  content: '';
+  position: absolute;
+  background: var(--purple);
+}
+.corner-tl { top: 16px; left: 16px; }
+.corner-tl::before { top: 0; left: 0; width: 60px; height: 4px; }
+.corner-tl::after  { top: 0; left: 0; width: 4px; height: 60px; }
+.corner-tr { top: 16px; right: 16px; }
+.corner-tr::before { top: 0; right: 0; width: 60px; height: 4px; }
+.corner-tr::after  { top: 0; right: 0; width: 4px; height: 60px; }
+.corner-bl { bottom: 16px; left: 16px; }
+.corner-bl::before { bottom: 0; left: 0; width: 60px; height: 4px; }
+.corner-bl::after  { bottom: 0; left: 0; width: 4px; height: 60px; }
+.corner-br { bottom: 16px; right: 16px; }
+.corner-br::before { bottom: 0; right: 0; width: 60px; height: 4px; }
+.corner-br::after  { bottom: 0; right: 0; width: 4px; height: 60px; }
+
+/* ── Scanline ───────────────────────────────── */
+.scanline {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--purple-glow), transparent);
+  animation: scan 6s ease-in-out infinite;
+  opacity: 0.4;
+  z-index: 999;
+  pointer-events: none;
+}
+@keyframes scan {
+  0%   { top: 16px; }
+  50%  { top: 1063px; }
+  100% { top: 16px; }
+}
+
+/* ── Grid Background ────────────────────────── */
+body {
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Slides ──────────────────────────────────── */
+.slide {
+  position: absolute;
+  top: 0; left: 0;
+  width: 1920px;
+  height: 1080px;
+  display: none;
+  padding: 80px 120px;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.slide.active {
+  display: flex;
+}
+
+/* ── Typography ──────────────────────────────── */
+.slide-num {
+  position: absolute;
+  top: 48px;
+  right: 80px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.3;
+}
+
+.slide-tag {
+  display: inline-block;
+  border: 3px solid var(--purple);
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--purple);
+  text-transform: uppercase;
+  margin-bottom: 32px;
+}
+
+.slide-section {
+  background: var(--purple);
+  color: var(--white);
+  padding: 12px 28px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  box-shadow: 8px 8px 0 var(--black);
+  display: inline-block;
+  margin-bottom: 40px;
+}
+
+h1 {
+  font-size: 72px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  margin-bottom: 32px;
+  max-width: 1400px;
+}
+
+h1.mega {
+  font-size: 96px;
+}
+
+h1::after {
+  content: '';
+  display: block;
+  width: 120px;
+  height: 8px;
+  background: var(--purple);
+  margin-top: 20px;
+}
+
+h1.no-bar::after { display: none; }
+
+h2 {
+  font-size: 32px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+  margin-bottom: 20px;
+}
+
+p, .body {
+  font-size: 22px;
+  line-height: 1.65;
+  max-width: 1200px;
+  color: var(--muted);
+}
+
+p.large {
+  font-size: 28px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+p.quote {
+  font-size: 36px;
+  font-style: italic;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.4;
+  max-width: 1100px;
+  opacity: 0.85;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--purple);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.label::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: var(--purple);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Callout Box ─────────────────────────────── */
+.callout {
+  background: var(--white);
+  border: 6px solid var(--black);
+  box-shadow: 12px 12px 0 var(--black);
+  padding: 32px 40px;
+  margin-top: 28px;
+  max-width: 1200px;
+}
+
+.callout p { margin-bottom: 0; font-size: 20px; }
+
+.callout-purple {
+  background: var(--purple);
+  color: var(--white);
+  border: 6px solid var(--black);
+  box-shadow: 12px 12px 0 var(--black);
+}
+
+.callout-purple p { color: var(--white); }
+
+/* ── Two Column ──────────────────────────────── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-top: 20px;
+  max-width: 1500px;
+}
+
+.col-card {
+  background: var(--white);
+  border: 6px solid var(--black);
+  padding: 36px 32px;
+}
+
+.col-card.purple-shadow { box-shadow: 12px 12px 0 var(--purple); }
+.col-card.black-shadow { box-shadow: 12px 12px 0 var(--black); }
+
+.col-card h2 {
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+.col-card .subtitle {
+  font-size: 14px;
+  font-style: italic;
+  opacity: 0.5;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.col-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.col-card li {
+  font-size: 18px;
+  padding: 10px 0;
+  border-top: 2px solid var(--grid);
+  color: var(--muted);
+}
+
+.col-card li:first-child { border-top: none; }
+
+/* ── Flow Diagram ────────────────────────────── */
+.flow {
+  display: flex;
+  gap: 0;
+  margin: 40px 0;
+  align-items: stretch;
+  max-width: 1500px;
+}
+
+.flow-step {
+  flex: 1;
+  background: var(--white);
+  border: 4px solid var(--ink);
+  padding: 24px 16px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flow-step:not(:last-child)::after {
+  content: '\2192';
+  position: absolute;
+  right: -16px;
+  font-size: 28px;
+  color: var(--purple);
+  z-index: 2;
+}
+
+.flow-step.purple-bg {
+  background: var(--purple);
+  color: var(--white);
+  border-color: var(--purple);
+}
+
+/* ── Token Distribution Bar ──────────────────── */
+.dist-bar {
+  display: flex;
+  height: 80px;
+  border: 6px solid var(--black);
+  box-shadow: 12px 12px 0 var(--black);
+  margin: 32px 0;
+  overflow: hidden;
+  max-width: 1400px;
+}
+
+.dist-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0 20px;
+}
+
+.dist-community { flex: 85; background: var(--purple); color: var(--white); }
+.dist-donors { flex: 10; background: var(--ink); color: var(--white); border-left: 3px solid var(--white); }
+.dist-company { flex: 5; background: var(--white); color: var(--ink); border-left: 3px solid var(--ink); }
+
+.dist-legend {
+  display: flex;
+  gap: 32px;
+  margin-top: 20px;
+}
+
+.dist-legend span {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dist-legend .dot {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  vertical-align: middle;
+  border: 3px solid var(--black);
+}
+
+/* ── Metrics Row ─────────────────────────────── */
+.metrics-row {
+  display: flex;
+  gap: 0;
+  margin: 40px 0;
+  border: 6px solid var(--black);
+  box-shadow: 12px 12px 0 var(--black);
+  overflow: hidden;
+  max-width: 1400px;
+}
+
+.metric {
+  flex: 1;
+  background: var(--white);
+  padding: 28px 24px;
+  text-align: center;
+  border-right: 4px solid var(--black);
+}
+
+.metric:last-child { border-right: none; }
+
+.metric-value {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  margin-bottom: 8px;
+  color: var(--purple);
+}
+
+.metric-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+
+/* ── Revenue Flow ────────────────────────────── */
+.revenue-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 32px 0;
+  max-width: 1200px;
+}
+
+.rev-step {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 0;
+  border-bottom: 3px solid var(--grid);
+}
+
+.rev-step:last-child { border-bottom: none; }
+
+.rev-num {
+  width: 48px;
+  height: 48px;
+  background: var(--purple);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.rev-text {
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.rev-text strong {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 18px;
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+
+.rev-text span {
+  color: var(--muted);
+}
+
+/* ── Airdrop Timeline ────────────────────────── */
+.timeline {
+  display: flex;
+  gap: 32px;
+  margin: 40px 0;
+  max-width: 1400px;
+}
+
+.timeline-block {
+  flex: 1;
+  background: var(--white);
+  border: 6px solid var(--black);
+  padding: 28px 24px;
+  position: relative;
+}
+
+.timeline-block:nth-child(odd) { box-shadow: 10px 10px 0 var(--purple); }
+.timeline-block:nth-child(even) { box-shadow: 10px 10px 0 var(--black); }
+
+.timeline-block h3 {
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 8px;
+  color: var(--purple);
+}
+
+.timeline-block p {
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin-bottom: 0;
+}
+
+/* ── Governance Card ─────────────────────────── */
+.gov-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 28px;
+  margin: 40px 0;
+  max-width: 1500px;
+}
+
+.gov-card {
+  background: var(--white);
+  border: 6px solid var(--black);
+  padding: 32px 24px;
+  border-top: 10px solid var(--purple);
+}
+
+.gov-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 12px;
+}
+
+.gov-card p {
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin-bottom: 0;
+}
+
+/* ── Bottom Ticker ───────────────────────────── */
+.ticker {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  height: 36px;
+  background: var(--purple);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.ticker-content {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  white-space: nowrap;
+  animation: scroll-ticker 30s linear infinite;
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ticker-content span { opacity: 0.5; }
+
+@keyframes scroll-ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── Nav Hint ────────────────────────────────── */
+.nav-hint {
+  position: fixed;
+  bottom: 64px;
+  right: 48px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.25;
+  z-index: 100;
+}
+
+/* ── Logo watermark ──────────────────────────── */
+.logo-watermark {
+  position: absolute;
+  top: 40px;
+  left: 80px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.2;
+}
+
+/* ── Slide-specific: Title slide centering ───── */
+.slide.title-slide {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.slide.title-slide h1::after {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.slide.title-slide p {
+  max-width: 900px;
+}
+
+/* ── Close slide ─────────────────────────────── */
+.slide.close-slide {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: var(--ink);
+  color: var(--white);
+}
+
+.slide.close-slide h1 {
+  color: var(--white);
+}
+
+.slide.close-slide h1::after {
+  background: var(--purple);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.slide.close-slide p {
+  color: rgba(255,255,255,0.5);
+}
+
+.slide.close-slide .logo-watermark {
+  color: var(--white);
+}
+
+.slide.close-slide .slide-num {
+  color: var(--white);
+}
+
+/* ── Print / export ──────────────────────────── */
+@media print {
+  body { background: white; background-image: none; }
+  body::before, .corner, .scanline, .ticker, .nav-hint { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+<div class="scanline"></div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 01 — TITLE                            -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide title-slide active" data-slide="1">
+  <div class="slide-num">01 / 17</div>
+  <div class="slide-tag">Livestream &mdash; March 4, 2026</div>
+  <h1 class="mega">THE TRUST LAYER<br>FOR GIVING</h1>
+  <p class="large" style="margin-top:20px;">How Glimpse works. How it makes money.<br>Why the token has value.</p>
+  <p style="margin-top:32px; font-size:16px; opacity:0.4; letter-spacing:0.12em; text-transform:uppercase;">giveglimpse.com &bull; @GiveGlimpse &bull; Built on Solana</p>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 02 — THE PROBLEM                      -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="2">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">02 / 17</div>
+  <div class="slide-section">The Problem</div>
+  <h1>THE $500B<br>TRUST GAP</h1>
+  <p class="large">Billions flow into charitable giving every year. The system that moves it is slow, opaque, and disconnected from the people it serves.</p>
+  <div class="metrics-row" style="margin-top:48px;">
+    <div class="metric">
+      <div class="metric-value">$500B+</div>
+      <div class="metric-label">Annual US Giving</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">0%</div>
+      <div class="metric-label">Donors Feel Impact</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">3-8%</div>
+      <div class="metric-label">Platform Fees</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">0</div>
+      <div class="metric-label">Permanent Records</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 03 — THE HOOK                         -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="3">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">03 / 17</div>
+  <div class="slide-section">The Hook</div>
+  <h1 class="no-bar" style="font-size:88px; line-height:1.05;">GOFUNDME<br>TAKES 3%.</h1>
+  <h1 class="no-bar" style="font-size:88px; line-height:1.05; color:var(--purple); margin-top:20px;">WE TAKE<br>ZERO.</h1>
+  <div style="width:120px; height:8px; background:var(--purple); margin-top:32px;"></div>
+  <p style="margin-top:32px;">Zero platform fees. Zero middlemen. Every dollar goes forward.</p>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 04 — SACRED LINE (emotional bridge)   -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide close-slide" data-slide="4">
+  <div class="logo-watermark" style="color:var(--white);">Glimpse</div>
+  <div class="slide-num" style="color:var(--white);">04 / 17</div>
+  <h1 class="no-bar" style="font-size:56px; color:var(--white); line-height:1.35; max-width:1200px;">&ldquo;MOST PEOPLE'S ENTIRE LIVES WILL BE FOREVER CHANGED BY A FEW THOUSAND DOLLARS.&rdquo;</h1>
+  <div style="width:120px; height:8px; background:var(--purple); margin-top:40px;"></div>
+  <p style="margin-top:28px; font-size:18px; color:rgba(255,255,255,0.45); letter-spacing:0.1em; text-transform:uppercase;">My son is one year old. I'm building the world I want him to grow up in.</p>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 05 — THE PROOF LOOP                   -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="5">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">05 / 17</div>
+  <div class="slide-section">The Solution</div>
+  <h1>THE PROOF LOOP</h1>
+  <p>Show people what happened, and they give again. That's it.</p>
+  <div class="flow" style="margin-top:40px;">
+    <div class="flow-step purple-bg">Donor Gives USDC</div>
+    <div class="flow-step">Give Glimpse Routes 100%</div>
+    <div class="flow-step">Impact Documented</div>
+    <div class="flow-step">Donor Sees Proof</div>
+    <div class="flow-step purple-bg">Donor Gives Again</div>
+  </div>
+  <div class="callout" style="margin-top:40px;">
+    <div class="label">On-Chain Receipt</div>
+    <p style="font-family:'Space Mono',monospace; font-size:17px; letter-spacing:0.02em;">
+      { "d": "HQ5C58Tu", "r": "DdqT7Fek", "a": 5.00, "t": 1709000000, "app": "glimpse", "tok": "usdc" }
+    </p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 06 — HOW IT WORKS                     -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="6">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">06 / 17</div>
+  <div class="slide-section">How It Works</div>
+  <h1>FIVE STEPS.<br>THAT'S IT.</h1>
+  <div class="revenue-flow" style="margin-top:24px;">
+    <div class="rev-step">
+      <div class="rev-num">1</div>
+      <div class="rev-text"><strong>Connect Your Wallet</strong><span>Open Glimpse on your Seeker. Tap connect.</span></div>
+    </div>
+    <div class="rev-step">
+      <div class="rev-num">2</div>
+      <div class="rev-text"><strong>Pick Your Cause</strong><span>Choose one. Your preference directs funds to real needs.</span></div>
+    </div>
+    <div class="rev-step">
+      <div class="rev-num">3</div>
+      <div class="rev-text"><strong>Give USDC</strong><span>Any amount. One-time or daily. 100% goes forward.</span></div>
+    </div>
+    <div class="rev-step">
+      <div class="rev-num">4</div>
+      <div class="rev-text"><strong>Get Permanent Proof</strong><span>Recorded on Solana's public ledger. Can never be changed.</span></div>
+    </div>
+    <div class="rev-step">
+      <div class="rev-num">5</div>
+      <div class="rev-text"><strong>A Conversation Opens</strong><span>Real updates from the ground. Not a templated email.</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 07 — REAL CONNECTION                  -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="7">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">07 / 17</div>
+  <div class="slide-section">The Differentiator</div>
+  <h1>NOT A RECEIPT.<br>A RELATIONSHIP.</h1>
+  <p class="large" style="margin-bottom:32px;">After every donation, a conversation opens between you and the Glimpse team. We relay updates from the recipient. You see exactly what your money did.</p>
+  <div class="gov-grid" style="max-width:1400px;">
+    <div class="gov-card">
+      <h3>Zero Fees</h3>
+      <p>Every dollar goes forward. No platform cut. No processing fee. No middleman.</p>
+    </div>
+    <div class="gov-card">
+      <h3>On-Chain Proof</h3>
+      <p>Permanent Solana transaction. Wallet, amount, timestamp &mdash; immutable and publicly verifiable.</p>
+    </div>
+    <div class="gov-card">
+      <h3>Real Connection</h3>
+      <p>A conversation opens. You see what happened. That's what makes someone give again.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 08 — COMMUNITY PARTNERSHIPS           -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="8">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">08 / 17</div>
+  <div class="slide-section">Trust Network</div>
+  <h1>WHO DECIDES WHO<br>GETS THE MONEY?</h1>
+  <p style="font-size:22px; color:var(--ink); max-width:1100px; margin-bottom:28px;">Glimpse scales through relationships, not algorithms. We partner with people who already know the needs on the ground.</p>
+  <div class="flow" style="max-width:1400px;">
+    <div class="flow-step purple-bg">Community Partners</div>
+    <div class="flow-step">Identify &amp; Verify Needs</div>
+    <div class="flow-step purple-bg">Give Glimpse Routes Funds</div>
+    <div class="flow-step">Glimpse Records Proof</div>
+  </div>
+  <div class="callout" style="margin-top:32px; max-width:1300px;">
+    <div class="label">Community Partners</div>
+    <p style="font-size:19px;">Nonprofits, churches, local organizations, and community leaders who already know the needs. They identify recipients. Give Glimpse handles the funds. Glimpse documents the impact and delivers proof back to donors.</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 09 — GLIMPSE vs GIVE GLIMPSE          -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="9">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">09 / 17</div>
+  <div class="slide-section">This Is Important</div>
+  <h1 class="no-bar" style="font-size:64px;">GLIMPSE &ne; GIVE GLIMPSE</h1>
+  <div style="width:120px; height:8px; background:var(--purple); margin:24px 0 32px;"></div>
+  <p style="font-size:20px; color:var(--ink); max-width:1100px; margin-bottom:28px;">Two separate legal entities. Same mission. Here's what each one does and why they're separate.</p>
+
+  <div style="display:grid; grid-template-columns:1fr 60px 1fr; gap:0; max-width:1400px; align-items:start;">
+    <div class="col-card purple-shadow" style="padding:32px 28px;">
+      <div style="display:inline-block; background:var(--purple); color:var(--white); padding:8px 18px; font-size:13px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:14px; box-shadow:6px 6px 0 var(--black);">Nonprofit</div>
+      <h2 style="font-size:26px; margin-bottom:4px;">Give Glimpse</h2>
+      <span class="subtitle">501(c)(3) &mdash; Filing Pending</span>
+      <ul>
+        <li><strong>Receives</strong> 100% of donor USDC</li>
+        <li><strong>Routes</strong> funds to verified recipients</li>
+        <li><strong>Records</strong> every tx on Solana</li>
+      </ul>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:center; height:100%;">
+      <div style="background:var(--purple); color:var(--white); width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; letter-spacing:0.1em;">VS</div>
+    </div>
+    <div class="col-card black-shadow" style="padding:32px 28px;">
+      <div style="display:inline-block; background:var(--ink); color:var(--white); padding:8px 18px; font-size:13px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:14px; box-shadow:6px 6px 0 var(--purple);">For-Profit</div>
+      <h2 style="font-size:26px; margin-bottom:4px;">Glimpse</h2>
+      <span class="subtitle">Public Benefit Corporation</span>
+      <ul>
+        <li><strong>Builds</strong> the app and technology</li>
+        <li><strong>Earns</strong> revenue via business partnerships</li>
+        <li><strong>Documents</strong> verified community impact</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:20px; font-size:16px;">Separate boards. Separate EINs. Arm's-length contracts. Independent by law.</p>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 10 — REVENUE MODEL (merged)           -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="10">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">10 / 17</div>
+  <div class="slide-section">Revenue</div>
+  <h1>THE TRUST LAYER<br>FOR GIVING</h1>
+  <p style="font-size:22px; color:var(--muted); max-width:1100px;">Glimpse is the infrastructure that proves a dollar did what it was supposed to do. Revenue comes from business partnerships &mdash; not donor fees.</p>
+  <div class="flow" style="margin-top:32px; max-width:1400px;">
+    <div class="flow-step">Partner Funds Impact</div>
+    <div class="flow-step purple-bg">Glimpse Documents It</div>
+    <div class="flow-step">Proof Goes On-Chain</div>
+    <div class="flow-step purple-bg">Everyone Sees It</div>
+  </div>
+  <div class="callout-purple callout" style="margin-top:32px; max-width:1300px;">
+    <p style="font-size:20px; letter-spacing:0.04em;">Businesses invest in their community through Glimpse. Every impact is documented, verified, and permanently recorded on Solana. Real revenue from real partnerships.</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 11 — WHY THE TOKEN EXISTS (thesis)    -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="11">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">11 / 17</div>
+  <div class="slide-section">The Token Thesis</div>
+  <h1>DONORS SHOULD<br>GOVERN.</h1>
+  <p class="large" style="margin-bottom:28px;">The people giving the money should be the people deciding where it goes. That's why the token exists.</p>
+  <div class="callout-purple callout" style="max-width:1300px; margin-top:0;">
+    <p style="font-size:24px; letter-spacing:0.04em;">The people who give should be the people who decide. That's the whole point.</p>
+  </div>
+  <div style="margin-top:32px; max-width:1200px;">
+    <div class="label">How This Works</div>
+    <p style="font-size:19px; color:var(--muted);">$GLIMPSE token holders govern how the community pool is deployed. Donors earn tokens through airdrops. Revenue from city partner contracts funds buybacks. The token is backed by real business performance &mdash; not speculation.</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 12 — TOKEN DISTRIBUTION               -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="12">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">12 / 17</div>
+  <div class="slide-section">$Glimpse Token</div>
+  <h1>FAIR LAUNCH<br>ON PUMP.FUN</h1>
+  <p>No pre-sale. No insider allocation. The community holds the majority.</p>
+  <div class="dist-bar" style="margin-top:40px;">
+    <div class="dist-segment dist-community">85% Community</div>
+    <div class="dist-segment dist-donors">10% Donors</div>
+    <div class="dist-segment dist-company">5% Co.</div>
+  </div>
+  <div class="dist-legend">
+    <span><span class="dot" style="background:var(--purple);"></span>85% Community-Held</span>
+    <span><span class="dot" style="background:var(--ink);"></span>10% Donor Airdrops</span>
+    <span><span class="dot" style="background:var(--white);"></span>5% Glimpse Company</span>
+  </div>
+  <div class="callout" style="margin-top:32px; max-width:1200px;">
+    <div class="label">On Tokenomics</div>
+    <p style="font-size:18px;">Exact mechanics being finalized with legal counsel. Detailed tokenomics published after attorney review. Glimpse is committed to doing this right.</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 13 — AIRDROP MECHANIC                 -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="13">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">13 / 17</div>
+  <div class="slide-section">Donor Rewards</div>
+  <h1>0.5% AIRDROPPED<br>EVERY 6 MONTHS</h1>
+  <p>Proportional to your share of total donations. Allocation resets each cycle.</p>
+  <div class="timeline" style="margin-top:36px;">
+    <div class="timeline-block">
+      <h3>Period Opens</h3>
+      <p>Six-month window. Every dollar counts toward your share.</p>
+    </div>
+    <div class="timeline-block">
+      <h3>Donors Give</h3>
+      <p>USDC flows. Receipts recorded on-chain permanently.</p>
+    </div>
+    <div class="timeline-block">
+      <h3>Period Closes</h3>
+      <p>0.5% of total supply released proportionally to donors.</p>
+    </div>
+    <div class="timeline-block">
+      <h3>Reset</h3>
+      <p>New period, new competition. Fresh start every cycle.</p>
+    </div>
+  </div>
+  <p style="margin-top:24px; font-size:17px;">Tokens earned retroactively. Never promised. Never guaranteed.</p>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 14 — REVENUE → BUYBACKS               -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="14">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">14 / 17</div>
+  <div class="slide-section">Token Value</div>
+  <h1>REVENUE FUNDS<br>BUYBACKS</h1>
+  <p style="font-size:22px; color:var(--ink); max-width:1100px;">Buybacks come from real revenue. City partner contracts fund them. Token value tied to business performance &mdash; not hype.</p>
+  <div class="flow" style="margin-top:40px; max-width:1300px;">
+    <div class="flow-step">Partners Pay Glimpse</div>
+    <div class="flow-step purple-bg">Revenue Earned</div>
+    <div class="flow-step">Buybacks Execute</div>
+    <div class="flow-step purple-bg">Token Supported</div>
+  </div>
+  <div class="callout" style="margin-top:36px; max-width:1200px;">
+    <div class="label">The Full Picture</div>
+    <p style="font-size:19px;">Donors give &rarr; earn tokens &rarr; govern the pool. Businesses pay Glimpse &rarr; revenue funds buybacks &rarr; token value supported. Real giving creates real value.</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 15 — ROADMAP                          -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="15">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">15 / 17</div>
+  <div class="slide-section">Roadmap</div>
+  <h1>WHERE THIS<br>IS GOING</h1>
+  <div style="margin-top:32px; max-width:1300px;">
+    <div class="rev-step" style="display:flex; align-items:center; gap:24px; padding:24px 0; border-bottom:3px solid var(--grid);">
+      <div style="min-width:180px;">
+        <div style="font-size:14px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--purple);">Season 1</div>
+        <div style="font-size:13px; opacity:0.5; margin-top:4px;">Now &ndash; June 2026</div>
+      </div>
+      <div>
+        <div style="font-size:20px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Build the Base</div>
+        <div style="font-size:17px; color:var(--muted);">Self-funded. App live on Solana mainnet. First campaigns running. Proving the model works.</div>
+      </div>
+    </div>
+    <div class="rev-step" style="display:flex; align-items:center; gap:24px; padding:24px 0; border-bottom:3px solid var(--grid);">
+      <div style="min-width:180px;">
+        <div style="font-size:14px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--purple);">Season 2</div>
+        <div style="font-size:13px; opacity:0.5; margin-top:4px;">June 2026+</div>
+      </div>
+      <div>
+        <div style="font-size:20px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Expand the Network</div>
+        <div style="font-size:17px; color:var(--muted);">New cities. New partners. The model leaves its first city and begins to replicate. Revenue activates.</div>
+      </div>
+    </div>
+    <div class="rev-step" style="display:flex; align-items:center; gap:24px; padding:24px 0;">
+      <div style="min-width:180px;">
+        <div style="font-size:14px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--purple);">2027</div>
+        <div style="font-size:13px; opacity:0.5; margin-top:4px;">&nbsp;</div>
+      </div>
+      <div>
+        <div style="font-size:20px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Community Decides</div>
+        <div style="font-size:17px; color:var(--muted);">Multiple campaigns complete. Real data. Token holders govern what comes next &mdash; together.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 16 — FOUNDER CLOSE                    -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide" data-slide="16">
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">16 / 17</div>
+  <div class="slide-section">The Founder</div>
+  <h1>FOUR YEARS.</h1>
+  <p class="large" style="max-width:1100px;">NFT project, partner search, traditional fundraising &mdash; none of it worked. Now I built it myself.</p>
+  <div class="sep" style="width:60px; height:6px; background:var(--purple); margin:32px 0;"></div>
+  <p style="font-size:22px; color:var(--ink); max-width:1000px;">Glimpse is live on Solana mainnet. The app is in review for the dApp Store. First donations are happening. This is not a whitepaper &mdash; it's working software.</p>
+  <div class="callout" style="margin-top:32px; max-width:1100px;">
+    <p style="font-size:20px;">We're looking for donors, business partners, and community leaders. If you want to be part of building something real, reach out.</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SLIDE 17 — CLOSE                            -->
+<!-- ════════════════════════════════════════════ -->
+<div class="slide close-slide" data-slide="17">
+  <div class="logo-watermark" style="color:var(--white);">Glimpse</div>
+  <div class="slide-num" style="color:var(--white);">17 / 17</div>
+  <h1 class="mega" style="color:var(--white);">WE'RE BUILDING<br>THE WORLD THE<br>NEXT GENERATION<br>DESERVES.</h1>
+  <p style="margin-top:40px; font-size:20px; color:rgba(255,255,255,0.55); letter-spacing:0.06em;">giveglimpse.com &bull; derrick@giveglimpse.com &bull; @GiveGlimpse &bull; @DerrickWKing</p>
+</div>
+
+<div class="nav-hint">Arrow Keys to Navigate</div>
+
+<!-- ── Slide Navigation ──────────────────────── -->
+<script>
+(function() {
+  var slides = document.querySelectorAll('.slide');
+  var current = 0;
+
+  function showSlide(n) {
+    slides[current].classList.remove('active');
+    current = n;
+    if (current < 0) current = slides.length - 1;
+    if (current >= slides.length) current = 0;
+    slides[current].classList.add('active');
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault();
+      showSlide(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      showSlide(current - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      showSlide(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      showSlide(slides.length - 1);
+    }
+  });
+
+  // Click to advance
+  document.addEventListener('click', function(e) {
+    var scale = parseFloat(document.body.style.transform.replace('scale(','').replace(')','')) || 1;
+    if (e.clientX / scale > 960) {
+      showSlide(current + 1);
+    } else {
+      showSlide(current - 1);
+    }
+  });
+
+  // Auto-scale to fit viewport
+  function scaleToFit() {
+    var scaleX = window.innerWidth / 1920;
+    var scaleY = window.innerHeight / 1080;
+    var s = Math.min(scaleX, scaleY);
+    document.body.style.transform = 'scale(' + s + ')';
+  }
+  scaleToFit();
+  window.addEventListener('resize', scaleToFit);
+})();
+</script>
+
+</body>
+</html>

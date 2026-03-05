@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glimpse — Slides Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --purple: #5b5bd6;
+  --purple-glow: rgba(91, 91, 214, 0.35);
+  --bg: #f0e9ff;
+  --grid: rgba(91, 91, 214, 0.12);
+  --ink: #1a1a2e;
+  --white: #ffffff;
+  --black: #000000;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 1920×1080 Canvas ─────────────────────────────── */
+.canvas {
+  width: 1920px;
+  height: 1080px;
+  position: relative;
+  flex-shrink: 0;
+  transform-origin: center center;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+  font-family: 'Space Mono', monospace;
+  color: var(--ink);
+  overflow: hidden;
+}
+
+/* ── Scanline ─────────────────────────────────────── */
+.scanline {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--purple-glow), transparent);
+  animation: scan 6s ease-in-out infinite;
+  opacity: 0.4;
+  z-index: 90;
+  pointer-events: none;
+}
+@keyframes scan {
+  0%   { top: 0; }
+  50%  { top: calc(100% - 3px); }
+  100% { top: 0; }
+}
+
+/* ── Headline Bar — top of canvas, centered for 9:16 ── */
+.headline-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 80px;
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  z-index: 50;
+}
+
+.headline-logo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--purple);
+}
+
+.headline-text {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--white);
+}
+
+.headline-divider {
+  width: 3px;
+  height: 28px;
+  background: var(--purple);
+  opacity: 0.5;
+}
+
+/* ── Slide Area — large, right-of-center ──────────── */
+.slide-area {
+  position: absolute;
+  top: 80px;
+  left: 480px;
+  right: 0;
+  bottom: 36px;
+  background: rgba(0, 0, 0, 0.03);
+  border-left: 4px solid var(--purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-area::after {
+  content: 'SLIDE / SCREEN SHARE';
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  opacity: 0.06;
+}
+
+/* ── Webcam — bottom left ─────────────────────────── */
+.webcam {
+  position: absolute;
+  bottom: 36px;
+  left: 0;
+  width: 480px;
+  z-index: 50;
+}
+
+.webcam-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--purple);
+  padding: 0 16px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.webcam-label::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: #e53e3e;
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.webcam-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: rgba(0, 0, 0, 0.04);
+  border-top: 4px solid var(--purple);
+}
+
+.webcam-frame::after {
+  content: 'WEBCAM';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  opacity: 0.06;
+}
+
+/* ── Left Sidebar — branding above webcam ─────────── */
+.sidebar {
+  position: absolute;
+  top: 96px;
+  left: 0;
+  width: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 32px;
+}
+
+.sidebar-ca {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.5;
+  word-break: break-all;
+  line-height: 1.6;
+  text-align: center;
+  max-width: 440px;
+}
+
+/* ── Bottom Ticker ────────────────────────────────── */
+.ticker {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 36px;
+  background: var(--purple);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  z-index: 50;
+}
+
+.ticker-content {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  white-space: nowrap;
+  animation: scroll-ticker 30s linear infinite;
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.ticker-content span { opacity: 0.5; }
+
+@keyframes scroll-ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+</style>
+</head>
+<body>
+
+<div class="canvas" id="canvas">
+  <div class="scanline"></div>
+
+  <!-- Headline Bar -->
+  <div class="headline-bar">
+    <div class="headline-logo">GLIMPSE</div>
+    <div class="headline-divider"></div>
+    <!-- ★ CHANGE THIS TEXT PER SLIDE ★ -->
+    <div class="headline-text">Zero Fees. Every Dollar Accounted For.</div>
+  </div>
+
+  <!-- Left Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-ca">Ab26LYP16ZyXvUJQqFYKKPU75GHhdzvhVnYtVUBFpump</div>
+  </div>
+
+  <!-- Webcam — bottom left -->
+  <div class="webcam">
+    <div class="webcam-label">Live</div>
+    <div class="webcam-frame"></div>
+  </div>
+
+  <!-- Slide Area — main content -->
+  <div class="slide-area"></div>
+
+  <!-- Bottom Ticker -->
+  <div class="ticker">
+    <div class="ticker-content">
+      Glimpse <span>&#x2022;</span> Zero Fees <span>&#x2022;</span> Direct Giving <span>&#x2022;</span> On-Chain Receipts <span>&#x2022;</span> Built on Solana <span>&#x2022;</span> Designed for Seeker <span>&#x2022;</span>
+      Glimpse <span>&#x2022;</span> Zero Fees <span>&#x2022;</span> Direct Giving <span>&#x2022;</span> On-Chain Receipts <span>&#x2022;</span> Built on Solana <span>&#x2022;</span> Designed for Seeker <span>&#x2022;</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function fit() {
+  const c = document.getElementById('canvas');
+  const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  c.style.transform = 'scale(' + s + ')';
+}
+window.addEventListener('resize', fit);
+fit();
+</script>
+</body>
+</html>

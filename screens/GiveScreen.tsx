@@ -300,7 +300,13 @@ export default function GiveScreen() {
         // Backend failed but tx is on-chain — show processing state with error
         setProcessingTxSig(result.data.txSignature);
         if (result.data.recordError) {
-          setError(`Backend: ${result.data.recordError}`);
+          console.error(
+            '[give] Donation recorded on-chain but thread creation is delayed:',
+            result.data.recordError,
+          );
+          setError(
+            'Your donation is confirmed on-chain. Message thread setup is taking longer than usual.',
+          );
         }
         transitionToStep('processing');
       }

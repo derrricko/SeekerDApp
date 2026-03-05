@@ -1,56 +1,84 @@
-# Mainnet Status — Launch Filter
+# Glimpse — Ship Status
 
-Last updated: 2026-02-27  
-Working branch: `codex/mainnet-readiness`
+Last updated: 2026-03-05
+Branch: `main`
 
-## Product Directive (Locked)
-
-Keep in mind the main goal is getting this app to mainnet ASAP. Number 1 priority filter everything through that. Things like leaderboard are not a priority. The giving flow must be airtight. We must get to mainnet so we can start taking in donations, even if it is only one donation. We must deploy the app to the Solana dApp Store.
-
-## North Star
-
-Ship one path that works end-to-end on mainnet:
+## North Star — ACHIEVED
 
 `connect wallet -> donate USDC -> confirm on-chain -> record in backend -> open message thread`
 
-If that works reliably, we can launch and take donations.
+End-to-end path working on mainnet since 2026-03-02.
 
-## Strategy Rules
+## Current Priorities
 
-1. Freeze scope on anything not required for the North Star path.
-2. Hardening beats new features.
-3. dApp Store prep runs in parallel, but does not block transaction reliability work.
+1. **Hackathon submission** — Monolith 2026, due Sunday March 9 7PM. Demo video + pitch deck + exceptional app.
+2. **dApp Store approval** — submitted, waiting on review.
+3. **First campaign** — Glimpse company-funded first donation to prove the loop publicly.
 
-## Mainnet Blockers (Current)
+## What Works (Mainnet)
 
-1. Enforce cause selection as 2-3 causes in Give flow.
-2. Remove config drift between app pool address and edge function pool/ATA constants.
-3. Normalize server-side `recipient_id` metadata to avoid client drift.
-4. Remove SOL fallback wording from donor-facing USDC flow.
-5. Restore green quality gates: lint, typecheck, tests.
-6. Align runbook docs to USDC mainnet path.
+- USDC donations via SPL transferChecked + Memo receipt
+- Server-side tx validation (mint, authority, destination ATA, memo)
+- Wallet-signed auth (ed25519 verify, JWT issuance, 24h TTL)
+- Supabase donation recording + conversation creation
+- Orphan retry queue (AsyncStorage) on next wallet connect
+- SGT gate active server-side (`SGT_GATE_ENABLED` env var)
+- Helius RPC for faster reads (mainnet.helius-rpc.com)
+- Helius Enhanced Transactions API — on-chain verification for feed badges
+- Helius webhook — server-side auto-recording of donations (belt-and-suspenders)
+- Dual recording architecture — client + webhook, idempotent on tx_signature
+- Per-wallet donation history cache (no cross-wallet bleed)
+- Hardened unread badge realtime handling
 
-## Deprioritized Until First Mainnet Donation
+## Recent Changes (2026-03-05)
 
-1. Leaderboard implementation.
-2. Group pooling mechanics beyond metadata.
-3. Non-essential UI polish.
-4. Legacy screen cleanup unless it affects launch reliability.
+- Helius integration: RPC switch, enhanced feed, verified badges, webhook edge function
+- Webhook deployed with `--no-verify-jwt` (Helius can't send Supabase JWT)
+- P1 fix: webhook uses `recipient_id: general` instead of hardcoded campaign
+- P1 fix: cross-wallet history bleed resolved with per-wallet staleness cache
+- P2 fix: unread badge increment from unrelated conversations
+- Lint cleanup across impacted files
 
-## Go/No-Go Launch Gates
+## Active Hackathon Sprint
 
-1. One successful USDC mainnet donation from device.
-2. Backend verifier accepts tx and creates donation + conversation row.
-3. Success screen opens the correct thread immediately.
-4. No SOL wording in donor-facing donation + messaging path.
-5. Lint, `tsc`, and tests pass cleanly.
-6. Signed release build installs and runs correctly.
-7. Solana dApp Store submission assets and metadata are complete.
+Hackathon mode active — "hardening beats new features" suspended until 2026-03-09.
+Breaking refactors allowed. Design north star: "making an incredibly complex solution feel simple, fun, and look beautiful."
 
-## Immediate Execution Order
+### Sprint Items (In Progress)
+1. Onboarding carousel rewrite (3-step: Give, Confirm, See Proof)
+2. Dark theme default
+3. Home screen redesign (3-Step Strip variant)
+4. Verified badge upgrade (Shield + G Monogram)
 
-1. Harden give flow validations and messaging reliability.
-2. Lock pool address/ATA config consistency.
-3. Run on-device mainnet E2E.
-4. Produce release candidate build.
-5. Submit to Solana dApp Store.
+## Default Operating Skill
+
+`solana-seeker-dev` v2.1 — see `.agents/skills/solana-seeker-dev/SKILL.md`
+
+## Quality Gates
+
+```
+npx eslint . --ext .ts,.tsx --max-warnings=0
+npx tsc --noEmit
+npm test -- --watchAll=false
+npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output /tmp/glimpse.bundle
+```
+
+If local EMFILE watcher limit fails, use: `CI=true npx react-native bundle ...`
+
+## Edge Functions (Deployed)
+
+| Function | Status | Notes |
+|---|---|---|
+| `wallet-auth` | ACTIVE | JWT issuance from wallet signature |
+| `record-donation` | ACTIVE | Client-side tx validation + recording |
+| `helius-webhook` | ACTIVE | Server-side auto-recording (no-verify-jwt) |
+| `nonce` | ACTIVE | Legacy v1, unused |
+| `siws-verify` | ACTIVE | Legacy v1, unused |
+| `record-transaction` | ACTIVE | Legacy v1, unused |
+
+## Reference
+
+For full architecture and entity structure, see `CLAUDE.md`.
+For founder voice, see `docs/SOUL.md`.
+For design system, see `docs/design/brand-guide.md`.
+For skill spec, see `.agents/skills/solana-seeker-dev/SKILL.md`.

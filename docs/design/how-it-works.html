@@ -465,7 +465,7 @@ strong { font-weight: 700; }
   flex: 1;
   min-width: 120px;
   background: var(--white);
-  border: 4px solid var(--black);
+  border: 3px solid var(--ink);
   padding: 16px 10px;
   font-size: 0.68rem;
   font-weight: 700;
@@ -476,6 +476,7 @@ strong { font-weight: 700; }
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--ink);
 }
 
 .flow-step:not(:last-child)::after {
@@ -485,12 +486,6 @@ strong { font-weight: 700; }
   font-size: 1.2rem;
   color: var(--purple);
   z-index: 2;
-}
-
-.flow-step:nth-child(odd) {
-  background: var(--purple);
-  color: var(--white);
-  border-color: var(--purple);
 }
 
 @media (max-width: 640px) {
@@ -848,7 +843,6 @@ footer {
 <!-- ════════════════════════════════════════════════ -->
 <section class="hero">
   <div class="container-narrow">
-    <div class="tag">Glimpse</div>
     <h1>HOW IT WORKS</h1>
     <p class="hero-tagline">Give USDC. See what happened. Give again.</p>
     <div class="sep"></div>
@@ -923,13 +917,13 @@ footer {
 <section>
   <div class="container">
     <div class="section-bar">02 &mdash; Community Partnerships</div>
-    <p>Glimpse scales through relationships, not algorithms. We partner directly with communities, nonprofits, and local groups to identify real needs and route donor dollars where they matter most.</p>
+    <p>Give Glimpse scales through relationships, not algorithms. We partner directly with communities, nonprofits, and local groups to identify real needs and route donor dollars where they matter most.</p>
 
     <div class="hub-grid">
       <div class="hub-card reveal">
         <div class="hub-num">01</div>
         <h3>Partner</h3>
-        <p>Glimpse works with nonprofits, churches, community organizations, and local leaders who already know the needs on the ground.</p>
+        <p>Give Glimpse works with nonprofits, churches, community organizations, and local leaders who already know the needs on the ground.</p>
       </div>
 
       <div class="hub-card reveal">
@@ -941,13 +935,13 @@ footer {
       <div class="hub-card reveal">
         <div class="hub-num">03</div>
         <h3>Expand</h3>
-        <p>What works in one community becomes the model for the next. Glimpse grows city by city, relationship by relationship.</p>
+        <p>What works in one community becomes the model for the next. Give Glimpse grows city by city, relationship by relationship.</p>
       </div>
     </div>
 
     <div class="callout reveal">
       <div class="label">How Partnerships Work</div>
-      <p>Community partners identify recipients and verify needs. Glimpse handles funds, records every transaction on Solana's public ledger, and delivers proof back to donors &mdash; creating the connection that keeps people giving.</p>
+      <p>Community partners identify recipients and verify needs. Give Glimpse handles funds and routes every dollar. Glimpse records every transaction on Solana&rsquo;s public ledger and delivers proof back to donors &mdash; creating the connection that keeps people giving.</p>
     </div>
   </div>
 </section>
@@ -963,7 +957,7 @@ footer {
     <div class="label" style="margin-top:32px;">Donation Flow</div>
     <div class="flow reveal">
       <div class="flow-step">Donor Gives USDC</div>
-      <div class="flow-step">Glimpse Routes 100%</div>
+      <div class="flow-step">Give Glimpse Routes 100%</div>
       <div class="flow-step">Glimpse Documents Impact</div>
       <div class="flow-step">Donor Sees Proof</div>
       <div class="flow-step">Donor Gives Again</div>
@@ -974,7 +968,7 @@ footer {
       <span class="memo-label">On-Chain Receipt (Solana Memo)</span>
       <code>{
   <span class="memo-key">"d"</span>: <span class="memo-str">"HQ5C58Tu"</span>,     <span style="color:#666">// donor wallet</span>
-  <span class="memo-key">"r"</span>: <span class="memo-str">"DdqT7Fek"</span>,     <span style="color:#666">// pool wallet</span>
+  <span class="memo-key">"r"</span>: <span class="memo-str">"DdqT7Fek"</span>,     <span style="color:#666">// glimpse wallet</span>
   <span class="memo-key">"a"</span>: <span class="memo-val">5.00</span>,            <span style="color:#666">// USDC amount</span>
   <span class="memo-key">"t"</span>: <span class="memo-val">1709000000</span>,      <span style="color:#666">// timestamp</span>
   <span class="memo-key">"app"</span>: <span class="memo-str">"glimpse"</span>,     <span style="color:#666">// app identifier</span>
@@ -1068,7 +1062,7 @@ footer {
             </div>
             <div class="example-step">
               <span class="example-num">3</span>
-              <span>$25.00 lands in the Glimpse wallet. A permanent receipt is written to Solana &mdash; her wallet, the amount, the timestamp. It can never be changed.</span>
+              <span>$25.00 lands in the Give Glimpse wallet. A permanent receipt is written to Solana &mdash; her wallet, the amount, the timestamp. It can never be changed.</span>
             </div>
             <div class="example-step">
               <span class="example-num">4</span>
@@ -1087,21 +1081,21 @@ footer {
       <div class="faq-item reveal">
         <div class="faq-q">Where does my money go?</div>
         <div class="faq-a">
-          <div class="faq-a-inner">100% of your donation goes forward. Glimpse takes zero platform fees. Your USDC goes directly to the Glimpse wallet, which routes it to verified recipients identified by our community partners. Every transaction is recorded permanently on Solana.</div>
+          <div class="faq-a-inner">100% of your donation goes forward. Zero platform fees. Your USDC goes to the Give Glimpse wallet, which routes it to verified recipients identified by our community partners. Every transaction is recorded permanently on Solana.</div>
         </div>
       </div>
 
       <div class="faq-item reveal">
         <div class="faq-q">Who decides who gets the money?</div>
         <div class="faq-a">
-          <div class="faq-a-inner">Glimpse works with community partners &mdash; nonprofits, churches, local organizations &mdash; who already know the needs on the ground. They identify and verify recipients. Glimpse handles the funds and the proof.</div>
+          <div class="faq-a-inner">Give Glimpse works with community partners &mdash; nonprofits, churches, local organizations &mdash; who already know the needs on the ground. They identify and verify recipients. Give Glimpse handles the funds. Glimpse records the proof.</div>
         </div>
       </div>
 
       <div class="faq-item reveal">
         <div class="faq-q">Is this tax-deductible?</div>
         <div class="faq-a">
-          <div class="faq-a-inner">No. Glimpse is a Public Benefit Corporation, not a 501(c)(3) nonprofit. Your donation is a direct gift from one person to another. We are in the process of applying for the appropriate nonprofit status, but as of today, donations are not tax-deductible.</div>
+          <div class="faq-a-inner">Not yet. Donations are routed through Give Glimpse, a separate nonprofit entity currently filing for 501(c)(3) status. Tax-deductible status is pending IRS approval. Donors will be notified upon approval.</div>
         </div>
       </div>
 
@@ -1122,7 +1116,7 @@ footer {
       <div class="faq-item reveal">
         <div class="faq-q">What is Glimpse, exactly?</div>
         <div class="faq-a">
-          <div class="faq-a-inner">Glimpse is a zero-fee donation app. You give USDC. It's recorded permanently on Solana. A conversation opens so you can see exactly what your money did. That's it. No middlemen. No mystery. Just a direct line between you and the person whose life changed.</div>
+          <div class="faq-a-inner">Glimpse is a zero-fee donation app built on Solana. You give USDC through the app. Give Glimpse &mdash; a separate nonprofit &mdash; receives and routes 100% of your donation. Every transaction is recorded permanently on-chain. A conversation opens so you can see exactly what your money did. No mystery. Real connection.</div>
         </div>
       </div>
     </div>
@@ -1144,7 +1138,7 @@ footer {
       <a href="https://x.com/GiveGlimpse" class="cta-link outline">DM Us on X</a>
     </div>
 
-    <p style="font-size:0.65rem; opacity:0.35; margin-top:40px; letter-spacing:0.08em; text-transform:uppercase; max-width:50ch; margin-left:auto; margin-right:auto;">Glimpse is a Public Benefit Corporation. Donations are not tax-deductible. Your gift is a direct person-to-person donation.</p>
+    <p style="font-size:0.65rem; opacity:0.35; margin-top:40px; letter-spacing:0.08em; text-transform:uppercase; max-width:50ch; margin-left:auto; margin-right:auto;">Glimpse is a Public Benefit Corporation. Donations are routed through Give Glimpse, a separate nonprofit. Tax-deductible status pending 501(c)(3) approval.</p>
   </div>
 </section>
 

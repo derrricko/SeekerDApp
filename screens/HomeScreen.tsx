@@ -1,72 +1,118 @@
-import React, {useState} from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import React, {useEffect, useRef} from 'react';
+import {
+  Animated,
+  Easing,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {useTheme} from '../theme/Theme';
-import GridBackground from '../ui/GridBackground';
+
+const STRIP_STEPS = ['GIVE', 'CONFIRM', 'SEE PROOF'] as const;
 
 export default function HomeScreen({onContinue}: {onContinue: () => void}) {
   const {theme} = useTheme();
-  const [isPressed, setIsPressed] = useState(false);
-  const [isLeaving, setIsLeaving] = useState(false);
+  const stripValues = useRef(
+    STRIP_STEPS.map(() => new Animated.Value(0)),
+  ).current;
 
-  const handlePress = () => {
-    if (isLeaving) {
-      return;
+  useEffect(() => {
+    for (const value of stripValues) {
+      value.setValue(0);
     }
 
-    setIsLeaving(true);
-
-    // Keep Android tap sound and complete navigation quickly after click-down.
-    setTimeout(() => {
-      onContinue();
-    }, 120);
-  };
+    Animated.stagger(
+      110,
+      stripValues.map(value =>
+        Animated.timing(value, {
+          toValue: 1,
+          duration: 170,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+      ),
+    ).start();
+  }, [stripValues]);
 
   return (
-    <View style={[styles.root, {backgroundColor: '#EDE8FA'}]}>
-      <GridBackground />
-
-      <View style={styles.centerWrap}>
-        <View style={styles.cartoonButtonWrap}>
-          <View
-            style={[
-              styles.buttonShadowPlate,
-              {
-                borderColor: '#1A1125',
-                backgroundColor: '#3F35AB',
-                opacity: isPressed ? 0.2 : 1,
-              },
-            ]}
-          />
-
-          <Pressable
-            onPressIn={() => setIsPressed(true)}
-            onPressOut={() => setIsPressed(false)}
-            onPress={handlePress}
-            android_disableSound={false}
-            style={[
-              styles.giveButton,
-              {
-                backgroundColor: '#6554D1',
-                borderColor: '#1A1125',
-              },
-              isPressed && styles.giveButtonPressed,
-            ]}>
-            <View
-              style={[
-                styles.topHighlight,
-                {backgroundColor: 'rgba(255,255,255,0.24)'},
-              ]}
-            />
-
-            <Text
-              style={[
-                styles.giveText,
-                {fontFamily: theme.typography.brand, color: '#FFFFFF'},
-              ]}>
-              give
-            </Text>
-          </Pressable>
+    <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+      <View style={styles.content}>
+        <View
+          style={[
+            styles.stripWrap,
+            {
+              borderColor: theme.colors.borderMuted,
+              backgroundColor: theme.colors.surface,
+            },
+          ]}>
+          {STRIP_STEPS.map((step, index) => {
+            const value = stripValues[index];
+            const isLast = index === STRIP_STEPS.length - 1;
+            return (
+              <React.Fragment key={step}>
+                <Animated.View
+                  style={[
+                    styles.stepPill,
+                    {
+                      borderColor: theme.colors.borderMuted,
+                      backgroundColor: value.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [
+                          theme.colors.surfaceMuted,
+                          `${theme.colors.accent}33`,
+                        ],
+                      }),
+                    },
+                  ]}>
+                  <Animated.Text
+                    style={[
+                      styles.stepText,
+                      {
+                        fontFamily: theme.typography.brand,
+                        color: value.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [
+                            theme.colors.textSecondary,
+                            theme.colors.textPrimary,
+                          ],
+                        }),
+                      },
+                    ]}>
+                    {step}
+                  </Animated.Text>
+                </Animated.View>
+                {!isLast ? (
+                  <Text
+                    style={[
+                      styles.arrow,
+                      {
+                        color: theme.colors.textTertiary,
+                        fontFamily: theme.typography.brand,
+                      },
+                    ]}>
+                    →
+                  </Text>
+                ) : null}
+              </React.Fragment>
+            );
+          })}
         </View>
+
+        <Pressable
+          onPress={onContinue}
+          style={({pressed}) => [
+            styles.cta,
+            {
+              backgroundColor: theme.colors.accent,
+              borderColor: theme.colors.border,
+              transform: [{scale: pressed ? 0.985 : 1}],
+            },
+          ]}>
+          <Text style={[styles.ctaText, {fontFamily: theme.typography.brand}]}>
+            START DONATION
+          </Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -75,53 +121,60 @@ export default function HomeScreen({onContinue}: {onContinue: () => void}) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    position: 'relative',
   },
-  centerWrap: {
+  content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
+    gap: 18,
   },
-  cartoonButtonWrap: {
-    position: 'relative',
-    width: 236,
-    height: 112,
+  stripWrap: {
+    width: '100%',
+    maxWidth: 420,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonShadowPlate: {
-    position: 'absolute',
-    width: 216,
-    height: 86,
-    borderRadius: 44,
-    borderWidth: 4,
-    transform: [{translateY: 10}, {translateX: 4}],
-  },
-  giveButton: {
-    width: 216,
-    height: 86,
-    borderRadius: 44,
-    borderWidth: 4,
+  stepPill: {
+    borderWidth: 1,
+    borderRadius: 9,
+    minWidth: 94,
+    minHeight: 38,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-    transform: [{translateX: 0}, {translateY: 0}],
+    paddingHorizontal: 8,
   },
-  giveButtonPressed: {
-    transform: [{translateX: 3}, {translateY: 8}],
-  },
-  topHighlight: {
-    position: 'absolute',
-    top: 9,
-    width: '76%',
-    height: 18,
-    borderRadius: 999,
-  },
-  giveText: {
-    fontSize: 39,
-    letterSpacing: 3,
-    textTransform: 'lowercase',
+  stepText: {
+    fontSize: 10,
+    lineHeight: 12,
+    letterSpacing: 0.9,
     fontWeight: '700',
-    lineHeight: 42,
+  },
+  arrow: {
+    marginHorizontal: 7,
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '700',
+  },
+  cta: {
+    width: '100%',
+    maxWidth: 420,
+    borderWidth: 2,
+    borderRadius: 12,
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaText: {
+    color: '#F3EFFF',
+    fontSize: 12,
+    lineHeight: 14,
+    letterSpacing: 1.2,
+    fontWeight: '700',
   },
 });

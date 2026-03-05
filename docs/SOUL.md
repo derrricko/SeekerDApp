@@ -1,106 +1,92 @@
-# SOUL.md — The Voice Behind Glimpse
+# SOUL.md — The Soul of Glimpse
 
-This is the permanent emotional and narrative reference for the Glimpse project. It is not a pitch deck, not a brand guide, not a feature spec. It answers: Who is this person, what does he believe, and how should anything written on his behalf sound?
+This is the permanent reference for the Glimpse project's identity, voice, and direction. It answers: what does Glimpse build, why does it matter, and how should anything written on its behalf sound?
 
 Anyone — human or AI — writing copy, content, pitches, social posts, or in-app text for Glimpse should read this first.
 
-For the brand design system (colors, typography, logos), see `docs/brand-guide.md`.
-For the pitch deck, demo script, and Q&A prep, see `docs/derrick-working-doc.md`.
+For the brand design system (colors, typography, logos), see `docs/design/brand-guide.md`.
+For the hackathon pitch deck, see `docs/design/pitch-deck-monolith-2026.html`.
 For the condensed always-on version, see the "Founder Voice" section in `CLAUDE.md`.
-For current build execution priorities and mainnet launch gating, see `STATUS.md`.
+For current priorities, see `STATUS.md`.
 
 ---
 
-## 1. The Founder
+## 1. The Mission
 
-Derrick Woepking. Based in Muscatine, Iowa. Husband. Father of a one-year-old son.
+Glimpse exists to give people a glimpse of the Kingdom of God through sacrificial giving.
 
-He has no technical background. He started trying to build Glimpse four years ago as an NFT project in 2022 — the tooling wasn't ready. He tried to find a technical co-founder — that didn't work out. He tried traditional fundraising — that didn't work either. In 2026, AI tooling finally let him build the entire product himself: the React Native mobile app, the Solana integration, the Supabase backend. Every line of code. Solo.
+The product is the infrastructure that makes this possible: zero-fee USDC donations on Solana with permanent on-chain receipts, verified impact documentation, and real human connection between donors and recipients.
 
-He is faith-driven but not performative about it. He says "God prompted me" as a statement of fact about his experience, not as marketing. His conviction came from personal experience — buying a stranger a car, sponsoring a child in Africa, watching his friend bootstrap a nonprofit in Tulsa — not from market research.
-
-He has been to the galas. He personally knows nonprofit founders. He has seen them switch into fundraising mode and watched the system force good people to perform instead of do the work they set out to do.
+The thesis is simple: show people what their money did, and they give again. Build the proof loop, and giving scales.
 
 ---
 
-## 2. The Origin Story
+## 2. The Problem (Data)
 
-Three beats. This is the canonical telling.
+These numbers define the opportunity. Use them. They are sourced and cited in `docs/research/glimpse-stats.md`.
 
-### Beat 1 — The Forbes List
+**The retention crisis:**
+- 3 out of 4 donors never give again (26.3% overall retention, FEP Q2 2025)
+- New donor retention: 7.2% (FEP Q1 2024)
+- ~70% of donors give only once and never return
+- #1 reason for churn: lack of connection and transparency
 
-I was at my desk looking at the Forbes Top Charities list. Billions of dollars flowing into the highest-donated platforms in the US — and essentially zero visible impact. Nobody let me down specifically. I just saw a problem and knew there had to be a way to make this antiquated system better. That was four years ago.
+**The proof gap:**
+- Once a donor gives a second gift, retention nearly doubles to 59%
+- The second gift is the "golden donation" — the inflection point
+- The driver of the second gift: seeing what your money did
 
-### Beat 2 — Emmanuel
+**The scale:**
+- $592.5 billion in US charitable giving in 2024 (Giving USA 2025)
+- $1B+ in crypto donations in 2024, projected $2.5B in 2025
+- 70% of Forbes Top 100 charities now accept crypto
+- Stablecoins processed $30T in 2024 — more than Visa + Mastercard combined
+- Even if only 1% of $592.5B is misused, that's $5 billion
 
-In 2021, I met an immigrant from Ethiopia named Emmanuel. It was cold out. He was standing outside a gas station. I was in a hurry — I needed to get home — but God prompted me to give him a ride, and I couldn't leave him there.
-
-We became friends. I met his family, got to know him, and found out he didn't have a car or a way to get to work. So I bought him one. A $3,500 Toyota. It was older, but it got the job done. I only had $5,000 at the time. I got him tires and paid for his first few months of insurance. I didn't tell anyone. It was the most intense thing I've done — I second-guessed it, but I knew I was supposed to do it.
-
-He and his mother thanked me immensely. Emmanuel got a different job and was able to make more money. After that moment I realized two things: one, that most people's entire lives will be forever changed by a few thousand dollars. And two, that one of the most impactful things a person can do is sacrificially give to another person with no expectation. After my marriage and the birth of my son, it was one of the best things I've ever experienced.
-
-### Beat 3 — Anita
-
-When I was younger, we used to sponsor kids from Africa monthly. I remember a girl named Anita. I remember her handwriting — she wrote "thank you" — and the photos they would send of pure happiness and joy. We got to know them, heard their stories, and they wrote us letters. That's why we kept giving.
-
-But nonprofits in the US don't do anything like that. You hear about what your money is being used for, but you never see the direct impact. What would keep me giving again? That connection piece. Not a templated email blast — something real.
-
-That's what Glimpse is. The Anita model, on-chain, at scale.
-
----
-
-## 3. The People
-
-These are real people. Every person in Glimpse's narrative is real. If a story hasn't happened yet, say so.
-
-### Emmanuel
-Ethiopian immigrant Derrick met in 2021. Standing outside a gas station in the cold. Derrick gave him a ride, then bought him a $3,500 Toyota when he had $5,000 to his name. Emmanuel got a better job. His life changed. He represents the thesis: most lives are forever changed by a few thousand dollars. Derrick has photos of Emmanuel with the car.
-
-**When to use:** The Emmanuel story is the emotional anchor — use it to open pitches, not to close them. It's the "why this founder" story. The gas station, the cold, the Toyota, the $5,000 — these details make it land.
-
-### Anita
-A sponsored child from Africa whose handwriting Derrick still remembers. She wrote "thank you." The photos showed pure happiness. Anita represents the missing piece: human connection as the engine of sustained giving. The sponsor-a-child model is what Glimpse recreates on-chain.
-
-**When to use:** Anita is the "golden donation" proof. She belongs in any conversation about donor retention, the connection gap, or why Glimpse exists. The handwriting detail is the sensory anchor — use it.
-
-### Evan DoGood
-Yes, that's literally his name. Founder of BeHeard Movement in Tulsa. He bootstrapped everything, burned the boats, relied on God and others to fund his vision. He works hard and tirelessly. His workers barely make any money but do it because they love people. Evan is committed to working with Glimpse as the first nonprofit partner. Derrick has videos from the nonprofit.
-
-**When to use:** Evan represents the nonprofit founder ground down by the current system. He's proof that good people exist doing hard work — they just need better rails. Use him when talking about the nonprofit side of the platform, partnership model, or BeHeard specifically.
-
-### Derrick's Son
-One year old. Never named in public materials. He represents the "why" behind the long-term vision.
-
-**When to use:** The son is the closer. Always. "My son is one year old. I'm building the world I want him to grow up in." This line ends pitches, demos, and decks. Do not open with it.
+**The fee problem:**
+- Fundraising platforms charge 3-8% in fees
+- Credit cards add 3-5% per transaction
+- GoFundMe takes 3%. Glimpse takes zero.
 
 ---
 
-## 4. The Emotional Thesis
+## 3. The Product Thesis
 
-These are convictions, not taglines. They are the sentences Derrick would say if cornered at a party with 60 seconds.
+Glimpse is the infrastructure that proves a dollar did what it was supposed to do.
 
-**On giving:**
-> "Most people's entire lives will be forever changed by a few thousand dollars."
+**The proof loop:**
+1. Donor gives USDC (zero fees)
+2. Transaction recorded permanently on Solana
+3. Impact documented and verified
+4. Donor sees proof
+5. Donor gives again
 
-> "One of the most impactful things a person can do is sacrificially give to another person with no expectation."
+**What makes it work:**
+- **On-chain receipts** — wallet, amount, timestamp, immutable, publicly verifiable
+- **Zero platform fees** — every dollar goes forward
+- **Real connection** — a conversation opens after every donation, not a templated email
+- **Solana** — sub-second finality, fractions of a penny in fees, permanent public ledger
 
-**On the system:**
-> "The system forces good people to perform instead of do the work."
+**The product is not:**
+- A marketplace for causes
+- A social media platform for nonprofits
+- A place to browse stories
+- A GoFundMe competitor with blockchain
 
-> "The best marketers take money from less savvy founders who only focus on solving problems."
+**The product is:**
+- The trust layer between money and impact
+- The receipt for charitable giving
+- The proof loop that turns one-time donors into sustained givers
 
-> "Founders are forced to beg for money every year instead of solving the problems they set out to solve."
+---
 
-**On the gap:**
-> "What would keep me giving again? The connection piece. Not a templated email blast — something real."
+## 4. The Founder
 
-**On doubt:**
-> "Doesn't excite most people" is not the same as "wrong idea." Airbnb was rejected by every investor because "strangers won't sleep in other people's beds." The idea didn't excite people. The proof did. The problem isn't the idea — it's that the proof-of-impact loop doesn't exist yet. You're asking people to imagine the thing that makes Glimpse different, instead of showing it to them.
+Derrick Woepking. Based in Muscatine, Iowa. Solo founder and builder.
 
-**On the scale:**
-> "Even if only 1% of $592.5B is misused, that's $5 billion."
+No technical background. Started trying to build Glimpse four years ago — NFT project in 2022, co-founder search, traditional fundraising. None of it worked. In 2026, AI tooling made it possible to build the entire product solo: React Native app, Solana integration, Supabase backend. Every line of code.
 
-> "The nonprofit industry is headed to a trillion dollars by 2030, and the rails haven't changed."
+Faith-driven but not performative. Personally knows nonprofit founders. Has seen the system force good people to perform instead of doing the work they set out to do.
 
 ---
 
@@ -109,67 +95,58 @@ These are convictions, not taglines. They are the sentences Derrick would say if
 Exact, word-for-word. Do not paraphrase. Do not "improve." Grouped by when to deploy them.
 
 ### Openers (start a pitch, a post, a conversation)
-> "I looked at the Forbes Top Charities list. Billions of dollars each. And I couldn't find any proof of what happened to the money."
+> "3 out of 4 donors never give again. Not because they stopped caring. Because nobody showed them what happened."
 
-> "It was cold out. Emmanuel was standing outside a gas station. I was in a hurry, but I couldn't leave him there."
+> "Even if only 1% of $592 billion is misused, that's $5 billion. And nobody can prove otherwise."
 
 ### Problem lines (establish what's broken)
 > "The system forces good people to perform instead of do the work."
 
-> "The best marketers take money from less savvy founders who only focus on solving problems."
-
-> "I've been to the galas. When you personally know founders, you see them in fundraising mode versus who they really are."
-
-### Proof lines (show you've lived it)
-> "I had five thousand dollars to my name. I bought him a thirty-five-hundred dollar Toyota. Got him tires. Paid his first few months of insurance. I didn't tell anyone."
-
-> "We sponsored a girl named Anita. I remember her handwriting. She wrote 'thank you.' That's why we kept giving."
-
-> "Evan DoGood — yes, that's literally his name — bootstrapped everything, burned the boats, and his workers barely make any money but do it because they love people."
+> "The nonprofit industry is headed to a trillion dollars by 2030, and the rails haven't changed."
 
 ### Differentiators (what makes Glimpse different)
 > "GoFundMe takes three percent. We take zero."
 
-> "I used Solana. I compared it to Ethereum. The difference was obvious."
+> "Show people what happened, and they give again. That's it."
+
+> "70% of nonprofits already accept crypto donations. The question isn't whether they'll say yes to money — it's whether the platform makes it easy enough."
+
+### Product lines (what Glimpse builds)
+> "Every dollar tracked. Every impact documented. Every donor connected."
+
+> "This is not a whitepaper. This is working software on Solana mainnet."
+
+> "Glimpse becomes the place to verify the impact of money."
 
 ### Persistence lines (why you, why now)
 > "Four years. NFT project, partner search, traditional fundraising — none of it worked. Now I built it myself."
 
-> "70% of nonprofits already accept crypto donations. The question isn't whether they'll say yes to money — it's whether the platform makes it easy enough."
-
 ### Vision lines (where this is going)
 > "A Seeker in every trustworthy nonprofit in America. That's year 10."
 
-> "Glimpse becomes the place to verify the impact of money."
-
 ### Closers (end a pitch, a post, a conversation)
-> "My son is one year old. I'm building the world I want him to grow up in."
+> "Every dollar tracked. Every impact proven. Try it."
 
-> "Most people's entire lives will be forever changed by a few thousand dollars."
+> "We're not asking you to trust us. We're showing you the proof."
 
 ---
 
 ## 6. Voice and Tone
 
-This is how Derrick specifically talks — not how the brand abstractly presents. These patterns are drawn from his actual speech.
-
 ### Sentence structure
-Short. Declarative. Leads with the human, not the feature. Uses commas sparingly. Prefers periods. His natural rhythm alternates between short punches ("It was cold out.") and one longer sentence that carries the emotional weight.
+Short. Declarative. Leads with data or product, not feelings. Uses commas sparingly. Prefers periods. Alternates between short punches and one longer sentence that carries the weight.
 
-### Words he gravitates toward
-"the work," "the need," "proof," "landed," "documented," "real," "personal," "the gap," "connection," "conviction," "sacrificial," "the rails."
+### Words Glimpse gravitates toward
+"proof," "documented," "verified," "tracked," "impact," "on-chain," "permanent," "real," "the gap," "the rails," "zero fees," "every dollar."
 
 ### Numbers are always specific
-"$3,500 Toyota," not "an affordable car." "$5,000 to my name," not "limited savings." "Four years," not "several years." "73.7% of donors," not "most donors."
+"$592.5 billion," not "hundreds of billions." "26.3% retention," not "low retention." "Four years," not "several years." "3 out of 4," not "most."
 
 ### Register
-Conversational but not casual. He says "I couldn't leave him there," not "I felt compelled to offer assistance." He says "I didn't tell anyone," not "I kept it private." Plain English with emotional precision.
+Direct and concrete. Plain English with technical precision. "Every transaction on Solana. Transparent. Permanent." Not "leveraging blockchain technology to create accountability."
 
-### The founder's cadence
-When telling a story, he layers details that build pressure: the cold, the gas station, the hurry, the prompting, the ride, the friendship, the car, the cost, the silence. Each sentence adds a specific detail until the weight is undeniable. Then the thesis drops in one line.
-
-### What warmth sounds like here
-Not exclamation points. Not "amazing." Warmth in Derrick's voice sounds like specificity — knowing someone's name, remembering handwriting, paying for insurance. Caring is shown through detail, not adjectives.
+### What confidence sounds like here
+Not exclamation points. Not "amazing." Confidence sounds like stating facts: "This works on mainnet." "Every dollar goes forward." "The receipt is permanent." The product speaks through results, not claims.
 
 ---
 
@@ -181,22 +158,19 @@ Things Glimpse never says, never does, never sounds like.
 "leverage," "synergy," "utilize," "facilitate," "stakeholder," "ecosystem" (in a business sense), "revolutionary," "game-changing," "disrupting," "empower" (unless quoting someone else), "make a difference" (too generic), "help those in need" (too abstract)
 
 ### Never frame giving as consumption
-No "shop for a cause." No "browse stories." The founder explicitly wrote in `data/content.ts`: "You're not here to browse causes or shop for a story that moves you."
+No "shop for a cause." No "browse stories." Glimpse is infrastructure for giving, not a marketplace for stories.
 
 ### Never guilt-trip
-Glimpse inspires through proof, not shame. "See what your money did" — not "think about what you could have done." The brand guide says: "We don't guilt-trip. We inspire through proof."
-
-### Never over-polish the founder's voice
-His power is in plainness. "I was in a hurry — I needed to get home — but God prompted me to give him a ride" is stronger than any rewrite of it. When quoting Derrick, preserve the raw quality. Don't smooth out the edges.
-
-### Never fake a story
-Every person in Glimpse's narrative is real. Emmanuel is real. Anita was real. Evan is real. The mock glimpse proofs in `data/content.ts` (Marcus, Tamika, Rosa) are explicitly labeled as placeholders. If a story hasn't happened, say so. If a detail came from the AI and not the founder, don't attribute it to him.
+Glimpse inspires through proof, not shame. "See what your money did" — not "think about what you could have done."
 
 ### Never lead with the technology
-"Solana" is the answer to "how," not the answer to "why." The pitch opens with Emmanuel, not with blockchain. The product description starts with the need, not the chain.
+"Solana" is the answer to "how," not the answer to "why." The pitch opens with the problem, not with blockchain. The product description starts with impact, not the chain.
 
-### Never say "we hope" or "we believe we can"
-Derrick doesn't hedge. He says "I'm sure" and "I knew I was supposed to do it." The brand guide says: "Confident — We believe in what we're building." Match that conviction. State things. Don't hope them.
+### Never hedge
+Don't say "we hope" or "we believe we can." State things. "This works on mainnet." "Every dollar goes forward." "The receipt is permanent." Match conviction with facts.
+
+### Never fake data
+Every stat in Glimpse materials is sourced. If a number hasn't been verified, don't use it. If a result hasn't happened yet, say so.
 
 ---
 
@@ -205,28 +179,35 @@ Derrick doesn't hedge. He says "I'm sure" and "I knew I was supposed to do it." 
 Faith is part of the founder's motivation, not the product's marketing. This distinction is deliberate and must be maintained.
 
 ### Where faith appears
-- The biblical anchor is Matthew 6:3: "But when you give to the needy, do not let your left hand know what your right hand is doing." This is embedded in the brand guide and the app's metadata.
-- The name "Glimpse" carries three meanings (from `data/content.ts`): a glimpse into the Kingdom, a glimpse into the work, a glimpse into someone's life. The Kingdom reference is intentional and first.
-- Derrick says "God prompted me" about the Emmanuel ride. He describes Evan as someone who "relied on God and others." These are personal statements of experience.
+- The biblical anchor is Matthew 6:3: "But when you give to the needy, do not let your left hand know what your right hand is doing."
+- The name "Glimpse" carries three meanings: a glimpse into the Kingdom, a glimpse into the work, a glimpse into someone's life. The Kingdom reference is intentional and first.
 
 ### Guidelines for writing
-- **Include** faith references when drawing from the founder's own words. If he said "God prompted me," write "God prompted me."
-- **Do not** insert new religious language that the founder didn't say.
+- **In product copy** (onboarding, UI, marketing): keep the tone inclusive. The app serves everyone. The faith dimension lives in the project's deeper meaning, not in calls-to-action or feature descriptions.
+- **Do not** insert new religious language.
 - **Do not** remove existing religious language to "play it safe."
-- **In product copy** (onboarding, UI, marketing): keep the tone inclusive. The app serves everyone. The faith dimension lives in the founder's story and the brand's deeper meaning, not in calls-to-action or feature descriptions.
 - The relationship to faith is: motivation and meaning, not marketing and messaging.
 
 ---
 
 ## 9. Business Identity
 
-### Entity
-Public Benefit Corporation (Delaware). A for-profit technology company with a legally codified social mission. Glimpse builds the platform and the connection layer between donors and people in need.
+### Two entities, one mission
+
+- **Give Glimpse** — Planned 501(c)(3) nonprofit (not yet filed). Receives and routes 100% of donor USDC. Vets recipients through community partners. Issues on-chain receipts for every transaction. Zero fee to donors.
+- **Glimpse** — Public Benefit Corporation (Delaware). Builds and owns the app and technology. Earns revenue via business partnerships. Stated public benefit: supporting Give Glimpse.
+
+These entities operate independently with arm's-length contracts. Separate boards, separate EINs. Glimpse cannot control Give Glimpse. Give Glimpse cannot distribute profits to Glimpse. For the full entity structure and operating model, see `docs/design/the-generosity-compact.html`.
 
 Glimpse is a new company navigating an evolving regulatory and legal landscape. Our entity structure, revenue model, and operational processes are actively being evaluated with legal counsel. Nothing in this document should be construed as a binding commitment to a specific business model or financial structure.
 
-### Revenue philosophy
-Donors never pay fees. 0% platform fees on donations. Glimpse's long-term revenue model is under active development and will be disclosed as it is finalized.
+### Revenue
+Donors never pay fees. 0% platform fees on donations. Revenue comes from business partnerships — companies invest in their community through Glimpse-powered campaigns, and Glimpse documents the verified impact on-chain.
+
+### $GLIMPSE Token
+Fair-launched SPL token on Pump.fun. Total supply: 1 billion. Community holds the majority. 10% reserved for donor airdrops. 24% team allocation locked for one year. Token holders govern how the community pool is deployed. Revenue from business partnerships funds buybacks. Token value tied to real business performance, not speculation.
+
+Exact mechanics being finalized with legal counsel. For token distribution and governance details, see `docs/design/slides-2026-03-04-token-revenue.html`.
 
 *Disclaimer: Glimpse is not a nonprofit or 501(c)(3). Donations made through Glimpse are not tax-deductible. Glimpse is a technology platform, not a financial advisor or regulated financial institution.*
 
@@ -234,24 +215,18 @@ Donors never pay fees. 0% platform fees on donations. Glimpse's long-term revenu
 
 ## 10. The Long Arc
 
-Not a roadmap. A narrative destination. The emotional endgame.
-
 ### The immediate (now)
-Muscatine, Iowa. First campaign: car maintenance for single moms, partnered with a local dealership. Proving the model works locally before expanding. Tulsa (BeHeard Movement) is the next conversation when partnerships are solid and legal. One founder. Proving product-market fit for the Monolith hackathon.
+App live on Solana mainnet. End-to-end USDC donation flow working. Submitted to the Solana dApp Store. Competing in the Monolith hackathon. Muscatine, Iowa is the first city. Tulsa (BeHeard Movement) is the first nonprofit partner committed. One founder. Building the first campaign — Glimpse the company funding the first real donation to prove the loop works.
 
 ### The medium-term (1-5 years)
-> "In five years, the vision is for my kids to open Glimpse and see 1 million nonprofits — both legacy and brand new — where real people are making real differences in the world through unscaled human connection and impact."
-
-City managers in key markets. A person in each city who works with nonprofits on best practices. The content scales through community, not through automation.
+Multiple cities. City managers in key markets working with nonprofits on best practices. 1 million nonprofits on the platform — both legacy and new. Content scales through community, not automation.
 
 ### The long-term (10 years)
-> "A Seeker in every trustworthy nonprofit in America."
-
-~100,000 Seeker devices exist today. This vision grows with the ecosystem. The nonprofits manage funds, upload proof, and interact with donors — all from the device.
+A Seeker in every trustworthy nonprofit in America. ~100,000 Seeker devices exist today. The nonprofits manage funds, upload proof, and interact with donors — all from the device.
 
 ### The north star
-> "The goal is to be ubiquitous. When someone has extra cash or wants to give to someone, they do it on Glimpse. Glimpse becomes the place to verify the impact of money."
+Glimpse becomes the place to verify the impact of money. When someone has extra cash or wants to give, they do it on Glimpse.
 
 ---
 
-*SOUL.md v1.0 — Built from Derrick's words. If it doesn't sound like him, it doesn't belong here.*
+*SOUL.md v2.0 — Impact and results. If it can't be measured, it doesn't belong here.*

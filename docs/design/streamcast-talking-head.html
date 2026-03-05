@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glimpse — Talking Head Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --purple: #5b5bd6;
+  --purple-glow: rgba(91, 91, 214, 0.35);
+  --bg: #f0e9ff;
+  --grid: rgba(91, 91, 214, 0.12);
+  --ink: #1a1a2e;
+  --white: #ffffff;
+  --black: #000000;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 1920×1080 Canvas ─────────────────────────────── */
+.canvas {
+  width: 1920px;
+  height: 1080px;
+  position: relative;
+  flex-shrink: 0;
+  transform-origin: center center;
+  background: transparent;
+  font-family: 'Space Mono', monospace;
+  color: var(--ink);
+  overflow: hidden;
+}
+
+/* ── Webcam fills entire canvas ───────────────────── */
+.webcam-frame {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.webcam-frame::after {
+  content: 'WEBCAM SOURCE';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  opacity: 0.05;
+  font-family: 'Space Mono', monospace;
+}
+
+/* ── Lower Third — name bar ───────────────────────── */
+.lower-third {
+  position: absolute;
+  bottom: 56px;
+  left: 56px;
+  z-index: 50;
+  display: flex;
+  align-items: stretch;
+}
+
+.lt-name {
+  background: var(--ink);
+  color: var(--white);
+  padding: 14px 24px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+}
+
+.lt-role {
+  background: var(--purple);
+  color: var(--white);
+  padding: 14px 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Top Left — logo + live ───────────────────────── */
+.top-bar {
+  position: absolute;
+  top: 32px;
+  left: 40px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.top-logo {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--white);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.top-live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--white);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.top-live::before {
+  content: '';
+  width: 8px; height: 8px;
+  background: #e53e3e;
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── Top Right — social handles ───────────────────── */
+.top-social {
+  position: absolute;
+  top: 32px;
+  right: 40px;
+  z-index: 50;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--white);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  line-height: 2;
+}
+
+/* ── Bottom Ticker ────────────────────────────────── */
+.ticker {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 32px;
+  background: var(--purple);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  z-index: 50;
+}
+
+.ticker-content {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  white-space: nowrap;
+  animation: scroll-ticker 30s linear infinite;
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.ticker-content span { opacity: 0.5; }
+
+@keyframes scroll-ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+</style>
+</head>
+<body>
+
+<div class="canvas" id="canvas">
+
+  <!-- Webcam fills entire canvas -->
+  <div class="webcam-frame"></div>
+
+  <!-- Top Left — GLIMPSE + LIVE -->
+  <div class="top-bar">
+    <div class="top-logo">GLIMPSE</div>
+    <div class="top-live">Live</div>
+  </div>
+
+  <!-- Top Right — social -->
+  <div class="top-social">
+    @GiveGlimpse<br>
+    @DerrickWKing
+  </div>
+
+  <!-- Lower Third — name bar -->
+  <div class="lower-third">
+    <div class="lt-name">Derrick Woepking</div>
+    <div class="lt-role">Founder &bull; Glimpse</div>
+  </div>
+
+  <!-- Bottom Ticker -->
+  <div class="ticker">
+    <div class="ticker-content">
+      Glimpse <span>&#x2022;</span> Zero Fees <span>&#x2022;</span> Direct Giving <span>&#x2022;</span> On-Chain Receipts <span>&#x2022;</span> Built on Solana <span>&#x2022;</span> Designed for Seeker <span>&#x2022;</span>
+      Glimpse <span>&#x2022;</span> Zero Fees <span>&#x2022;</span> Direct Giving <span>&#x2022;</span> On-Chain Receipts <span>&#x2022;</span> Built on Solana <span>&#x2022;</span> Designed for Seeker <span>&#x2022;</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function fit() {
+  const c = document.getElementById('canvas');
+  const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  c.style.transform = 'scale(' + s + ')';
+}
+window.addEventListener('resize', fit);
+fit();
+</script>
+</body>
+</html>

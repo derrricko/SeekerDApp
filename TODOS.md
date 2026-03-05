@@ -43,35 +43,33 @@ Repo: `github.com/derrricko/giveglimpse-site`
 
 ## 1. Functional Leaderboard
 
-**What:** Build a leaderboard screen that ranks donors by total SOL given, sourced from the `donations` Supabase table.
+**What:** Build a leaderboard screen that ranks donors by total USDC given, sourced from the `donations` Supabase table.
 
-**Why:** The leaderboard is core to the Glimpse transparency thesis — public, verifiable giving. Without it, donors can't see the community effect. It's also a key differentiator from "just sending SOL" because the leaderboard proves a pattern of sustained giving.
+**Why:** The leaderboard is core to the Glimpse transparency thesis — public, verifiable giving. Without it, donors can't see the community effect. It's also a key differentiator from "just sending USDC" because the leaderboard proves a pattern of sustained giving.
 
-**Context:** v2 currently has a "Coming soon" placeholder at `screens/LeaderboardScreen.tsx`. The `donations` table in Supabase already records `donor_wallet` and `amount_sol` for every donation. The leaderboard is a `GROUP BY donor_wallet ORDER BY SUM(amount_sol) DESC` query. Display as a ranked list with wallet address (truncated), total given, and donation count. Consider adding a Supabase RPC function for efficient aggregation. On-chain verification can be added later by cross-referencing memo data.
+**Context:** v2 currently has a "Coming soon" placeholder at `screens/LeaderboardScreen.tsx`. The `donations` table in Supabase already records `donor_wallet` and `amount_usdc` for every donation. The leaderboard is a `GROUP BY donor_wallet ORDER BY SUM(amount_usdc) DESC` query. Display as a ranked list with wallet address (truncated), total given, and donation count. Consider adding a Supabase RPC function for efficient aggregation. On-chain verification can be added later by cross-referencing memo data.
 
 **Depends on:** Supabase `donations` table being populated (already done by `services/donations.ts`).
 
 ---
 
-## 2. Backend Transaction Listener
+## 2. Backend Transaction Listener — DONE
 
-**What:** A Supabase Edge Function or cron job that watches Solana for Glimpse donation transactions and auto-creates conversations when one confirms.
+**Implemented as:** Helius webhook (`supabase/functions/helius-webhook/index.ts`). Helius monitors the pool wallet on-chain and POSTs enhanced transaction data to our edge function when USDC arrives. The function parses the Glimpse memo, auto-records the donation, and creates the conversation + welcome message. Idempotent on `tx_signature` — safe alongside client-side recording.
 
-**Why:** Currently, conversation creation happens client-side after tx confirmation (`services/donations.ts`). If the user closes the app between tx confirmation and Supabase insert, the donation is on-chain but no chat room exists. The AsyncStorage retry queue (`utils/retry.ts`) mitigates this, but a backend listener would eliminate the gap entirely.
+**Deployed:** 2026-03-05. Webhook configured on Helius dashboard, auth token set as Supabase secret.
 
-**Context:** The listener would use `connection.onLogs` or poll `getSignaturesForAddress` on the admin/recipient wallets, parse the memo JSON for `"app":"glimpse"`, and create the conversation + welcome message in Supabase. The Memo program makes this possible because every Glimpse donation has a structured JSON memo with `d` (donor), `r` (recipient), `a` (amount), and `app: "glimpse"`. A Supabase pg_cron + Edge Function combo could poll every 30 seconds.
-
-**Depends on:** Stable memo format (already defined in `utils/transfer.ts`), Supabase Edge Functions deployed.
+**Remaining:** Webhook fallback inserts `recipient_id: general` with empty cause preferences (campaign context unavailable from on-chain data alone). Client retry can enrich later.
 
 ---
 
 ## 3. Recipient Admin Panel
 
-**What:** Move the recipient list from hardcoded `data/recipients.ts` to a Supabase `recipients` table with a simple admin UI for adding/removing causes.
+**What:** Create a Supabase `recipients` table with a simple admin UI for adding/removing causes.
 
-**Why:** The hardcoded list works for hackathon demo but doesn't scale. When Glimpse partners with new nonprofits or individuals, the admin needs to add them without a code deploy. This also enables recipient-specific metadata (photos, story text, funding goals) that enrich the Give screen.
+**Why:** Recipients are currently managed through the Supabase dashboard. When Glimpse partners with new nonprofits or individuals, the admin needs a proper interface to add them without direct database access. This also enables recipient-specific metadata (photos, story text, funding goals) that enrich the Give screen.
 
-**Context:** The `data/recipients.ts` interface (`Recipient: {id, name, wallet, description, category}`) is the schema for the table. Migration would add a `recipients` table with these columns. The `GiveScreen` would fetch from Supabase instead of importing the static array. Admin UI could be a simple web dashboard or even a Supabase Studio workflow.
+**Context:** Schema: `Recipient: {id, name, wallet, description, category}`. Migration would add a `recipients` table with these columns. The `GiveScreen` would fetch from Supabase. Admin UI could be a simple web dashboard or a Supabase Studio workflow.
 
 **Depends on:** v2 core being stable and deployed.
 
@@ -132,7 +130,7 @@ Repo: `github.com/derrricko/giveglimpse-site`
 - No conversation archiving or filtering
 - If admin reply from app fails, fallback is Supabase dashboard SQL insert
 
-**Depends on:** Two Seeker phones, devnet USDC in donor wallet, edge functions deployed.
+**Depends on:** Two Seeker phones, mainnet USDC in donor wallet, edge functions deployed.
 
 ---
 

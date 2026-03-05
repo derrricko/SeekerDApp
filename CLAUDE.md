@@ -1,41 +1,45 @@
 # Glimpse v2 — Solana Mobile DApp
 
-## Mainnet Filter (Locked)
+## Launch Filter (Locked)
 
-Keep in mind the main goal is getting this app to mainnet ASAP. Number 1 priority filter everything through that. Things like leaderboard are not a priority. The giving flow must be airtight. We must get to mainnet so we can start taking in donations, even if it is only one donation. We must deploy the app to the Solana dApp Store.
-
-### North Star
-
-Ship one path that works end-to-end on mainnet:
+The North Star path works end-to-end on mainnet:
 
 `connect wallet -> donate USDC -> confirm on-chain -> record in backend -> open message thread`
 
-If that works reliably, we can launch and take donations.
+### Current Priorities (March 2026)
+
+1. **dApp Store approval** — app submitted, waiting for review
+2. **Hackathon submission** — pitch deck, demo video, submit to Monolith
+3. **First campaign** — Glimpse the company funds the first real donation, build out a campaign around it
 
 ### Execution Rules
 
-1. Freeze scope on anything not required for the North Star path.
+1. Ship what's needed for hackathon submission and dApp Store approval.
 2. Hardening beats new features.
-3. dApp Store prep runs in parallel, but never blocks transaction reliability work.
+3. Don't break the working mainnet donation flow.
 
-### Explicitly Deprioritized (Until First Mainnet Donation)
+### Explicitly Deprioritized
 
 1. Leaderboard implementation.
 2. Group pooling mechanics beyond metadata capture.
-3. Non-essential polish unrelated to conversion/reliability.
+3. Non-essential polish unrelated to submission/approval.
 4. Legacy cleanup that does not affect launch path stability.
 
 ## Default Collaboration Profile (Locked)
 
 Use this skill stack by default for all implementation and review work:
 
-1. `interface-design` for screen structure, spacing, hierarchy, and visual consistency
-2. `interaction-design` for transitions, microinteractions, and UX polish
-3. `fixing-motion-performance` when motion feels slow or unstable on device
-4. `12-principles-of-animation` as final animation quality audit
-5. `solana-dev` referenced on every code change (frontend or backend) to ensure Solana best-practice alignment
+1. **`solana-seeker-dev`** — DEFAULT OPERATING SKILL. Referenced on every code change (frontend or backend). Covers mainnet source-of-truth, dual recording architecture, RLS safety, error contracts, incident runbooks, device QA, and delivery expectations. See `.agents/skills/solana-seeker-dev/SKILL.md`.
+2. `interface-design` for screen structure, spacing, hierarchy, and visual consistency
+3. `interaction-design` for transitions, microinteractions, and UX polish
+4. `fixing-motion-performance` when motion feels slow or unstable on device
+5. `12-principles-of-animation` as final animation quality audit
 
-Rule: any touched code path should be checked against the Solana dev playbook before sign-off.
+Rule: any touched code path should be checked against `solana-seeker-dev` before sign-off.
+
+### Hackathon Sprint Mode (Active — expires 2026-03-09)
+
+"Hardening beats new features" is suspended for hackathon sprint. Breaking refactors are allowed if they make the app significantly better for the demo. Risk tolerance is elevated. Ship fast, take risks, make it exceptional.
 
 ## What Changed (v1 → v2)
 
@@ -43,7 +47,7 @@ Glimpse pivoted from a complex vault system to a direct USDC donation app with o
 
 **v1 (archived on `feat/visual-skeleton-rework`):** USDC SPL transfers, vault PDAs, campaigns, activity-weighted giving, glassmorphism design system, SIWS auth.
 
-**v2 (this branch `v2/give-portal`):** USDC SPL transfers with Memo receipts, cause-preference matching, Solo/Group metadata, Supabase Realtime chat, 4-tab app (Glimpses, Give, Messages, Rank placeholder).
+**v2 (branch `main`):** USDC SPL transfers with Memo receipts, cause-preference matching, Solo/Group metadata, Supabase Realtime chat, 4-tab app (Glimpses, Give, Messages, Rank placeholder). Live on mainnet.
 
 ## App Architecture
 
@@ -86,11 +90,7 @@ utils/utf8.ts                          — UTF-8 encoding wrapper
 
 supabase/functions/wallet-auth/index.ts     — Ed25519 verify → JWT issuance
 supabase/functions/record-donation/index.ts — SPL transferChecked validation → upsert donation
-supabase/migrations/001_v2_tables.sql       — Schema (donations, conversations, messages)
-supabase/migrations/002_v2_hardening.sql    — RLS policies + current_wallet()
-supabase/migrations/003_v2_auth_replay_guard.sql — Auth challenge replay guard
-supabase/migrations/004_v2_donation_cadence_and_stage.sql — cadence + impact stage metadata
-supabase/migrations/005_v2_usdc_hold_tracking.sql — USDC amount, hold tracking, cause preferences
+supabase/migrations/                       — 001-017 deployed (see directory for full list)
 
 navigation/AppNavigator.tsx            — Bottom tab navigator (exports RootTabParamList)
 
@@ -98,10 +98,13 @@ docs/SOUL.md                           — Founder voice & narrative
 docs/research/glimpse-stats.md         — Market research & statistics
 docs/handoffs/                         — AI agent handoff docs (archived)
 docs/launch/                           — Launch checklists, privacy policy, dApp Store copy
-docs/design/                           — Brand guide, wireframes, social assets, web mockups
-docs/pitch/                            — Pitch decks and investor materials
-STATUS.md                              — Living ship status (what works, what blocks)
-memory/MEMORY.md                       — Persistent cross-session memory and backend runbook
+docs/design/brand-guide.md             — Full design system (colors, typography, components, animation)
+docs/design/                           — Wireframes, social assets, web mockups, pitch decks, overlays
+docs/design/pitch-deck-monolith-2026.html — Monolith hackathon pitch deck
+docs/design/the-generosity-compact.html — Entity structure and operating model
+docs/design/slides-2026-03-04-token-revenue.html — Token and revenue slides
+docs/pitch/                            — Pitch decks (.pptx) and investor materials
+STATUS.md                              — Current priorities and launch status
 TODOS.md                               — Deferred work with full context
 ```
 
@@ -132,20 +135,48 @@ TODOS.md                               — Deferred work with full context
 ## Founder Voice & Product Soul
 
 > For the full conviction story, see `docs/SOUL.md`.
-> For market research, see `docs/glimpse-stats.md`.
+> For market research, see `docs/research/glimpse-stats.md`.
+> For the design system, see `docs/design/brand-guide.md`.
 
-### Sacred lines — use verbatim, never paraphrase
-> "Most people's entire lives will be forever changed by a few thousand dollars."
+### Key lines — use verbatim, never paraphrase
+> "3 out of 4 donors never give again. Not because they stopped caring. Because nobody showed them what happened."
 > "GoFundMe takes three percent. We take zero."
 > "Four years. NFT project, partner search, traditional fundraising — none of it worked. Now I built it myself."
-> "My son is one year old. I'm building the world I want him to grow up in."
+> "Every dollar tracked. Every impact proven. Try it."
+> "We're not asking you to trust us. We're showing you the proof."
+
+## Entity Structure
+
+Two legally separate, mission-aligned entities:
+
+- **Give Glimpse** — Planned 501(c)(3) nonprofit (not yet filed). Receives and routes 100% of donor USDC. Vets recipients. Issues on-chain receipts. Zero fee to donors.
+- **Glimpse** — Public Benefit Corporation (Delaware). Builds and owns the app and technology. Earns revenue via business partnerships. Stated public benefit: supporting Give Glimpse.
+
+Separate boards, separate EINs, arm's-length contracts. See `docs/design/the-generosity-compact.html` for full details.
+
+## $GLIMPSE Token
+
+Fair-launched SPL token on Pump.fun. Total supply: 1 billion.
+
+### Distribution (actual)
+- ~51% community-held (fair launch via pump.fun)
+- 24% team (locked 1 year)
+- 12.4% locked supply (124M)
+- 10% donor airdrops
+- 1.7% founder personal
+- ~1.2% liquid on pump.fun
+
+### Token thesis
+Donors who give should have a voice in how the community pool is deployed. Token holders govern allocation decisions. Revenue from business partnerships funds buybacks. Token value tied to real business performance.
+
+*Exact mechanics being finalized with legal counsel. See `docs/design/slides-2026-03-04-token-revenue.html` for current framing.*
 
 ## Project Stack
 - Frontend: React Native 0.76.5 + TypeScript ~5.3
 - Target Device: Solana Seeker (Android)
 - Wallet: Mobile Wallet Adapter (MWA) 2.0
 - Tokens: USDC (SPL Token) — 6 decimals
-- Chain: Solana devnet
+- Chain: Solana mainnet-beta
 - Backend: Supabase (PostgreSQL + Realtime + Storage)
 - Auth: Wallet-sign verification (NOT SIWS)
 - Solana SDK: @solana/web3.js v1 + @solana/spl-token v0.3.x

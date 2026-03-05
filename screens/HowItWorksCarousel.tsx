@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   Animated,
   Easing,
@@ -8,9 +8,31 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useTheme} from '../theme/Theme';
 
-const TOTAL_STEPS = 6;
-const TYPING_TARGET = '250.00';
+const TOTAL_STEPS = 3;
+
+const STEPS = [
+  {
+    key: 'give',
+    label: 'GIVE',
+    headline: 'GoFundMe takes three percent. We take zero.',
+    body: 'Donate USDC in seconds to start a real thread tied to your on-chain transaction.',
+  },
+  {
+    key: 'confirm',
+    label: 'CONFIRM',
+    headline:
+      'This is not a whitepaper. This is working software on Solana mainnet.',
+    body: 'Your donation confirms on-chain and opens a conversation tied to that donation.',
+  },
+  {
+    key: 'proof',
+    label: 'SEE PROOF',
+    headline: "We're not asking you to trust us. We're showing you the proof.",
+    body: 'Every donation has a verifiable receipt and a visible update path.',
+  },
+] as const;
 
 export default function HowItWorksCarousel({
   visible,
@@ -21,14 +43,15 @@ export default function HowItWorksCarousel({
   onClose: () => void;
   onComplete?: () => void;
 }) {
+  const {theme} = useTheme();
   const [step, setStep] = useState(0);
-  const [typedAmount, setTypedAmount] = useState('');
-  const [cursorVisible, setCursorVisible] = useState(true);
   const stepMotion = useRef(new Animated.Value(1)).current;
+
+  const activeStep = STEPS[step];
 
   const stepTranslateY = stepMotion.interpolate({
     inputRange: [0, 1],
-    outputRange: [8, 0],
+    outputRange: [6, 0],
   });
 
   useEffect(() => {
@@ -39,84 +62,43 @@ export default function HowItWorksCarousel({
   }, [visible]);
 
   useEffect(() => {
-    if (!visible || step !== 0) {
-      return;
-    }
-
-    let index = 0;
-    let deleting = false;
-    let pauseTicks = 0;
-
-    setTypedAmount('');
-    setCursorVisible(true);
-
-    const typingTimer = setInterval(() => {
-      if (pauseTicks > 0) {
-        pauseTicks -= 1;
-        return;
-      }
-
-      if (!deleting) {
-        index += 1;
-        setTypedAmount(TYPING_TARGET.slice(0, index));
-        if (index >= TYPING_TARGET.length) {
-          deleting = true;
-          pauseTicks = 8;
-        }
-      } else {
-        index -= 1;
-        setTypedAmount(TYPING_TARGET.slice(0, Math.max(index, 0)));
-        if (index <= 0) {
-          deleting = false;
-          pauseTicks = 6;
-        }
-      }
-    }, 95);
-
-    const cursorTimer = setInterval(() => {
-      setCursorVisible(current => !current);
-    }, 420);
-
-    return () => {
-      clearInterval(typingTimer);
-      clearInterval(cursorTimer);
-    };
-  }, [step, visible]);
-
-  useEffect(() => {
     if (!visible) {
       return;
     }
     stepMotion.setValue(0);
     Animated.timing(stepMotion, {
       toValue: 1,
-      duration: 200,
+      duration: 150,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
-  }, [step, visible, stepMotion]);
+  }, [step, stepMotion, visible]);
 
-  const handleNext = () => {
-    if (step === TOTAL_STEPS - 1) {
-      if (onComplete) {
-        onComplete();
-      } else {
-        onClose();
-      }
+  const complete = () => {
+    if (onComplete) {
+      onComplete();
       return;
     }
-    setStep(current => current + 1);
+    onClose();
   };
 
-  const handlePrevious = () => {
-    if (step === 0) {
-      return;
-    }
-    setStep(current => current - 1);
-  };
-
-  const isFirstStep = step === 0;
-  const isLastStep = step === TOTAL_STEPS - 1;
+  const progressDots = useMemo(
+    () =>
+      Array.from({length: TOTAL_STEPS}).map((_, index) => (
+        <View
+          key={`progress-${index}`}
+          style={[
+            styles.progressDot,
+            {
+              backgroundColor:
+                index === step ? theme.colors.accent : theme.colors.borderMuted,
+              width: index === step ? 18 : 6,
+            },
+          ]}
+        />
+      )),
+    [step, theme.colors.accent, theme.colors.borderMuted],
+  );
 
   return (
     <Modal
@@ -124,66 +106,175 @@ export default function HowItWorksCarousel({
       transparent
       animationType="fade"
       onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={styles.sheet}>
-          <View style={styles.topRow}>
-            <View style={styles.progressRow}>
-              {Array.from({length: TOTAL_STEPS}).map((_, index) => (
-                <View
-                  key={`dot-${index}`}
-                  style={[
-                    styles.progressDot,
-                    index === step && styles.progressDotActive,
-                  ]}
-                />
-              ))}
-            </View>
-
+      <View style={[styles.backdrop, {backgroundColor: theme.colors.overlay}]}>
+        <View
+          style={[
+            styles.sheet,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.borderMuted,
+            },
+          ]}>
+          <View style={styles.headerRow}>
+            <View style={styles.progressRow}>{progressDots}</View>
             <TouchableOpacity
               onPress={onClose}
-              style={styles.closeButton}
+              style={[
+                styles.closeButton,
+                {
+                  borderColor: theme.colors.borderMuted,
+                  backgroundColor: theme.colors.surfaceMuted,
+                },
+              ]}
               activeOpacity={0.85}>
-              <Text style={styles.closeText}>×</Text>
+              <Text
+                style={[
+                  styles.closeText,
+                  {
+                    color: theme.colors.textSecondary,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                ×
+              </Text>
             </TouchableOpacity>
           </View>
 
           <Animated.View
             style={[
               styles.content,
-              {
-                opacity: stepMotion,
-                transform: [{translateY: stepTranslateY}],
-              },
+              {opacity: stepMotion, transform: [{translateY: stepTranslateY}]},
             ]}>
-            {renderStep(step, typedAmount, cursorVisible)}
+            <Text
+              style={[
+                styles.kicker,
+                {
+                  color: theme.colors.accent,
+                  fontFamily: theme.typography.brand,
+                },
+              ]}>
+              {activeStep.label}
+            </Text>
+            <Text style={[styles.headline, {color: theme.colors.textPrimary}]}>
+              {activeStep.headline}
+            </Text>
+            <Text style={[styles.body, {color: theme.colors.textSecondary}]}>
+              {activeStep.body}
+            </Text>
+
+            {step === TOTAL_STEPS - 1 ? (
+              <View
+                style={[
+                  styles.nextCard,
+                  {
+                    borderColor: theme.colors.borderMuted,
+                    backgroundColor: theme.colors.surfaceMuted,
+                  },
+                ]}>
+                <Text
+                  style={[
+                    styles.nextTitle,
+                    {
+                      color: theme.colors.textPrimary,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  WHAT HAPPENS NEXT
+                </Text>
+                <Text
+                  style={[
+                    styles.nextLine,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  1. Your donation confirms on-chain.
+                </Text>
+                <Text
+                  style={[
+                    styles.nextLine,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  2. Your message thread opens.
+                </Text>
+                <Text
+                  style={[
+                    styles.nextLine,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  3. Proof updates appear in that thread.
+                </Text>
+              </View>
+            ) : null}
           </Animated.View>
 
-          <View style={styles.navRow}>
+          <View style={styles.footer}>
             <TouchableOpacity
-              onPress={handlePrevious}
               style={[
-                styles.navButton,
-                isFirstStep && styles.navButtonDisabled,
+                styles.primaryButton,
+                {
+                  backgroundColor: theme.colors.accent,
+                  borderColor: theme.colors.border,
+                },
               ]}
-              activeOpacity={0.85}
-              disabled={isFirstStep}>
+              activeOpacity={0.9}
+              onPress={complete}>
               <Text
                 style={[
-                  styles.navButtonText,
-                  isFirstStep && styles.navButtonTextDisabled,
+                  styles.primaryText,
+                  {fontFamily: theme.typography.brand, color: '#F3EFFF'},
                 ]}>
-                ←
+                START DONATION
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={handleNext}
-              style={[styles.navButton, styles.navButtonPrimary]}
-              activeOpacity={0.9}>
-              <Text style={[styles.navButtonText, styles.navButtonTextPrimary]}>
-                {isLastStep ? '✓' : '→'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.navRow}>
+              <TouchableOpacity
+                onPress={() => setStep(current => Math.max(0, current - 1))}
+                disabled={step === 0}
+                activeOpacity={0.85}
+                style={[
+                  styles.navButton,
+                  {
+                    borderColor: theme.colors.borderMuted,
+                    opacity: step === 0 ? 0.45 : 1,
+                  },
+                ]}>
+                <Text
+                  style={[
+                    styles.navButtonText,
+                    {
+                      color: theme.colors.textSecondary,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  BACK
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() =>
+                  setStep(current => Math.min(TOTAL_STEPS - 1, current + 1))
+                }
+                disabled={step === TOTAL_STEPS - 1}
+                activeOpacity={0.85}
+                style={[
+                  styles.navButton,
+                  {
+                    borderColor: theme.colors.borderMuted,
+                    opacity: step === TOTAL_STEPS - 1 ? 0.45 : 1,
+                  },
+                ]}>
+                <Text
+                  style={[
+                    styles.navButtonText,
+                    {
+                      color: theme.colors.textSecondary,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  NEXT
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
@@ -191,501 +282,121 @@ export default function HowItWorksCarousel({
   );
 }
 
-function renderStep(step: number, typedAmount: string, cursorVisible: boolean) {
-  if (step === 0) {
-    return (
-      <View style={styles.stepWrap}>
-        <Text style={[styles.title, styles.titleSentence]}>
-          Choose how much you want to give
-        </Text>
-
-        <View style={styles.moneyLoopCard}>
-          <View style={styles.moneyLoopHeader}>
-            <View style={styles.moneyLoopDot} />
-            <View style={styles.moneyLoopDot} />
-            <View style={styles.moneyLoopDot} />
-          </View>
-
-          <View style={styles.typingBox}>
-            <Text style={styles.typingPrefix}>$</Text>
-            <Text style={styles.typingText}>{typedAmount || '0'}</Text>
-            <View
-              style={[styles.typingCursor, {opacity: cursorVisible ? 1 : 0}]}
-            />
-          </View>
-
-          <View style={styles.keypadRow}>
-            <View style={styles.keypadKey} />
-            <View style={styles.keypadKey} />
-            <View style={styles.keypadKey} />
-          </View>
-          <View style={styles.keypadRow}>
-            <View style={styles.keypadKey} />
-            <View style={styles.keypadKey} />
-            <View style={styles.keypadKey} />
-          </View>
-        </View>
-      </View>
-    );
-  }
-
-  if (step === 1) {
-    return (
-      <View style={styles.stepWrap}>
-        <Text style={[styles.title, styles.titleSentenceSmall]}>
-          select a campaign
-        </Text>
-        <CausesIcon />
-      </View>
-    );
-  }
-
-  if (step === 2) {
-    return (
-      <View style={styles.stepWrap}>
-        <Text style={[styles.title, styles.titleSentenceSmall]}>
-          add optional context and a note for the recipient
-        </Text>
-        <NoteIcon />
-      </View>
-    );
-  }
-
-  if (step === 3) {
-    return (
-      <View style={styles.stepWrap}>
-        <Text style={[styles.title, styles.titleSentenceSmall]}>
-          We connect you to the need
-        </Text>
-        <ConnectIcon />
-      </View>
-    );
-  }
-
-  if (step === 4) {
-    return (
-      <View style={styles.stepWrap}>
-        <Text style={styles.title}>Confirmed</Text>
-        <Text style={styles.icon}>✓</Text>
-        <Text style={styles.body}>
-          Once you confirm, your USDC donation is final and recorded on-chain.
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.stepWrap}>
-      <Text style={styles.title}>Transparency</Text>
-      <View style={styles.docIcon}>
-        <View style={styles.docFold} />
-        <View style={styles.docLine} />
-        <View style={styles.docLine} />
-      </View>
-      <Text style={styles.bodySpread}>
-        As your donation is put to work,{'\n'}your Glimpse is updated with
-        {'\n'}photos, receipts, and impact.
-      </Text>
-    </View>
-  );
-}
-
-function CausesIcon() {
-  return (
-    <View style={styles.lineIconFrame}>
-      <View style={styles.causeIconRow}>
-        <View style={styles.causeIconDot} />
-        <View style={styles.causeIconLine} />
-      </View>
-      <View style={styles.causeIconRow}>
-        <View style={styles.causeIconDot} />
-        <View style={styles.causeIconLine} />
-      </View>
-      <View style={styles.causeIconRow}>
-        <View style={styles.causeIconDot} />
-        <View style={styles.causeIconLine} />
-      </View>
-    </View>
-  );
-}
-
-function ConnectIcon() {
-  return (
-    <View style={styles.lineIconFrame}>
-      <View style={styles.connectTopRow}>
-        <View style={styles.connectSourceNode} />
-        <View style={styles.connectSourceNode} />
-      </View>
-      <View style={styles.connectTopBar} />
-      <View style={styles.connectCenterDot} />
-      <View style={styles.connectDropLine} />
-      <View style={styles.connectNeedNode} />
-      <View style={styles.connectNeedMark} />
-    </View>
-  );
-}
-
-function NoteIcon() {
-  return (
-    <View style={styles.lineIconFrame}>
-      <View style={styles.noteLineWide} />
-      <View style={styles.noteLineMid} />
-      <View style={styles.noteLineWide} />
-      <View style={styles.noteDot} />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(23, 16, 42, 0.18)',
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 14,
   },
   sheet: {
     width: '100%',
-    maxWidth: 420,
-    borderRadius: 22,
+    maxWidth: 460,
+    borderRadius: 18,
+    borderWidth: 1,
     paddingHorizontal: 14,
     paddingTop: 10,
     paddingBottom: 14,
-    backgroundColor: '#F4F2FA',
   },
-  topRow: {
-    minHeight: 24,
+  headerRow: {
+    minHeight: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
   },
   progressRow: {
     flexDirection: 'row',
-    gap: 5,
+    gap: 6,
   },
   progressDot: {
-    width: 5,
-    height: 5,
+    height: 6,
     borderRadius: 10,
-    backgroundColor: '#CEC8E4',
-  },
-  progressDotActive: {
-    width: 16,
-    backgroundColor: '#6554D1',
   },
   closeButton: {
     position: 'absolute',
     right: 0,
     top: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E5E2EF',
   },
   closeText: {
-    color: '#9C95B7',
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 17,
     lineHeight: 18,
+    fontWeight: '700',
   },
   content: {
     minHeight: 230,
-    paddingHorizontal: 8,
-    paddingTop: 8,
+    paddingTop: 10,
+    paddingHorizontal: 6,
   },
-  stepWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepWrapTop: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 6,
-  },
-  title: {
-    color: '#17102A',
-    textAlign: 'center',
-    fontSize: 37,
-    lineHeight: 42,
-    fontWeight: '800',
-    marginBottom: 12,
-  },
-  titleSentence: {
-    fontSize: 33,
-    lineHeight: 38,
-    marginBottom: 2,
-    maxWidth: 305,
-  },
-  titleSentenceSmall: {
-    fontSize: 30,
-    lineHeight: 35,
+  kicker: {
+    fontSize: 10,
+    lineHeight: 12,
+    letterSpacing: 1,
     marginBottom: 8,
-    maxWidth: 300,
+  },
+  headline: {
+    fontSize: 23,
+    lineHeight: 29,
+    fontWeight: '600',
+    marginBottom: 9,
   },
   body: {
-    marginTop: 8,
-    color: '#5E5878',
-    textAlign: 'center',
-    fontSize: 16,
-    lineHeight: 21,
-    fontFamily: 'CourierPrime-Regular',
-    maxWidth: 280,
+    fontSize: 14,
+    lineHeight: 20,
   },
-  bodySpread: {
-    marginTop: 10,
-    color: '#5E5878',
-    textAlign: 'center',
-    fontSize: 15,
-    lineHeight: 27,
-    letterSpacing: 0.35,
-    fontFamily: 'CourierPrime-Regular',
-    width: '100%',
-    maxWidth: 320,
-    paddingHorizontal: 6,
-  },
-  moneyLoopCard: {
+  nextCard: {
     marginTop: 14,
-    width: '100%',
-    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#DDD7EE',
-    backgroundColor: '#F8F6FD',
+    borderRadius: 10,
+    paddingVertical: 9,
     paddingHorizontal: 10,
-    paddingVertical: 10,
   },
-  moneyLoopHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
+  nextTitle: {
+    fontSize: 10,
+    lineHeight: 12,
+    letterSpacing: 1,
+    marginBottom: 6,
   },
-  moneyLoopDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 6,
-    backgroundColor: '#CEC8E4',
-    marginRight: 5,
+  nextLine: {
+    fontSize: 13,
+    lineHeight: 19,
   },
-  typingBox: {
-    width: '100%',
-    minHeight: 50,
-    borderRadius: 12,
-    paddingHorizontal: 13,
-    backgroundColor: '#EEEBF9',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  typingPrefix: {
-    color: '#6554D1',
-    fontSize: 26,
-    lineHeight: 30,
-    fontWeight: '700',
-    marginRight: 2,
-    fontFamily: 'CourierPrime-Regular',
-  },
-  typingText: {
-    color: '#6554D1',
-    fontSize: 26,
-    lineHeight: 30,
-    fontWeight: '700',
-    fontFamily: 'CourierPrime-Regular',
-  },
-  typingCursor: {
-    marginLeft: 6,
-    width: 2,
-    height: 24,
-    borderRadius: 2,
-    backgroundColor: '#6554D1',
-  },
-  keypadRow: {
-    marginTop: 7,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  keypadKey: {
-    flex: 1,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#E5E0F3',
-    marginHorizontal: 3,
-  },
-  lineIconFrame: {
-    width: 50,
-    height: 60,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#6554D1',
-    marginTop: 2,
-    marginBottom: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  causeIconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 2,
-  },
-  causeIconDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 3,
-    backgroundColor: '#6554D1',
-    marginRight: 4,
-  },
-  causeIconLine: {
-    width: 19,
-    height: 2,
-    borderRadius: 2,
-    backgroundColor: '#6554D1',
-  },
-  noteLineWide: {
-    width: 24,
-    height: 2,
-    borderRadius: 2,
-    backgroundColor: '#6554D1',
-    marginVertical: 2,
-  },
-  noteLineMid: {
-    width: 18,
-    height: 2,
-    borderRadius: 2,
-    backgroundColor: '#6554D1',
-    marginVertical: 2,
-  },
-  noteDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 4,
-    backgroundColor: '#6554D1',
-    marginTop: 4,
-  },
-  connectTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  footer: {
     gap: 8,
   },
-  connectSourceNode: {
-    width: 8,
-    height: 8,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: '#6554D1',
-  },
-  connectTopBar: {
-    width: 26,
-    height: 1.5,
-    borderRadius: 2,
-    backgroundColor: '#6554D1',
-    marginTop: 2,
-  },
-  connectCenterDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 6,
-    backgroundColor: '#6554D1',
-    marginTop: 3,
-  },
-  connectDropLine: {
-    width: 1.5,
-    height: 12,
-    borderRadius: 2,
-    backgroundColor: '#6554D1',
-    marginTop: 2,
-  },
-  connectNeedNode: {
-    width: 16,
-    height: 10,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: '#6554D1',
-    marginTop: 2,
-  },
-  connectNeedMark: {
-    position: 'absolute',
-    top: 38,
-    width: 6,
-    height: 6,
-    borderRadius: 4,
-    backgroundColor: '#6554D1',
-  },
-  icon: {
-    color: '#6554D1',
-    fontSize: 52,
-    lineHeight: 58,
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  docIcon: {
-    width: 50,
-    height: 60,
-    borderRadius: 8,
+  primaryButton: {
     borderWidth: 2,
-    borderColor: '#6554D1',
-    marginTop: 2,
-    marginBottom: 6,
+    borderRadius: 11,
+    minHeight: 46,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
   },
-  docFold: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 10,
-    height: 10,
-    borderTopWidth: 2,
-    borderRightWidth: 2,
-    borderColor: '#6554D1',
-  },
-  docLine: {
-    width: 22,
-    height: 2,
-    backgroundColor: '#6554D1',
-    marginVertical: 2,
-    borderRadius: 2,
+  primaryText: {
+    fontSize: 12,
+    lineHeight: 14,
+    letterSpacing: 1.1,
+    fontWeight: '700',
   },
   navRow: {
-    marginTop: 8,
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 6,
+    gap: 8,
   },
   navButton: {
-    width: 56,
-    height: 48,
-    borderRadius: 12,
+    flex: 1,
+    minHeight: 36,
     borderWidth: 1,
-    borderColor: '#D8D1EA',
-    backgroundColor: '#EEEBF7',
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  navButtonDisabled: {
-    backgroundColor: '#F1EEF9',
-    borderColor: '#E5E1F0',
-  },
-  navButtonPrimary: {
-    backgroundColor: '#6554D1',
-    borderColor: '#5B49CB',
-  },
   navButtonText: {
-    color: '#5E5878',
-    fontSize: 24,
-    lineHeight: 28,
+    fontSize: 10,
+    lineHeight: 12,
+    letterSpacing: 0.9,
     fontWeight: '700',
-    fontFamily: 'CourierPrime-Regular',
-  },
-  navButtonTextDisabled: {
-    color: '#C0B9D8',
-  },
-  navButtonTextPrimary: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontFamily: 'CourierPrime-Regular',
   },
 });
