@@ -23,6 +23,7 @@ import {
   fetchAllDonations,
   type DonationHistoryItem,
 } from '../services/chat';
+import {fetchEnhancedTransactions, type EnhancedDonation} from '../services/helius';
 
 type ViewMode = 'feed' | 'my_glimpses';
 
@@ -47,6 +48,9 @@ export default function CampaignsScreen() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const lastHistoryFetchAt = useRef(0);
+
+  // Enhanced on-chain verification data (Helius)
+  const [enhancedData, setEnhancedData] = useState<Map<string, EnhancedDonation>>(new Map());
 
   const walletAddress = publicKey?.toBase58() ?? null;
 
@@ -91,6 +95,32 @@ export default function CampaignsScreen() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode]);
+
+  // Fetch enhanced on-chain data for feed donations
+  useEffect(() => {
+    const signatures = feedDonations
+      .map(d => d.tx_signature)
+      .filter(Boolean);
+
+    if (signatures.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+    fetchEnhancedTransactions(signatures)
+      .then(data => {
+        if (!cancelled) {
+          setEnhancedData(data);
+        }
+      })
+      .catch(() => {
+        // Non-fatal — feed works without enhanced data
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [feedDonations]);
 
   // My Glimpses tab — user's donations
   useEffect(() => {
@@ -223,6 +253,7 @@ export default function CampaignsScreen() {
                 theme,
                 emptyText: 'No donations yet. Be the first to give a glimpse.',
                 showDonorWallet: true,
+                enhancedData,
               })
             : renderDonationList({
                 requiresWallet: true,
@@ -235,6 +266,7 @@ export default function CampaignsScreen() {
                 emptyText: 'No donations recorded for this wallet yet.',
                 showDonorWallet: false,
                 onConnect: connect,
+                enhancedData,
               })}
         </SurfaceCard>
       </ScreenContainer>
@@ -253,6 +285,7 @@ function renderDonationList({
   emptyText,
   showDonorWallet,
   onConnect,
+  enhancedData,
 }: {
   requiresWallet: boolean;
   walletConnected: boolean;
@@ -264,6 +297,7 @@ function renderDonationList({
   emptyText: string;
   showDonorWallet: boolean;
   onConnect?: () => void;
+  enhancedData?: Map<string, EnhancedDonation>;
 }) {
   if (requiresWallet && !walletConnected) {
     return (
@@ -366,6 +400,8 @@ function renderDonationList({
         const truncatedWallet = item.donor_wallet
           ? `${item.donor_wallet.slice(0, 4)}...${item.donor_wallet.slice(-4)}`
           : '';
+        const enhanced = enhancedData?.get(item.tx_signature);
+        const isVerified = enhanced?.verified === true;
         const cardContent = (
           <>
             <View style={styles.historyTopRow}>
@@ -376,13 +412,33 @@ function renderDonationList({
                 ]}>
                 ${item.amount_usdc.toFixed(2)} USDC
               </Text>
-              <Text
-                style={[
-                  styles.historyStatus,
-                  {color: statusColor, fontFamily: theme.typography.brand},
-                ]}>
-                {statusLabel}
-              </Text>
+              <View style={styles.statusRow}>
+                {isVerified && (
+                  <View
+                    style={[
+                      styles.verifiedBadge,
+                      {backgroundColor: theme.colors.teal + '18'},
+                    ]}>
+                    <Text
+                      style={[
+                        styles.verifiedText,
+                        {
+                          color: theme.colors.teal,
+                          fontFamily: theme.typography.brand,
+                        },
+                      ]}>
+                      VERIFIED
+                    </Text>
+                  </View>
+                )}
+                <Text
+                  style={[
+                    styles.historyStatus,
+                    {color: statusColor, fontFamily: theme.typography.brand},
+                  ]}>
+                  {statusLabel}
+                </Text>
+              </View>
             </View>
             {showDonorWallet && truncatedWallet ? (
               <Text
@@ -597,5 +653,21 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 14,
     letterSpacing: 0.3,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  verifiedBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  verifiedText: {
+    fontSize: 8,
+    lineHeight: 11,
+    letterSpacing: 0.8,
+    fontWeight: '700',
   },
 });

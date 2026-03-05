@@ -8,12 +8,14 @@ export type SolanaCluster = 'devnet' | 'testnet' | 'mainnet-beta';
 // TODO: Add devnet support to edge functions before re-enabling the toggle.
 export const SOLANA_CLUSTER: SolanaCluster = 'mainnet-beta';
 
-// Client RPC — public endpoint. Helius key stays server-side only (edge fn env var).
-// If client volume outgrows public RPC, add a Supabase edge proxy.
+// Helius RPC — faster reads, no rate limiting.
+// Key is in the URL for hackathon. Post-hackathon: proxy through edge function.
+export const HELIUS_API_KEY = 'bedb2822-5ff9-411a-ac1d-57bd2d354810';
+
 const RPC_URLS: Record<SolanaCluster, string> = {
   devnet: 'https://api.devnet.solana.com',
   testnet: 'https://api.testnet.solana.com',
-  'mainnet-beta': 'https://api.mainnet-beta.solana.com',
+  'mainnet-beta': `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`,
 };
 
 export const RPC_URL = RPC_URLS[SOLANA_CLUSTER];
