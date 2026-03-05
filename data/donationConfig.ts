@@ -57,9 +57,10 @@ export const CAMPAIGN_OPTIONS: CampaignOption[] = [
   },
 ];
 
-const NAME_BY_RECIPIENT_ID: Record<string, string> = Object.fromEntries(
-  CAMPAIGN_OPTIONS.map(c => [c.id, c.label]),
-);
+const NAME_BY_RECIPIENT_ID: Record<string, string> = {
+  ...Object.fromEntries(CAMPAIGN_OPTIONS.map(c => [c.id, c.label])),
+  general: 'General Donation',
+};
 const GLIMPSE_BY_RECIPIENT_ID: Record<string, string> = Object.fromEntries(
   CAMPAIGN_OPTIONS.map(c => [c.id, c.glimpseTag]),
 );

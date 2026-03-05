@@ -75,12 +75,7 @@ class FallbackTxSent extends Error {
   txSignature: string;
   authSignature: string;
   authMessage: string;
-  constructor(
-    pk: PublicKey,
-    txSig: string,
-    authSig: string,
-    authMsg: string,
-  ) {
+  constructor(pk: PublicKey, txSig: string, authSig: string, authMsg: string) {
     super('Wallet sent transaction via fallback path');
     this.name = 'FallbackTxSent';
     this.publicKey = pk;
@@ -283,8 +278,15 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
 
         // Persist pending auth BEFORE the HTTP call. If Android destroys the
         // Activity during the fetch, the hydration effect will complete it.
-        const pendingAuth: PendingAuth = {wallet: walletAddress, signature, message};
-        await AsyncStorage.setItem(PENDING_AUTH_KEY, JSON.stringify(pendingAuth));
+        const pendingAuth: PendingAuth = {
+          wallet: walletAddress,
+          signature,
+          message,
+        };
+        await AsyncStorage.setItem(
+          PENDING_AUTH_KEY,
+          JSON.stringify(pendingAuth),
+        );
 
         // Now make the HTTP call. This may or may not complete before
         // Android destroys the Activity — that's OK, hydration handles it.
@@ -537,10 +539,7 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
               message: authMessage,
             }),
           );
-          await AsyncStorage.setItem(
-            '@glimpse_wallet_address',
-            walletAddress,
-          );
+          await AsyncStorage.setItem('@glimpse_wallet_address', walletAddress);
 
           return {
             walletAddress,
@@ -565,7 +564,8 @@ export function WalletProvider({children}: {children: React.ReactNode}) {
           await setSupabaseAccessToken(authResult.token);
           await AsyncStorage.removeItem(PENDING_AUTH_KEY);
         } catch (wpAuthErr) {
-          const msg = wpAuthErr instanceof Error ? wpAuthErr.message : String(wpAuthErr);
+          const msg =
+            wpAuthErr instanceof Error ? wpAuthErr.message : String(wpAuthErr);
           console.error('[WP] wallet-auth FAILED:', msg);
           // Auth failed — donations.ts will retry with same credentials.
         }

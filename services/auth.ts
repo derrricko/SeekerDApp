@@ -30,10 +30,10 @@ export async function authenticateWalletSignature(params: {
     const serverError =
       typeof payload?.error === 'string' ? payload.error : null;
     const detail = serverError || JSON.stringify(payload) || '(empty body)';
-    console.error(
-      `[wallet-auth] HTTP ${response.status}: ${detail}`,
+    console.error(`[wallet-auth] HTTP ${response.status}: ${detail}`);
+    throw new Error(
+      serverError || `Wallet auth failed (HTTP ${response.status})`,
     );
-    throw new Error(serverError || `Wallet auth failed (HTTP ${response.status})`);
   }
 
   if (

@@ -144,11 +144,11 @@ async function processTransaction(
       tx_signature: signature,
       donor_wallet: donorWallet,
       recipient_wallet: MATCHING_POOL_WALLET,
-      recipient_id: 'public-schools', // Default — client recording has the actual campaign
+      recipient_id: 'general', // Webhook lacks campaign context — client retry overwrites with real data
       amount_usdc: amountUSDC,
       cadence,
       donation_mode: 'solo',
-      cause_preferences: ['education', 'public-schools'], // Default
+      cause_preferences: [], // Unknown from webhook — client retry fills in actual preferences
       status: 'confirmed',
     })
     .select('id')

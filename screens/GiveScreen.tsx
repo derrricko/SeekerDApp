@@ -725,8 +725,8 @@ export default function GiveScreen() {
                     styles.timelineItem,
                     {color: theme.colors.textTertiary},
                   ]}>
-                  {'—  '}Network fee: {'<'}$0.01 SOL (paid to Solana
-                  validators, not Glimpse)
+                  {'—  '}Network fee: {'<'}$0.01 SOL (paid to Solana validators,
+                  not Glimpse)
                 </Text>
               </View>
 

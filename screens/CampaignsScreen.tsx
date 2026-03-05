@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -23,7 +23,10 @@ import {
   fetchAllDonations,
   type DonationHistoryItem,
 } from '../services/chat';
-import {fetchEnhancedTransactions, type EnhancedDonation} from '../services/helius';
+import {
+  fetchEnhancedTransactions,
+  type EnhancedDonation,
+} from '../services/helius';
 
 type ViewMode = 'feed' | 'my_glimpses';
 
@@ -47,10 +50,13 @@ export default function CampaignsScreen() {
   );
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
-  const lastHistoryFetchAt = useRef(0);
+  const lastHistoryFetchAtByWallet = useRef<Record<string, number>>({});
+  const previousWalletRef = useRef<string | null>(null);
 
   // Enhanced on-chain verification data (Helius)
-  const [enhancedData, setEnhancedData] = useState<Map<string, EnhancedDonation>>(new Map());
+  const [enhancedData, setEnhancedData] = useState<
+    Map<string, EnhancedDonation>
+  >(new Map());
 
   const walletAddress = publicKey?.toBase58() ?? null;
 
@@ -93,14 +99,11 @@ export default function CampaignsScreen() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode]);
 
   // Fetch enhanced on-chain data for feed donations
   useEffect(() => {
-    const signatures = feedDonations
-      .map(d => d.tx_signature)
-      .filter(Boolean);
+    const signatures = feedDonations.map(d => d.tx_signature).filter(Boolean);
 
     if (signatures.length === 0) {
       return;
@@ -122,6 +125,15 @@ export default function CampaignsScreen() {
     };
   }, [feedDonations]);
 
+  useEffect(() => {
+    if (walletAddress !== previousWalletRef.current) {
+      previousWalletRef.current = walletAddress;
+      setDonationHistory([]);
+      setHistoryError(null);
+      setHistoryLoading(false);
+    }
+  }, [walletAddress]);
+
   // My Glimpses tab — user's donations
   useEffect(() => {
     if (viewMode !== 'my_glimpses') {
@@ -134,10 +146,8 @@ export default function CampaignsScreen() {
       return;
     }
 
-    if (
-      lastHistoryFetchAt.current > 0 &&
-      Date.now() - lastHistoryFetchAt.current < STALE_MS
-    ) {
+    const lastFetchAt = lastHistoryFetchAtByWallet.current[walletAddress] ?? 0;
+    if (lastFetchAt > 0 && Date.now() - lastFetchAt < STALE_MS) {
       return;
     }
 
@@ -150,7 +160,7 @@ export default function CampaignsScreen() {
         if (!cancelled) {
           setDonationHistory(rows);
           setHistoryLoading(false);
-          lastHistoryFetchAt.current = Date.now();
+          lastHistoryFetchAtByWallet.current[walletAddress] = Date.now();
         }
       })
       .catch(error => {
@@ -167,7 +177,6 @@ export default function CampaignsScreen() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, walletAddress]);
 
   return (
@@ -454,8 +463,7 @@ function renderDonationList({
                   styles.historyMeta,
                   {color: theme.colors.textSecondary},
                 ]}>
-                {recipient} -{' '}
-                {new Date(item.created_at).toLocaleDateString()}
+                {recipient} - {new Date(item.created_at).toLocaleDateString()}
               </Text>
             )}
           </>
@@ -538,9 +546,7 @@ function renderDonationList({
                     fontFamily: theme.typography.brand,
                   },
                 ]}>
-                {item.conversation_id
-                  ? 'VIEW THREAD \u2192'
-                  : 'PROCESSING...'}
+                {item.conversation_id ? 'VIEW THREAD \u2192' : 'PROCESSING...'}
               </Text>
             </View>
           </TouchableOpacity>

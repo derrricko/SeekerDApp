@@ -22,11 +22,8 @@ import HomeScreen from '../screens/HomeScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import HowItWorksCarousel from '../screens/HowItWorksCarousel';
 import MessagesScreen from '../screens/MessagesScreen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useUnread} from '../components/providers/UnreadProvider';
 import {useTheme} from '../theme/Theme';
-
-const ONBOARDED_KEY = '@glimpse_onboarded';
 
 export type RootTabParamList = {
   Glimpses: undefined;

@@ -248,7 +248,7 @@ async function queryDonations(opts: {
     throw error;
   }
 
-  return (data ?? [] as DonationHistoryRow[]).map(mapDonationRow);
+  return (data ?? ([] as DonationHistoryRow[])).map(mapDonationRow);
 }
 
 export function fetchDonationHistory(
@@ -257,9 +257,7 @@ export function fetchDonationHistory(
   return queryDonations({walletAddress});
 }
 
-export function fetchAllDonations(
-  limit = 50,
-): Promise<DonationHistoryItem[]> {
+export function fetchAllDonations(limit = 50): Promise<DonationHistoryItem[]> {
   return queryDonations({limit});
 }
 
@@ -286,6 +284,7 @@ export function useUnreadCount(walletAddress: string | null) {
     string | null
   >(null);
   const activeConversationRef = useRef<string | null>(null);
+  const refreshInFlightRef = useRef(false);
 
   useEffect(() => {
     activeConversationRef.current = activeConversationId;
@@ -360,10 +359,26 @@ export function useUnreadCount(walletAddress: string | null) {
             return;
           }
 
-          setConversationUnreads(prev => ({
-            ...prev,
-            [conversationId]: (prev[conversationId] ?? 0) + 1,
-          }));
+          setConversationUnreads(prev => {
+            if (conversationId in prev) {
+              return {
+                ...prev,
+                [conversationId]: (prev[conversationId] ?? 0) + 1,
+              };
+            }
+
+            // Ignore unrelated conversations from global Realtime feed.
+            // For unknown ids, perform one full refresh to pick up new threads.
+            if (!refreshInFlightRef.current) {
+              refreshInFlightRef.current = true;
+              refresh()
+                .catch(() => {})
+                .finally(() => {
+                  refreshInFlightRef.current = false;
+                });
+            }
+            return prev;
+          });
         },
       )
       .subscribe();
@@ -371,7 +386,7 @@ export function useUnreadCount(walletAddress: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [markRead, walletAddress]);
+  }, [markRead, refresh, walletAddress]);
 
   const totalUnread = useMemo(
     () =>

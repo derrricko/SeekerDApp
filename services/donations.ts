@@ -23,7 +23,11 @@ import {
   removePendingConversation,
 } from '../utils/retry';
 import {SUPABASE_ANON_KEY, SUPABASE_URL} from '../config/env';
-import {getSupabaseAccessToken, isTokenExpired, setSupabaseAccessToken} from './supabase';
+import {
+  getSupabaseAccessToken,
+  isTokenExpired,
+  setSupabaseAccessToken,
+} from './supabase';
 import {authenticateWalletSignature} from './auth';
 import {DonationCadence, DonationMode} from '../data/donationConfig';
 import type {WalletSignResult} from '../components/providers/WalletProvider';
@@ -207,7 +211,9 @@ export async function executeDonationSeamless(
     // there is no valid token yet (avoids duplicate calls + replay guard rejection).
     const existingToken = getSupabaseAccessToken();
     if (!existingToken || isTokenExpired(existingToken)) {
-      console.warn('[donation] No valid auth token — attempting wallet-auth...');
+      console.warn(
+        '[donation] No valid auth token — attempting wallet-auth...',
+      );
       try {
         const authResult = await authenticateWalletSignature({
           wallet: donorPubkey.toBase58(),
@@ -216,7 +222,8 @@ export async function executeDonationSeamless(
         });
         await setSupabaseAccessToken(authResult.token);
       } catch (authErr) {
-        const msg = authErr instanceof Error ? authErr.message : String(authErr);
+        const msg =
+          authErr instanceof Error ? authErr.message : String(authErr);
         console.error('[donation] wallet-auth FAILED:', msg);
         // Continue — token may have been set by WalletProvider
       }
@@ -313,7 +320,14 @@ async function confirmAndRecord(
 
   return ok({
     txSignature,
-    memo: memo || {d: '', r: '', a: amountUSDC, t: 0, app: 'glimpse', tok: 'usdc'},
+    memo: memo || {
+      d: '',
+      r: '',
+      a: amountUSDC,
+      t: 0,
+      app: 'glimpse',
+      tok: 'usdc',
+    },
     conversationId,
     donorWallet: donorPubkey.toBase58(),
     recordError,

@@ -370,9 +370,10 @@ export default function MessagesScreen() {
           contentContainerStyle={styles.conversationList}
           renderItem={({item, index}) => {
             const amount = Number(item.amount_usdc ?? 0).toFixed(2);
-            const glimpseNumber = String(
-              conversations.length - index,
-            ).padStart(3, '0');
+            const glimpseNumber = String(conversations.length - index).padStart(
+              3,
+              '0',
+            );
             const glimpseTag = `#${glimpseNumber}`;
             const unreadCount =
               conversationUnreads[item.id] ?? item.unread_count ?? 0;
@@ -511,9 +512,7 @@ export default function MessagesScreen() {
       onStatusChange={newStatus => {
         setConversations(prev =>
           prev.map(c =>
-            c.id === conversation.id
-              ? {...c, donation_status: newStatus}
-              : c,
+            c.id === conversation.id ? {...c, donation_status: newStatus} : c,
           ),
         );
       }}
@@ -572,7 +571,10 @@ function ChatView({
       onStatusChange?.('completed');
     } catch (e) {
       console.error('Failed to mark completed:', e);
-      Alert.alert('Update failed', 'Could not mark donation as completed. Try again.');
+      Alert.alert(
+        'Update failed',
+        'Could not mark donation as completed. Try again.',
+      );
     }
     setMarkingComplete(false);
     markingRef.current = false;
