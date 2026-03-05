@@ -6,7 +6,6 @@ import {
   Animated,
   Alert,
   BackHandler,
-  Linking,
   View,
   Text,
   FlatList,
@@ -45,9 +44,13 @@ import {
 } from '../services/chat';
 import {getRecipientLabel, type DonationStatus} from '../data/donationConfig';
 import {ADMIN_WALLET} from '../config/env';
-import {getExplorerUrl} from '../utils/explorer';
 import AppHeader from '../ui/AppHeader';
 import SurfaceCard from '../ui/SurfaceCard';
+import ProofCard from '../ui/ProofCard';
+import {
+  fetchEnhancedTransactions,
+  type EnhancedDonation,
+} from '../services/helius';
 import type {RootTabParamList} from '../navigation/AppNavigator';
 import {useUnread} from '../components/providers/UnreadProvider';
 
@@ -242,7 +245,7 @@ export default function MessagesScreen() {
   const {theme} = useTheme();
   const navigation = useNavigation<any>();
   const route = useRoute<MessagesRouteProp>();
-  const {connected, publicKey, isAdmin} = useWallet();
+  const {connected, connecting, publicKey, isAdmin, connect} = useWallet();
   const {conversationUnreads, markRead, setActiveConversation} = useUnread();
 
   const conversationId: string | undefined = route.params?.conversationId;
@@ -333,6 +336,61 @@ export default function MessagesScreen() {
     );
   }
 
+  if (!connected || !walletAddress) {
+    return (
+      <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+        <AppHeader title="Messages" />
+        <View style={styles.emptyWrap}>
+          <SurfaceCard
+            style={{
+              ...styles.stateCard,
+              borderColor: theme.colors.borderMuted,
+              backgroundColor: theme.colors.surfaceMuted,
+            }}>
+            <Text
+              style={[
+                styles.stateTitle,
+                {
+                  color: theme.colors.textPrimary,
+                  fontFamily: theme.typography.brand,
+                },
+              ]}>
+              CONNECT WALLET
+            </Text>
+            <Text
+              style={[styles.stateBody, {color: theme.colors.textSecondary}]}>
+              Connect your wallet to view your message threads.
+            </Text>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              disabled={connecting}
+              onPress={() => connect().catch(() => {})}
+              style={[
+                styles.walletConnectButton,
+                {
+                  backgroundColor: theme.colors.accent,
+                  borderColor: theme.colors.border,
+                  opacity: connecting ? 0.7 : 1,
+                },
+              ]}>
+              {connecting ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text
+                  style={[
+                    styles.walletConnectButtonText,
+                    {fontFamily: theme.typography.brand},
+                  ]}>
+                  CONNECT WALLET
+                </Text>
+              )}
+            </TouchableOpacity>
+          </SurfaceCard>
+        </View>
+      </View>
+    );
+  }
+
   // No conversationId param — show conversation list
   if (!conversationId && !conversation) {
     if (conversations.length === 0) {
@@ -383,7 +441,8 @@ export default function MessagesScreen() {
                   styles.conversationRow,
                   {
                     backgroundColor: theme.colors.surface,
-                    borderColor: theme.colors.border,
+                    borderColor: theme.colors.borderMuted,
+                    borderRadius: theme.radius.lg,
                   },
                 ]}
                 activeOpacity={0.8}
@@ -555,9 +614,31 @@ function ChatView({
     conversation.donation_status ?? 'confirmed',
   );
   const [markingComplete, setMarkingComplete] = useState(false);
+  const [threadEnhanced, setThreadEnhanced] = useState<
+    EnhancedDonation | undefined
+  >();
   const markingRef = useRef(false);
   const flatListRef = React.useRef<FlatList>(null);
   const sendPulse = React.useRef(new Animated.Value(1)).current;
+
+  // Fetch enhanced on-chain data for the donation context card
+  useEffect(() => {
+    const sig = conversation.tx_signature;
+    if (!sig) {
+      return;
+    }
+    let cancelled = false;
+    fetchEnhancedTransactions([sig])
+      .then(data => {
+        if (!cancelled) {
+          setThreadEnhanced(data.get(sig));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [conversation.tx_signature]);
 
   const handleMarkCompleted = useCallback(async () => {
     if (markingRef.current) {
@@ -750,15 +831,27 @@ function ChatView({
         style={styles.chatBody}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={90}>
-        <View
-          style={[
-            styles.chatTopCard,
-            {
-              backgroundColor: theme.colors.surfaceMuted,
-              borderColor: theme.colors.borderMuted,
-            },
-          ]}>
-          <View style={styles.chatMetaWrap}>
+        {/* Donation context card */}
+        {conversation.tx_signature ? (
+          <ProofCard
+            compact
+            amountUsdc={conversation.amount_usdc ?? 0}
+            recipientId={conversation.recipient_id ?? 'general'}
+            txSignature={conversation.tx_signature}
+            createdAt={conversation.created_at}
+            status={donationStatus}
+            enhanced={threadEnhanced}
+            style={{marginBottom: 4}}
+          />
+        ) : (
+          <View
+            style={[
+              styles.chatTopCard,
+              {
+                backgroundColor: theme.colors.surfaceMuted,
+                borderColor: theme.colors.borderMuted,
+              },
+            ]}>
             <Text
               style={[styles.chatRecipient, {color: theme.colors.textPrimary}]}>
               GLIMPSE {glimpseTag}
@@ -773,72 +866,58 @@ function ChatView({
               ]}>
               {amount} USDC • {shortThreadId(conversation.id)} • {recipientName}
             </Text>
+          </View>
+        )}
+
+        {/* Thread navigation + admin controls */}
+        <View style={styles.chatControlsRow}>
+          <TouchableOpacity
+            onPress={onBackToThreads}
+            style={styles.backToThreadsButton}
+            activeOpacity={0.8}>
+            <Text
+              style={[
+                styles.backToThreadsText,
+                {
+                  color: theme.colors.accent,
+                  fontFamily: theme.typography.brand,
+                },
+              ]}>
+              {hasRouteConversationId ? 'Go to inbox' : 'Back to threads'}
+            </Text>
+          </TouchableOpacity>
+          {isAdmin && donationStatus === 'confirmed' ? (
             <TouchableOpacity
-              onPress={onBackToThreads}
-              style={styles.backToThreadsButton}
+              onPress={handleMarkCompleted}
+              disabled={markingComplete}
+              style={[
+                styles.markCompletedButton,
+                {borderColor: theme.colors.success},
+              ]}
               activeOpacity={0.8}>
               <Text
                 style={[
-                  styles.backToThreadsText,
-                  {
-                    color: theme.colors.accent,
-                    fontFamily: theme.typography.brand,
-                  },
-                ]}>
-                {hasRouteConversationId ? 'Go to inbox' : 'Back to threads'}
-              </Text>
-            </TouchableOpacity>
-            {conversation.tx_signature ? (
-              <TouchableOpacity
-                onPress={() =>
-                  Linking.openURL(getExplorerUrl(conversation.tx_signature!))
-                }
-                activeOpacity={0.7}>
-                <Text
-                  style={[
-                    styles.explorerLink,
-                    {
-                      color: theme.colors.accent,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  View on Explorer
-                </Text>
-              </TouchableOpacity>
-            ) : null}
-            {isAdmin && donationStatus === 'confirmed' ? (
-              <TouchableOpacity
-                onPress={handleMarkCompleted}
-                disabled={markingComplete}
-                style={[
-                  styles.markCompletedButton,
-                  {borderColor: theme.colors.success},
-                ]}
-                activeOpacity={0.8}>
-                <Text
-                  style={[
-                    styles.markCompletedText,
-                    {
-                      color: theme.colors.success,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  {markingComplete ? 'UPDATING...' : 'MARK COMPLETED'}
-                </Text>
-              </TouchableOpacity>
-            ) : donationStatus === 'completed' ? (
-              <Text
-                style={[
-                  styles.completedBadge,
+                  styles.markCompletedText,
                   {
                     color: theme.colors.success,
                     fontFamily: theme.typography.brand,
                   },
                 ]}>
-                COMPLETED
+                {markingComplete ? 'UPDATING...' : 'MARK COMPLETED'}
               </Text>
-            ) : null}
-          </View>
+            </TouchableOpacity>
+          ) : donationStatus === 'completed' ? (
+            <Text
+              style={[
+                styles.completedBadge,
+                {
+                  color: theme.colors.success,
+                  fontFamily: theme.typography.brand,
+                },
+              ]}>
+              COMPLETED
+            </Text>
+          ) : null}
         </View>
 
         {chatLoading ? (
@@ -1008,7 +1087,7 @@ const styles = StyleSheet.create({
   },
   stateCard: {
     borderRadius: 14,
-    borderWidth: 2,
+    borderWidth: 1,
   },
   stateTitle: {
     fontSize: 16,
@@ -1020,6 +1099,22 @@ const styles = StyleSheet.create({
   stateBody: {
     fontSize: 15,
     lineHeight: 22,
+  },
+  walletConnectButton: {
+    marginTop: 14,
+    minHeight: 42,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  walletConnectButtonText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 0.9,
+    fontWeight: '700',
   },
   chatBody: {
     flex: 1,
@@ -1033,8 +1128,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 10,
   },
-  chatMetaWrap: {
-    width: '100%',
+  chatControlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 2,
+    marginBottom: 6,
   },
   chatRecipient: {
     fontSize: 18,
@@ -1228,13 +1327,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  explorerLink: {
-    fontSize: 11,
-    letterSpacing: 0.5,
-    marginTop: 6,
-  },
   markCompletedButton: {
-    borderWidth: 2,
+    borderWidth: 1,
     borderRadius: 0,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -1258,8 +1352,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   conversationRow: {
-    borderWidth: 2,
-    borderRadius: 14,
+    borderWidth: 1,
+    borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
