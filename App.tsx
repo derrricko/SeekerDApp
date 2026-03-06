@@ -16,8 +16,8 @@ import {ThemeProvider} from './theme/Theme';
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider initialMode="dark">
-        <StatusBar barStyle="light-content" backgroundColor="#0A1628" />
+      <ThemeProvider>
+        <StatusBar barStyle="dark-content" backgroundColor="#EDE8FA" />
         <ConnectionProvider>
           <WalletProvider>
             <UnreadProvider>

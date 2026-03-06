@@ -318,8 +318,7 @@ export default function GiveScreen() {
     }
   };
 
-  const inputSurface =
-    theme.mode === 'light' ? '#FFFFFF' : theme.colors.surface;
+  const inputSurface = '#FFFFFF';
 
   return (
     <View style={[styles.root, {backgroundColor: theme.colors.background}]}>

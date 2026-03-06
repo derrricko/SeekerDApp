@@ -1,7 +1,7 @@
-import React, {createContext, useContext, useMemo, useState} from 'react';
-import {useColorScheme, ViewStyle} from 'react-native';
+import React, {createContext, useContext} from 'react';
+import {ViewStyle} from 'react-native';
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = 'light';
 
 type ShadowSet = {
   subtle: ViewStyle;
@@ -10,7 +10,7 @@ type ShadowSet = {
 };
 
 export interface AppTheme {
-  mode: 'light' | 'dark';
+  mode: 'light';
   colors: {
     background: string;
     surface: string;
@@ -124,35 +124,6 @@ const lightTheme: AppTheme = {
   },
 };
 
-const darkTheme: AppTheme = {
-  mode: 'dark',
-  colors: {
-    background: '#0A1628',
-    surface: 'rgba(30,41,59,0.78)',
-    surfaceAlt: '#13223A',
-    border: 'rgba(255,255,255,0.12)',
-    textPrimary: '#F7FAFC',
-    textSecondary: '#A0AEC0',
-    textTertiary: '#718096',
-    accent: '#BF5AF2',
-    accentPressed: '#A74ED4',
-    teal: '#40E0D0',
-    danger: '#FF6A85',
-    success: '#30D158',
-    overlay: 'rgba(3, 6, 12, 0.45)',
-    surfaceMuted: 'rgba(255,255,255,0.04)',
-    borderMuted: 'rgba(255,255,255,0.08)',
-  },
-  spacing: lightTheme.spacing,
-  radius: lightTheme.radius,
-  typography: lightTheme.typography,
-  shadows: {
-    subtle: createShadow('#000000', 0.2, 3, 0, 2, 2),
-    card: createShadow('#000000', 0.3, 8, 0, 4, 3),
-    press: createShadow('#000000', 0.2, 2, 0, 1, 1),
-  },
-};
-
 interface ThemeContextValue {
   theme: AppTheme;
   setMode: (mode: ThemeMode) => void;
@@ -163,33 +134,15 @@ const ThemeContext = createContext<ThemeContextValue>({
   setMode: () => {},
 });
 
-export function ThemeProvider({
-  children,
-  initialMode = 'light',
-}: {
-  children: React.ReactNode;
-  initialMode?: ThemeMode;
-}) {
-  const deviceMode = useColorScheme();
-  const [modePreference, setModePreference] = useState<ThemeMode>(initialMode);
-
-  const resolvedMode = useMemo<'light' | 'dark'>(() => {
-    if (modePreference === 'system') {
-      return deviceMode === 'dark' ? 'dark' : 'light';
-    }
-    return modePreference;
-  }, [deviceMode, modePreference]);
-
-  const value = useMemo(
-    () => ({
-      theme: resolvedMode === 'dark' ? darkTheme : lightTheme,
-      setMode: setModePreference,
-    }),
-    [resolvedMode],
-  );
-
+export function ThemeProvider({children}: {children: React.ReactNode}) {
   return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider
+      value={{
+        theme: lightTheme,
+        setMode: () => {},
+      }}>
+      {children}
+    </ThemeContext.Provider>
   );
 }
 

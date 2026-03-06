@@ -872,17 +872,9 @@ function ChatView({
                   donorBubbleBackground={theme.colors.accent}
                   donorBubbleBorder={theme.colors.accentPressed}
                   adminTextColor={theme.colors.textPrimary}
-                  donorTextColor={
-                    theme.mode === 'light'
-                      ? 'rgba(248,244,255,0.98)'
-                      : '#F7FAFC'
-                  }
+                  donorTextColor={'rgba(248,244,255,0.98)'}
                   adminTimeColor={theme.colors.textTertiary}
-                  donorTimeColor={
-                    theme.mode === 'light'
-                      ? 'rgba(244,240,255,0.74)'
-                      : 'rgba(247,250,252,0.6)'
-                  }
+                  donorTimeColor={'rgba(244,240,255,0.74)'}
                 />
               );
             }}
@@ -942,8 +934,7 @@ function ChatView({
             style={[
               styles.chatInput,
               {
-                backgroundColor:
-                  theme.mode === 'light' ? '#FFFFFF' : theme.colors.surface,
+                backgroundColor: '#FFFFFF',
                 color: theme.colors.textPrimary,
                 borderColor: theme.colors.borderMuted,
               },
