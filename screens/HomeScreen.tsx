@@ -9,120 +9,110 @@ import {
 } from 'react-native';
 import {useTheme} from '../theme/Theme';
 
+const STRIP_STEPS = ['GIVE', 'CONFIRM', 'SEE PROOF'] as const;
+
 export default function HomeScreen({onContinue}: {onContinue: () => void}) {
   const {theme} = useTheme();
-  const breathe = useRef(new Animated.Value(0.85)).current;
-  const fadeIn = useRef(new Animated.Value(0)).current;
+  const stripValues = useRef(
+    STRIP_STEPS.map(() => new Animated.Value(0)),
+  ).current;
 
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(breathe, {
-          toValue: 1,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(breathe, {
-          toValue: 0.85,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
+    for (const value of stripValues) {
+      value.setValue(0);
+    }
 
-    Animated.timing(fadeIn, {
-      toValue: 1,
-      duration: 600,
-      delay: 200,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-  }, [breathe, fadeIn]);
+    Animated.stagger(
+      110,
+      stripValues.map(value =>
+        Animated.timing(value, {
+          toValue: 1,
+          duration: 170,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+      ),
+    ).start();
+  }, [stripValues]);
 
   return (
     <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
       <View style={styles.content}>
-        {/* G Lettermark */}
-        <Animated.View style={[styles.gMarkWrap, {opacity: breathe}]}>
-          <View
-            style={[styles.gMarkCircle, {borderColor: theme.colors.accent}]}
-          />
-          <View
-            style={[styles.gMarkBar, {backgroundColor: theme.colors.accent}]}
-          />
-        </Animated.View>
-
-        <Animated.View style={[styles.textBlock, {opacity: fadeIn}]}>
-          <Text
-            style={[
-              styles.kicker,
-              {
-                color: theme.colors.textTertiary,
-                fontFamily: theme.typography.brand,
-              },
-            ]}>
-            DOCUMENTING KINDNESS
-          </Text>
-
-          <Text
-            style={[
-              styles.headline,
-              {
-                color: theme.colors.textPrimary,
-                fontFamily: theme.typography.display,
-              },
-            ]}>
-            Give. See the proof.{'\n'}Start a conversation.
-          </Text>
-
-          <View style={styles.stepsRow}>
-            {['GIVE', 'CONFIRM', 'SEE PROOF'].map((step, i) => (
+        <View
+          style={[
+            styles.stripWrap,
+            {
+              borderColor: theme.colors.borderMuted,
+              backgroundColor: theme.colors.surface,
+            },
+          ]}>
+          {STRIP_STEPS.map((step, index) => {
+            const value = stripValues[index];
+            const isLast = index === STRIP_STEPS.length - 1;
+            return (
               <React.Fragment key={step}>
-                <Text
+                <Animated.View
                   style={[
-                    styles.stepText,
+                    styles.stepPill,
                     {
-                      color: theme.colors.textTertiary,
-                      fontFamily: theme.typography.brand,
+                      borderColor: theme.colors.borderMuted,
+                      backgroundColor: value.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [
+                          theme.colors.surfaceMuted,
+                          `${theme.colors.accent}33`,
+                        ],
+                      }),
                     },
                   ]}>
-                  {step}
-                </Text>
-                {i < 2 && (
+                  <Animated.Text
+                    style={[
+                      styles.stepText,
+                      {
+                        fontFamily: theme.typography.brand,
+                        color: value.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [
+                            theme.colors.textSecondary,
+                            theme.colors.textPrimary,
+                          ],
+                        }),
+                      },
+                    ]}>
+                    {step}
+                  </Animated.Text>
+                </Animated.View>
+                {!isLast ? (
                   <Text
                     style={[
-                      styles.stepArrow,
-                      {color: theme.colors.textTertiary},
+                      styles.arrow,
+                      {
+                        color: theme.colors.textTertiary,
+                        fontFamily: theme.typography.brand,
+                      },
                     ]}>
-                    {'\u2192'}
+                    →
                   </Text>
-                )}
+                ) : null}
               </React.Fragment>
-            ))}
-          </View>
-        </Animated.View>
+            );
+          })}
+        </View>
 
-        <Animated.View style={{opacity: fadeIn, width: '100%', maxWidth: 420}}>
-          <Pressable
-            onPress={onContinue}
-            style={({pressed}) => [
-              styles.cta,
-              {
-                backgroundColor: theme.colors.accent,
-                borderColor: theme.colors.borderMuted,
-                borderRadius: theme.radius.md,
-                transform: [{scale: pressed ? 0.985 : 1}],
-              },
-              theme.shadows.card,
-            ]}>
-            <Text
-              style={[styles.ctaText, {fontFamily: theme.typography.brand}]}>
-              GIVE A GLIMPSE
-            </Text>
-          </Pressable>
-        </Animated.View>
+        <Pressable
+          onPress={onContinue}
+          style={({pressed}) => [
+            styles.cta,
+            {
+              backgroundColor: theme.colors.accent,
+              borderColor: theme.colors.border,
+              transform: [{scale: pressed ? 0.985 : 1}],
+            },
+          ]}>
+          <Text style={[styles.ctaText, {fontFamily: theme.typography.brand}]}>
+            START DONATION
+          </Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -136,73 +126,54 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    gap: 24,
+    paddingHorizontal: 16,
+    gap: 18,
   },
-  gMarkWrap: {
-    width: 64,
-    height: 64,
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  gMarkCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 2.5,
-  },
-  gMarkBar: {
-    position: 'absolute',
-    right: 4,
-    width: 16,
-    height: 2.5,
-    borderRadius: 1,
-  },
-  textBlock: {
-    alignItems: 'center',
-    gap: 12,
-  },
-  kicker: {
-    fontSize: 13,
-    lineHeight: 16,
-    letterSpacing: 3,
-    fontWeight: '400',
-  },
-  headline: {
-    fontSize: 24,
-    lineHeight: 32,
-    fontWeight: '300',
-    textAlign: 'center',
-  },
-  stepsRow: {
+  stripWrap: {
+    width: '100%',
+    maxWidth: 420,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
+    justifyContent: 'center',
+  },
+  stepPill: {
+    borderWidth: 1,
+    borderRadius: 9,
+    minWidth: 94,
+    minHeight: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
   },
   stepText: {
-    fontSize: 9,
-    lineHeight: 12,
-    letterSpacing: 0.8,
-    fontWeight: '700',
-  },
-  stepArrow: {
     fontSize: 10,
     lineHeight: 12,
+    letterSpacing: 0.9,
+    fontWeight: '700',
+  },
+  arrow: {
+    marginHorizontal: 7,
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '700',
   },
   cta: {
     width: '100%',
-    borderWidth: 1,
-    minHeight: 48,
+    maxWidth: 420,
+    borderWidth: 2,
+    borderRadius: 12,
+    minHeight: 52,
     alignItems: 'center',
     justifyContent: 'center',
   },
   ctaText: {
     color: '#F3EFFF',
-    fontSize: 14,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 14,
     letterSpacing: 1.2,
     fontWeight: '700',
   },

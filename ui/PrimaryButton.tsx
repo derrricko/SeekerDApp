@@ -64,8 +64,8 @@ export default function PrimaryButton({
       style={({pressed}) => [
         styles.base,
         {
-          borderRadius: theme.radius.md,
-          paddingVertical: theme.spacing.sm,
+          borderRadius: theme.radius.sm,
+          paddingVertical: theme.spacing.md,
           paddingHorizontal: theme.spacing.lg,
           opacity: disabled ? 0.5 : 1,
           transform: [{scale: pressed ? 0.99 : 1}],
@@ -80,8 +80,8 @@ export default function PrimaryButton({
           styles.text,
           {
             fontFamily: theme.typography.brand,
-            fontSize: 14,
-            letterSpacing: 1.1,
+            fontSize: 22,
+            letterSpacing: 1,
             textTransform: 'uppercase',
           },
           variantStyles[variant].text,
@@ -94,10 +94,10 @@ export default function PrimaryButton({
 
 const styles = StyleSheet.create({
   base: {
-    borderWidth: 1.5,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 48,
+    minHeight: 54,
   },
   text: {
     fontWeight: '700',

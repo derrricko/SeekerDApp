@@ -19,8 +19,8 @@ export default function SurfaceCard({
         styles.card,
         {
           backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.borderMuted,
-          borderRadius: theme.radius.lg,
+          borderColor: theme.colors.border,
+          borderRadius: theme.radius.sm,
           padding: padded ? theme.spacing.lg : 0,
         },
         theme.shadows.card,
@@ -33,6 +33,6 @@ export default function SurfaceCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: 1,
+    borderWidth: 3,
   },
 });
