@@ -37,7 +37,7 @@ Repo: `github.com/derrricko/giveglimpse-site`
 - [x] **Rotate Helius API key** — new key deployed to Supabase secrets (2026-03-02)
 - [x] **Deploy migrations** — 011 through 016 deployed
 - [x] **Deploy edge functions** — wallet-auth + record-donation deployed
-- [ ] **Verify `config/env.ts`** mainnet values: cluster, USDC mint, pool ATA, RPC endpoint
+- [x] **Verify `config/env.ts`** mainnet values: cluster, USDC mint, pool ATA, RPC endpoint (2026-03-07)
 
 ---
 
@@ -59,7 +59,7 @@ Repo: `github.com/derrricko/giveglimpse-site`
 
 **Deployed:** 2026-03-05. Webhook configured on Helius dashboard, auth token set as Supabase secret.
 
-**Remaining:** Webhook fallback inserts `recipient_id: general` with empty cause preferences (campaign context unavailable from on-chain data alone). Client retry can enrich later.
+**Remaining:** Webhook fallback inserts `recipient_id: general` with empty cause preferences (campaign context unavailable from on-chain data alone). Client retry can enrich later. Auth now fails closed if `HELIUS_WEBHOOK_AUTH_TOKEN` is missing (2026-03-07).
 
 ---
 
@@ -81,32 +81,20 @@ Repo: `github.com/derrricko/giveglimpse-site`
 
 **Why:** This was flagged as the single critical gap in the v2 plan review. Currently, if a photo/video upload fails in `services/chat.ts` (`uploadChatMedia`), the failure is silent — no error toast, no retry, the user just sees nothing happen. For a demo this is acceptable, but for real use it's a broken experience.
 
-**Context:** The fix involves: (1) wrapping `uploadChatMedia` in a try/catch with a user-visible error toast, (2) adding an upload progress callback using XMLHttpRequest instead of the Supabase client's fetch-based upload, (3) file size validation before upload (reject videos over 50MB), (4) a retry button if upload fails. The `ChatView` component in `screens/MessagesScreen.tsx` is where the UI lives. Estimated effort: 2-3 hours.
+**Context:** The fix involves: (1) wrapping `uploadChatMedia` in a try/catch with a user-visible error toast, (2) adding an upload progress callback using XMLHttpRequest instead of the Supabase client's fetch-based upload, (3) file size validation before upload (reject videos over 50MB), (4) a retry button if upload fails. The `ChatView` component in `screens/MessagesScreen.tsx` is where the UI lives. Estimated effort: 2-3 hours. Filename sanitization is already in place as of 2026-03-07; the remaining gap is user-facing upload UX.
 
 **Depends on:** Chat functionality working end-to-end.
 
 ---
 
-## 5. Replace dApp Store Placeholder Assets
+## 5. Replace dApp Store Placeholder Assets — DONE
 
-**What:** Replace all placeholder dApp Store assets with real branded content before submission.
+**Completed:** All assets replaced with real branded content and submitted to dApp Store on 2026-03-03.
 
-**Why:** The current icon (plain purple square), banner (solid dark rectangle), and all 4 screenshots (solid-color images) are placeholders. The dApp Store requires real assets showing the actual app experience. Placeholder assets will result in rejection during manual review.
-
-**Assets to replace:**
-- `dapp-store/icon-512.png` — 512x512 PNG with Glimpse branding/logo
-- `dapp-store/banner-1200x600.png` — 1200x600 PNG with app name, tagline, and/or device mockup
-- `dapp-store/screenshots/01-campaigns.png` — 1080x1920, show campaigns list
-- `dapp-store/screenshots/02-give.png` — 1080x1920, show give flow with amount entry
-- `dapp-store/screenshots/03-done.png` — 1080x1920, show confirmation/done screen
-- `dapp-store/screenshots/04-messages.png` — 1080x1920, show messages thread
-
-**Also verify before submission:**
-- `config.yaml` publisher/app/release addresses populated (run `npx dapp-store create publisher` + `create app`)
-- `https://giveglimpse.com/privacy` is live and returning a privacy policy
-- Confirm `com.seekerdapp` is the permanent package name
-
-**Depends on:** App running on-device for screenshot capture.
+- `dapp-store/icon-512.png` — branded icon
+- `dapp-store/banner-1200x600.png` — branded banner
+- `dapp-store/screenshots/` — real app screenshots
+- `config.yaml` populated, privacy policy live at `giveglimpse.com/privacy`
 
 ---
 
@@ -147,3 +135,30 @@ Repo: `github.com/derrricko/giveglimpse-site`
 **Approach:** Upgrade `@solana/spl-token` when 0.4.x stabilizes and MWA compatibility is confirmed. For `fast-xml-parser`, wait for the next React Native upgrade cycle.
 
 **Depends on:** Mainnet launch stable, `@solana/spl-token` 0.4.x compatible with MWA and `@solana/web3.js` v1.
+
+---
+
+## 8. SKR Integration: "Donate a Seeker" Campaign
+
+**What:** Add a 4th campaign — "Donate a Seeker with $SKR" — that accepts SKR token donations via the same `transferChecked` + Memo pattern. Pool SKR toward funding a Seeker device ($500) for someone in need. SKR donors eligible for 2x points when Seasons launch.
+
+**Why:** Qualifies for the $10,000 SKR Integration Bonus at Monolith (missed for March 9 deadline). Strong narrative alignment — SKR donors fund devices for people who need them, expanding the Seeker ecosystem.
+
+**Design doc:** `docs/plans/2026-03-07-skr-donate-a-seeker-design.md`
+**Implementation plan:** `docs/plans/2026-03-07-skr-donate-a-seeker-impl.md`
+
+**Scope (from Codex review):**
+- Write path: `config/env.ts`, `donationConfig.ts`, `transfer.ts`, `donations.ts`, `GiveScreen.tsx`
+- Read path (P1): `services/chat.ts`, `services/helius.ts`, `CampaignsScreen.tsx`, `MessagesScreen.tsx` — all assume `amount_usdc` today
+- Server: `record-donation` (multi-token validation + token-aware minimums + webhook reconciliation enrichment), `helius-webhook` (SKR mint detection + auto-map to donate-a-seeker)
+- Migration: `amount_skr NUMERIC(18,6)`, `token_type TEXT` with CHECK constraint
+- New helper: `utils/donationDisplay.ts` — `getDonationDisplay()` single source of truth for rendering
+- Retry queue: make `PendingConversation` token-aware
+- Pre-deploy: derive + pre-create SKR ATA for pool wallet
+
+**Key decisions made:**
+- No Jupiter swap needed — accept SKR directly, convert off-chain
+- Points = USD-normalized value at time of donation, 2x multiplier for SKR
+- SKR mint: `SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3` (6 decimals, same as USDC)
+
+**Depends on:** Mainnet stable, first real USDC campaign complete.

@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Glimpse — Global Go-To-Market Strategy (Print)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --purple: #5b5bd6;
+  --purple-glow: rgba(91, 91, 214, 0.35);
+  --purple-soft: rgba(91, 91, 214, 0.10);
+  --bg: #f0e9ff;
+  --grid: rgba(91, 91, 214, 0.12);
+  --ink: #1a1a2e;
+  --white: #ffffff;
+  --black: #000000;
+  --muted: rgba(26, 26, 46, 0.55);
+  --teal: #40e0d0;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Space Mono', monospace;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+@page {
+  size: 1920px 1080px;
+  margin: 0;
+}
+
+/* -- Each slide is a page -- */
+.slide {
+  width: 1920px;
+  height: 1080px;
+  padding: 80px 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  page-break-after: always;
+  overflow: hidden;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+  border: 16px solid var(--purple);
+}
+
+.slide:last-child {
+  page-break-after: avoid;
+}
+
+/* -- Corner Accents (per-slide) -- */
+.slide::before, .slide::after {
+  content: '';
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Top-left corner */
+.corner-tl, .corner-tr, .corner-bl, .corner-br {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  z-index: 10;
+  pointer-events: none;
+}
+.corner-tl { top: 16px; left: 16px; }
+.corner-tr { top: 16px; right: 16px; }
+.corner-bl { bottom: 16px; left: 16px; }
+.corner-br { bottom: 16px; right: 16px; }
+.corner-tl::before, .corner-tl::after,
+.corner-tr::before, .corner-tr::after,
+.corner-bl::before, .corner-bl::after,
+.corner-br::before, .corner-br::after {
+  content: '';
+  position: absolute;
+  background: var(--purple);
+}
+.corner-tl::before { top: 0; left: 0; width: 60px; height: 4px; }
+.corner-tl::after  { top: 0; left: 0; width: 4px; height: 60px; }
+.corner-tr::before { top: 0; right: 0; width: 60px; height: 4px; }
+.corner-tr::after  { top: 0; right: 0; width: 4px; height: 60px; }
+.corner-bl::before { bottom: 0; left: 0; width: 60px; height: 4px; }
+.corner-bl::after  { bottom: 0; left: 0; width: 4px; height: 60px; }
+.corner-br::before { bottom: 0; right: 0; width: 60px; height: 4px; }
+.corner-br::after  { bottom: 0; right: 0; width: 4px; height: 60px; }
+
+/* -- Typography -- */
+.slide-num {
+  position: absolute;
+  top: 48px;
+  right: 80px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.3;
+}
+
+.slide-tag {
+  display: inline-block;
+  border: 3px solid var(--purple);
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--purple);
+  text-transform: uppercase;
+  margin-bottom: 32px;
+}
+
+.slide-section {
+  background: var(--purple);
+  color: var(--white);
+  padding: 12px 28px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  box-shadow: 8px 8px 0 var(--black);
+  display: inline-block;
+  margin-bottom: 40px;
+}
+
+h1 {
+  font-size: 72px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  margin-bottom: 32px;
+  max-width: 1400px;
+}
+
+h1.mega { font-size: 96px; }
+
+h1::after {
+  content: '';
+  display: block;
+  width: 120px;
+  height: 8px;
+  background: var(--purple);
+  margin-top: 20px;
+}
+
+h1.no-bar::after { display: none; }
+
+h2 {
+  font-size: 32px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+  margin-bottom: 20px;
+}
+
+p, .body {
+  font-size: 22px;
+  line-height: 1.65;
+  max-width: 1200px;
+  color: var(--muted);
+}
+
+p.large {
+  font-size: 28px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--purple);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.label::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: var(--purple);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* -- Callout Box -- */
+.callout {
+  background: var(--white);
+  border: 6px solid var(--black);
+  box-shadow: 12px 12px 0 var(--black);
+  padding: 32px 40px;
+  margin-top: 28px;
+  max-width: 1200px;
+}
+.callout p { margin-bottom: 0; font-size: 20px; }
+
+.callout-purple {
+  background: var(--purple);
+  color: var(--white);
+  border: 6px solid var(--black);
+  box-shadow: 12px 12px 0 var(--black);
+  padding: 32px 40px;
+  margin-top: 28px;
+  max-width: 1200px;
+}
+.callout-purple p { color: var(--white); margin-bottom: 0; font-size: 20px; }
+
+/* -- Metrics Row -- */
+.metrics-row {
+  display: flex;
+  gap: 0;
+  margin: 40px 0;
+  border: 6px solid var(--black);
+  box-shadow: 12px 12px 0 var(--black);
+  overflow: hidden;
+  max-width: 1400px;
+}
+
+.metric {
+  flex: 1;
+  background: var(--white);
+  padding: 28px 24px;
+  text-align: center;
+  border-right: 4px solid var(--black);
+}
+.metric:last-child { border-right: none; }
+
+.metric-value {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  margin-bottom: 8px;
+  color: var(--purple);
+}
+
+.metric-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+
+/* -- Reframe Table -- */
+.reframe-table {
+  width: 100%;
+  max-width: 1400px;
+  border-collapse: collapse;
+  margin: 32px 0;
+}
+.reframe-table th {
+  background: var(--purple);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 16px 24px;
+  text-align: left;
+  border: 4px solid var(--black);
+}
+.reframe-table td {
+  background: var(--white);
+  font-size: 18px;
+  padding: 16px 24px;
+  border: 4px solid var(--black);
+  line-height: 1.4;
+}
+.reframe-table td.old {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: rgba(26,26,46,0.25);
+}
+.reframe-table td.new { font-weight: 700; color: var(--ink); }
+
+/* -- Dark slides -- */
+.slide.dark-slide {
+  background: var(--ink);
+  color: var(--white);
+  background-image:
+    linear-gradient(rgba(91, 91, 214, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(91, 91, 214, 0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  border-color: var(--purple);
+}
+.slide.dark-slide h1 { color: var(--white); }
+.slide.dark-slide h1::after { background: var(--purple); }
+.slide.dark-slide p { color: rgba(255,255,255,0.5); }
+.slide.dark-slide .logo-watermark { color: var(--white); }
+.slide.dark-slide .slide-num { color: var(--white); }
+
+/* -- Centered slides -- */
+.slide.centered {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.slide.centered h1::after { margin-left: auto; margin-right: auto; }
+.slide.centered p { max-width: 1000px; }
+
+/* -- Logo watermark -- */
+.logo-watermark {
+  position: absolute;
+  top: 40px;
+  left: 80px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.2;
+}
+
+/* -- Org Chart -- */
+.org-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin: 32px 0;
+  max-width: 1400px;
+}
+.org-root {
+  background: var(--purple);
+  color: var(--white);
+  border: 6px solid var(--black);
+  box-shadow: 8px 8px 0 var(--black);
+  padding: 20px 40px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.org-root .org-sub {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  opacity: 0.7;
+  margin-top: 4px;
+  font-weight: 400;
+}
+.org-connector { width: 4px; height: 32px; background: var(--black); }
+.org-branch-line { width: 80%; height: 4px; background: var(--black); }
+.org-branches {
+  display: flex;
+  width: 80%;
+  justify-content: space-between;
+}
+.org-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+.org-branch-connector { width: 4px; height: 24px; background: var(--black); }
+.org-region {
+  background: var(--white);
+  border: 4px solid var(--black);
+  padding: 14px 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  width: 100%;
+  max-width: 200px;
+}
+.org-region .org-devices {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.5;
+  margin-top: 4px;
+  letter-spacing: 0.08em;
+}
+.org-cities { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+.org-city {
+  background: var(--purple-soft);
+  border: 2px solid var(--purple);
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--purple);
+}
+
+/* -- Timeline -- */
+.timeline { display: flex; gap: 32px; margin: 40px 0; max-width: 1500px; }
+.timeline-block {
+  flex: 1;
+  background: var(--white);
+  border: 6px solid var(--black);
+  padding: 28px 24px;
+}
+.timeline-block:nth-child(odd) { box-shadow: 10px 10px 0 var(--purple); }
+.timeline-block:nth-child(even) { box-shadow: 10px 10px 0 var(--black); }
+.timeline-block h3 {
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 4px;
+  color: var(--purple);
+}
+.timeline-block .date { font-size: 13px; opacity: 0.5; margin-bottom: 14px; display: block; }
+.timeline-block p { font-size: 17px; line-height: 1.5; color: var(--muted); margin-bottom: 0; }
+
+/* -- Gov Grid -- */
+.gov-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 28px; margin: 40px 0; max-width: 1500px; }
+.gov-card {
+  background: var(--white);
+  border: 6px solid var(--black);
+  padding: 32px 24px;
+  border-top: 10px solid var(--purple);
+}
+.gov-card h3 { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 12px; }
+.gov-card p { font-size: 17px; line-height: 1.5; color: var(--muted); margin-bottom: 0; }
+
+/* -- Flywheel -- */
+.flywheel { display: flex; align-items: center; gap: 0; margin: 40px 0; max-width: 1300px; }
+.flywheel-node {
+  background: var(--white);
+  border: 5px solid var(--black);
+  padding: 24px 20px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  flex: 1;
+}
+.flywheel-node.active-node {
+  background: var(--purple);
+  color: var(--white);
+  border-color: var(--purple);
+  box-shadow: 8px 8px 0 var(--black);
+}
+.flywheel-arrow { font-size: 32px; color: var(--purple); font-weight: 700; padding: 0 4px; flex-shrink: 0; }
+
+/* -- Steps Flow -- */
+.steps-flow { display: flex; flex-direction: column; gap: 0; margin: 32px 0; max-width: 1200px; }
+.step-row { display: flex; align-items: center; gap: 24px; padding: 20px 0; border-bottom: 3px solid var(--grid); }
+.step-row:last-child { border-bottom: none; }
+.step-num {
+  width: 48px; height: 48px;
+  background: var(--purple); color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; flex-shrink: 0;
+}
+.step-text { font-size: 20px; line-height: 1.4; }
+.step-text strong { text-transform: uppercase; letter-spacing: 0.06em; font-size: 18px; display: block; margin-bottom: 4px; color: var(--ink); }
+.step-text span { color: var(--muted); }
+
+/* -- CTA Grid -- */
+.cta-grid { display: flex; gap: 24px; margin-top: 40px; flex-wrap: wrap; justify-content: center; }
+.cta-item {
+  background: rgba(91, 91, 214, 0.15);
+  border: 3px solid rgba(91, 91, 214, 0.3);
+  padding: 16px 32px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+}
+</style>
+</head>
+<body>
+
+<!-- SLIDE 01 -->
+<div class="slide centered">
+  <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
+  <div class="slide-num">01 / 09</div>
+  <div class="slide-tag">Global Go-To-Market Strategy &mdash; 2026</div>
+  <h1 class="mega no-bar">THE OPERATING<br>SYSTEM FOR GLOBAL<br>GENEROSITY.</h1>
+  <div style="width:120px; height:8px; background:var(--purple); margin:24px auto 0;"></div>
+  <p class="large" style="margin-top:28px; max-width:1000px;">Give. See the proof. Start a conversation.</p>
+</div>
+
+<!-- SLIDE 02 -->
+<div class="slide">
+  <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">02 / 09</div>
+  <div class="slide-section">The Opportunity</div>
+  <h1>116,000 DEVICES.<br>50+ COUNTRIES.</h1>
+  <p class="large" style="margin-bottom:8px;">68% of Seeker devices are outside the Americas.</p>
+  <p style="margin-bottom:32px;">This isn't a US product. This is a world mission.</p>
+  <div class="metrics-row">
+    <div class="metric"><div class="metric-value">37,115</div><div class="metric-label">Americas &bull; 32%</div></div>
+    <div class="metric"><div class="metric-value">32,047</div><div class="metric-label">Europe &bull; 28%</div></div>
+    <div class="metric"><div class="metric-value">24,095</div><div class="metric-label">Asia-Pacific &bull; 21%</div></div>
+    <div class="metric"><div class="metric-value">22,801</div><div class="metric-label">Other &bull; 20%</div></div>
+  </div>
+  <div class="callout" style="margin-top:24px;">
+    <p style="font-size:19px; font-style:italic;">&ldquo;If you are a new solana founder&hellip; launch first on Seeker. This is the easiest way to get your first 10k PAYING users.&rdquo; &mdash; <strong>Toly</strong></p>
+  </div>
+</div>
+
+<!-- SLIDE 03 -->
+<div class="slide">
+  <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">03 / 09</div>
+  <div class="slide-section">Identity Shift</div>
+  <h1>FROM APP<br>TO INFRASTRUCTURE.</h1>
+  <p style="margin-bottom:40px;">Glimpse is infrastructure that makes giving as simple, transparent, and borderless as sending a text. Any person, any country, any cause, any time.</p>
+  <table class="reframe-table">
+    <thead><tr><th style="width:50%">Old Framing</th><th style="width:50%">New Framing</th></tr></thead>
+    <tbody>
+      <tr><td class="old">&ldquo;Donate USDC to causes&rdquo;</td><td class="new">&ldquo;Give to anything, anywhere, with proof&rdquo;</td></tr>
+      <tr><td class="old">&ldquo;US-focused donation app&rdquo;</td><td class="new">&ldquo;Global giving infrastructure on Seeker&rdquo;</td></tr>
+      <tr><td class="old">&ldquo;Nonprofit app&rdquo;</td><td class="new">&ldquo;The operating system for generosity&rdquo;</td></tr>
+      <tr><td class="old">&ldquo;Chat with recipients&rdquo;</td><td class="new">&ldquo;Direct connection to the impact you created&rdquo;</td></tr>
+      <tr><td class="old">&ldquo;On-chain receipts&rdquo;</td><td class="new">&ldquo;Every dollar tracked. Every impact proven.&rdquo;</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SLIDE 04 -->
+<div class="slide dark-slide centered">
+  <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
+  <div class="logo-watermark" style="color:var(--white);">Glimpse</div>
+  <div class="slide-num" style="color:var(--white);">04 / 09</div>
+  <h1 class="no-bar" style="font-size:64px; color:var(--white); line-height:1.25; max-width:1300px;">EVERY NONPROFIT<br>IN THE WORLD<br>IS A LEAKY BUCKET.</h1>
+  <div style="width:120px; height:8px; background:var(--purple); margin:24px auto 32px;"></div>
+  <p class="large" style="color:rgba(255,255,255,0.7); max-width:1000px;">Money lost to overhead, middlemen, inefficiency, opacity. Glimpse replaces the plumbing &mdash; stablecoin rails, on-chain receipts, direct connection between giver and recipient.</p>
+  <p style="color:rgba(255,255,255,0.4); margin-top:32px; font-size:24px; font-weight:700; letter-spacing:0.06em;">No leaks. Every dollar accounted for.</p>
+</div>
+
+<!-- SLIDE 05 -->
+<div class="slide">
+  <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">05 / 09</div>
+  <div class="slide-section">Global Hub Model</div>
+  <h1>ONE CREATOR.<br>ONE SEEKER.<br>ONE CITY.</h1>
+  <div class="org-chart">
+    <div class="org-root">Glimpse (PBC)<div class="org-sub">Media + Tech + Token</div></div>
+    <div class="org-connector"></div>
+    <div class="org-branch-line"></div>
+    <div class="org-branches">
+      <div class="org-branch">
+        <div class="org-branch-connector"></div>
+        <div class="org-region">Americas<div class="org-devices">~37K devices</div></div>
+        <div class="org-cities"><div class="org-city">Muscatine</div><div class="org-city">Tulsa</div><div class="org-city">S&atilde;o Paulo</div></div>
+      </div>
+      <div class="org-branch">
+        <div class="org-branch-connector"></div>
+        <div class="org-region">Europe<div class="org-devices">~32K devices</div></div>
+        <div class="org-cities"><div class="org-city">Berlin</div><div class="org-city">Amsterdam</div></div>
+      </div>
+      <div class="org-branch">
+        <div class="org-branch-connector"></div>
+        <div class="org-region">APAC<div class="org-devices">~24K devices</div></div>
+        <div class="org-cities"><div class="org-city">Jakarta</div><div class="org-city">Tokyo</div></div>
+      </div>
+      <div class="org-branch">
+        <div class="org-branch-connector"></div>
+        <div class="org-region">Other<div class="org-devices">~23K devices</div></div>
+        <div class="org-cities"><div class="org-city">Lagos</div><div class="org-city">Dubai</div><div class="org-city">Nairobi</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 06 -->
+<div class="slide">
+  <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">06 / 09</div>
+  <div class="slide-section">Phase Rollout</div>
+  <h1>GROWTH IS<br>PURPOSEFUL.</h1>
+  <div class="timeline" style="margin-top:32px;">
+    <div class="timeline-block"><h3>Phase 1</h3><span class="date">Now &ndash; June 2026</span><p>One city. Muscatine. Prove the loop works. Win the hackathon. Close first brand partnerships. Build the content engine.</p></div>
+    <div class="timeline-block"><h3>Phase 2</h3><span class="date">June 2026</span><p>2&ndash;5 more cities. Funded by raise. First Glimpse Creators deployed to highest-density Seeker regions. Content flywheel begins.</p></div>
+    <div class="timeline-block"><h3>Phase 3+</h3><span class="date">Each raise funds the next wave</span><p>Expand city by city. Token governance decides which regions grow next. Growth funded by revenue + raises, never speculation.</p></div>
+  </div>
+  <div class="callout" style="margin-top:28px;">
+    <div class="label">The Model</div>
+    <p style="font-size:19px;">Each raise funds the next wave of expansion. Revenue from brand partnerships sustains existing cities. The flywheel is self-reinforcing: content drives donations, donations fund creators, creators produce content.</p>
+  </div>
+</div>
+
+<!-- SLIDE 07 -->
+<div class="slide">
+  <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">07 / 09</div>
+  <div class="slide-section">The Media Company</div>
+  <h1>BARSTOOL SPORTS<br>FOR GIVING.</h1>
+  <p style="margin-bottom:24px;">Glimpse is a media company. Creators are employees, not volunteers. The content is inherently viral. Brands want in.</p>
+  <div class="gov-grid" style="max-width:1400px;">
+    <div class="gov-card"><h3>Creators</h3><p>Base pay in stablecoins. Viral content bonuses. $GLIMPSE token distribution tied to company success. Real compensation for real work.</p></div>
+    <div class="gov-card"><h3>Revenue</h3><p>Brand partnerships &mdash; companies buy placement alongside impact content. Nonprofits and nonprofit-adjacent brands naturally want to align. We sell the ad space.</p></div>
+    <div class="gov-card"><h3>Governance</h3><p>Only donors govern. The people spending dollars get the voice. $GLIMPSE holders vote on capital allocation. The operators who deploy most efficiently win.</p></div>
+  </div>
+  <div class="flywheel" style="margin-top:24px;">
+    <div class="flywheel-node active-node">Content</div>
+    <div class="flywheel-arrow">&rarr;</div>
+    <div class="flywheel-node">Donations</div>
+    <div class="flywheel-arrow">&rarr;</div>
+    <div class="flywheel-node active-node">Proof</div>
+    <div class="flywheel-arrow">&rarr;</div>
+    <div class="flywheel-node">More Content</div>
+    <div class="flywheel-arrow">&rarr;</div>
+    <div class="flywheel-node active-node" style="font-size:14px;">&#x21BA; Flywheel</div>
+  </div>
+</div>
+
+<!-- SLIDE 08 -->
+<div class="slide">
+  <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
+  <div class="logo-watermark">Glimpse</div>
+  <div class="slide-num">08 / 09</div>
+  <div class="slide-section">Glimpse Creators</div>
+  <h1>WHAT THEY DO.<br>WHY IT WORKS.</h1>
+  <div style="display:flex; gap:40px; margin-top:24px; max-width:1500px;">
+    <div style="flex:1;">
+      <div class="label">What Glimpse Creators Do</div>
+      <div class="steps-flow" style="margin-top:8px;">
+        <div class="step-row"><div class="step-num">1</div><div class="step-text"><strong>Document Impact</strong><span>Stream, film, photograph real work on the ground. Every day.</span></div></div>
+        <div class="step-row"><div class="step-num">2</div><div class="step-text"><strong>Create Listings</strong><span>On-chain listings for local causes and nonprofits in their city.</span></div></div>
+        <div class="step-row"><div class="step-num">3</div><div class="step-text"><strong>Post Proof</strong><span>Proof-of-impact content to the Glimpse feed. Verified. Permanent.</span></div></div>
+        <div class="step-row"><div class="step-num">4</div><div class="step-text"><strong>Be The Face</strong><span>The local voice of Glimpse. Known. Trusted. On the ground.</span></div></div>
+      </div>
+    </div>
+    <div style="flex:1;">
+      <div class="label">Why This Works for Seeker</div>
+      <div class="steps-flow" style="margin-top:8px;">
+        <div class="step-row"><div class="step-num" style="background:var(--teal);">&check;</div><div class="step-text"><strong>Daily Active Users</strong><span>Each Creator is a daily Seeker user. The stickiness metric Solana Mobile wants.</span></div></div>
+        <div class="step-row"><div class="step-num" style="background:var(--teal);">&check;</div><div class="step-text"><strong>Self-Reinforcing</strong><span>Content drives donations drives content. The flywheel never stops.</span></div></div>
+        <div class="step-row"><div class="step-num" style="background:var(--teal);">&check;</div><div class="step-text"><strong>Local + Global</strong><span>Local knowledge + global rails = causes that resonate in each market.</span></div></div>
+        <div class="step-row"><div class="step-num" style="background:var(--teal);">&check;</div><div class="step-text"><strong>Showcase Use Case</strong><span>&ldquo;Seeker is how this person in Lagos documents clean water projects.&rdquo;</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 09 -->
+<div class="slide dark-slide centered">
+  <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
+  <div class="logo-watermark" style="color:var(--white);">Glimpse</div>
+  <div class="slide-num" style="color:var(--white);">09 / 09</div>
+  <h1 class="no-bar" style="font-size:56px; color:var(--white); line-height:1.3; max-width:1200px;">GIVE.<br>SEE THE PROOF.<br>START A CONVERSATION.</h1>
+  <div style="width:120px; height:8px; background:var(--purple); margin:32px auto 0;"></div>
+  <p style="color:rgba(255,255,255,0.5); margin-top:32px; font-size:22px; max-width:900px;">Every nonprofit in the world is a leaky bucket. Glimpse replaces the plumbing. Any person, any country, any cause, any time. Zero fees. On-chain proof. Direct connection to impact.</p>
+  <div class="cta-grid" style="margin-top:40px;">
+    <div class="cta-item">116K+ Seeker Devices</div>
+    <div class="cta-item">50+ Countries</div>
+    <div class="cta-item">Zero Fees</div>
+    <div class="cta-item">Live on Mainnet</div>
+  </div>
+  <p style="margin-top:40px; font-size:16px; color:rgba(255,255,255,0.3); letter-spacing:0.12em; text-transform:uppercase;">The Operating System for Global Generosity &bull; Built on Solana</p>
+</div>
+
+</body>
+</html>

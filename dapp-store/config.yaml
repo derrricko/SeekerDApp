@@ -20,7 +20,7 @@ app:
     - purpose: icon
       uri: icon-512.png
 release:
-  address: F6uhmhv27PstFHkzymPKQ53DFGFuUSigPpZNNrHtxe4h
+  address: 5NHWG7sPTfY7wEkFPHqJhmKADu1LMCSn38tsszMmFPuc
   media:
     - purpose: icon
       uri: icon-512.png
@@ -75,8 +75,8 @@ solana_mobile_dapp_publisher_portal:
     6. Verify the donation appears in the Glimpses tab with CONFIRMED status.
     7. Verify a message thread appears in the Messages tab.
 lastSubmittedVersionOnChain:
-  address: F6uhmhv27PstFHkzymPKQ53DFGFuUSigPpZNNrHtxe4h
-  version_code: 1
-  apk_hash: RALkdAkvoYySB2XucX8bhF1YHtcKuDH08L7+oMeJzhI=
+  address: 5NHWG7sPTfY7wEkFPHqJhmKADu1LMCSn38tsszMmFPuc
+  version_code: 2
+  apk_hash: ICe3k/cW/uzfcOffCHgvTWCIrhfA+ruVkBU9PSF83rE=
 lastUpdatedVersionOnStore:
-  address: F6uhmhv27PstFHkzymPKQ53DFGFuUSigPpZNNrHtxe4h
+  address: 5NHWG7sPTfY7wEkFPHqJhmKADu1LMCSn38tsszMmFPuc

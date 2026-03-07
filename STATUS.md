@@ -1,6 +1,6 @@
 # Glimpse — Ship Status
 
-Last updated: 2026-03-05
+Last updated: 2026-03-07
 Branch: `main`
 
 ## North Star — ACHIEVED
@@ -30,25 +30,24 @@ End-to-end path working on mainnet since 2026-03-02.
 - Per-wallet donation history cache (no cross-wallet bleed)
 - Hardened unread badge realtime handling
 
-## Recent Changes (2026-03-05)
+## Recent Changes (2026-03-07)
 
-- Helius integration: RPC switch, enhanced feed, verified badges, webhook edge function
-- Webhook deployed with `--no-verify-jwt` (Helius can't send Supabase JWT)
-- P1 fix: webhook uses `recipient_id: general` instead of hardcoded campaign
-- P1 fix: cross-wallet history bleed resolved with per-wallet staleness cache
-- P2 fix: unread badge increment from unrelated conversations
-- Lint cleanup across impacted files
+- UI reset to the closer-to-App-Store baseline instead of the broader redesign
+- Onboarding simplified to a trust-first 3-step flow
+- Give/Confirm/Messages screens polished for final demo walkthroughs
+- Dark theme/runtime theme switching removed; app is light-only
+- Thread headers and keyboard behavior tightened on device
+- Helius webhook now fails closed if auth token is missing
+- Chat media upload filenames are sanitized before storage upload
 
-## Active Hackathon Sprint
+## Final Hackathon Push
 
-Hackathon mode active — "hardening beats new features" suspended until 2026-03-09.
-Breaking refactors allowed. Design north star: "making an incredibly complex solution feel simple, fun, and look beautiful."
+Hackathon mode is now in final QA, not active redesign.
 
-### Sprint Items (In Progress)
-1. Onboarding carousel rewrite (3-step: Give, Confirm, See Proof)
-2. Dark theme default
-3. Home screen redesign (3-Step Strip variant)
-4. Verified badge upgrade (Shield + G Monogram)
+### Remaining Must-Verify Items
+1. One real `$1` mainnet donation end to end
+2. Two-phone donor/admin messaging test
+3. Final APK decision: keep submitted build or ship a version-bumped update
 
 ## Default Operating Skill
 
@@ -65,13 +64,23 @@ npx react-native bundle --platform android --dev false --entry-file index.js --b
 
 If local EMFILE watcher limit fails, use: `CI=true npx react-native bundle ...`
 
+## dApp Store Submission
+
+- **Submitted:** 2026-03-03 at 4:18 AM CST
+- **Transaction:** `4NsEgmAt2PpuCqTaPi5NJiE5SdCW6wpPuSNDax79bTfDr4mrZ55zgJxXDU7BEVAQg68ou8PH29FWCtDcCjS3Em1H`
+- **Explorer:** https://explorer.solana.com/tx/4NsEgmAt2PpuCqTaPi5NJiE5SdCW6wpPuSNDax79bTfDr4mrZ55zgJxXDU7BEVAQg68ou8PH29FWCtDcCjS3Em1H
+- **App NFT:** `EXaw3mEfQWgxxNQWNiuHAYYu8nNXYqeF8srpboudEXa`
+- **Release NFT:** `F6uhmhv27PstFHkzymPKQ53DFGFuUSigPpZNNrHtxe4h`
+- **Publisher Wallet:** `HQ5C58Tu11cy8Q8Lfjpj8sRTW25wY7VnwgoW61cfMsY5`
+- **Status:** Pending review
+
 ## Edge Functions (Deployed)
 
 | Function | Status | Notes |
 |---|---|---|
 | `wallet-auth` | ACTIVE | JWT issuance from wallet signature |
 | `record-donation` | ACTIVE | Client-side tx validation + recording |
-| `helius-webhook` | ACTIVE | Server-side auto-recording (no-verify-jwt) |
+| `helius-webhook` | ACTIVE | Server-side auto-recording (no-verify-jwt, auth fails closed if secret missing) |
 | `nonce` | ACTIVE | Legacy v1, unused |
 | `siws-verify` | ACTIVE | Legacy v1, unused |
 | `record-transaction` | ACTIVE | Legacy v1, unused |
