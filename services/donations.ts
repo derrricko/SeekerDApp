@@ -29,7 +29,7 @@ import {
   setSupabaseAccessToken,
 } from './supabase';
 import {authenticateWalletSignature} from './auth';
-import {DonationCadence, DonationMode} from '../data/donationConfig';
+import {DonationCadence, DonationMode} from '../config/donationConfig';
 import type {WalletSignResult} from '../components/providers/WalletProvider';
 
 export interface DonationResult {

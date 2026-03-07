@@ -16,7 +16,7 @@ import SurfaceCard from '../ui/SurfaceCard';
 import {
   getRecipientLabel,
   DONATION_STATUS_LABELS,
-} from '../data/donationConfig';
+} from '../config/donationConfig';
 import {getExplorerUrl} from '../utils/explorer';
 import {
   fetchDonationHistory,

@@ -3,7 +3,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {getSupabase} from './supabase';
 import {decodeBase64} from '../utils/base64';
-import type {DonationStatus} from '../data/donationConfig';
+import type {DonationStatus} from '../config/donationConfig';
 
 // ---------- Types ----------
 

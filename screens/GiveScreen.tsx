@@ -16,7 +16,7 @@ import {
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {CAMPAIGN_OPTIONS, MATCHING_POOL} from '../data/donationConfig';
+import {CAMPAIGN_OPTIONS, MATCHING_POOL} from '../config/donationConfig';
 import {useConnection} from '../components/providers/ConnectionProvider';
 import {useWallet} from '../components/providers/WalletProvider';
 import {executeDonationSeamless} from '../services/donations';

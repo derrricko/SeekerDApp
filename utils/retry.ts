@@ -3,7 +3,7 @@
 // we store the pending operation and retry on next app open.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {DonationMode} from '../data/donationConfig';
+import {DonationMode} from '../config/donationConfig';
 
 const RETRY_KEY = '@glimpse_pending_conversations';
 

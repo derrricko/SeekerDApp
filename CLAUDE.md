@@ -67,7 +67,7 @@ index.js                               — Polyfills + app registration
 globals.js                             — Buffer, process, btoa/atob polyfills
 metro.config.js                        — Metro bundler with Node.js module stubs
 config/env.ts                          — Cluster, RPC, Supabase creds, USDC mint, Memo program ID
-data/donationConfig.ts                 — CAUSE_OPTIONS, MATCHING_POOL, DonationCadence, DonationMode
+config/donationConfig.ts               — CAUSE_OPTIONS, MATCHING_POOL, DonationCadence, DonationMode
 
 screens/GiveScreen.tsx                 — Cause multi-select, USDC amount, Solo/Group, cadence
 screens/MessagesScreen.tsx             — Conversation list + chat view

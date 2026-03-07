@@ -43,7 +43,7 @@ import {
   uploadChatMedia,
   useChatMessages,
 } from '../services/chat';
-import {getRecipientLabel, type DonationStatus} from '../data/donationConfig';
+import {getRecipientLabel, type DonationStatus} from '../config/donationConfig';
 import {ADMIN_WALLET} from '../config/env';
 import {getExplorerUrl} from '../utils/explorer';
 import AppHeader from '../ui/AppHeader';

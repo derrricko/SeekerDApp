@@ -81,6 +81,7 @@ dapp-store/publisher-keypair.json
 
 # Supabase
 .supabase/
+supabase/.temp/
 
 # Other generated
 link-assets-manifest.json
