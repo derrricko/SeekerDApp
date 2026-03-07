@@ -9,7 +9,7 @@ Built for the [Monolith 2026 Hackathon](https://www.solanamobile.com/monolith) b
 ## How It Works
 
 1. Connect your wallet via Mobile Wallet Adapter (MWA)
-2. Choose up to 3 causes you care about
+2. Choose a cause you care about
 3. Donate USDC — transaction includes an on-chain Memo receipt
 4. Server validates the transaction (mint, authority, destination, memo)
 5. A message thread opens between you and the recipient
