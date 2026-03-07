@@ -1,5 +1,11 @@
 import React from 'react';
-import {Pressable, StyleSheet, Text, TextStyle, ViewStyle} from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  TextStyle,
+  ViewStyle,
+} from 'react-native';
 import {useTheme} from '../theme/Theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
@@ -30,7 +36,7 @@ export default function PrimaryButton({
     primary: {
       container: {
         backgroundColor: theme.colors.accent,
-        borderColor: theme.colors.accent,
+        borderColor: theme.colors.border,
       },
       text: {
         color: '#FFFFFF',
@@ -38,8 +44,8 @@ export default function PrimaryButton({
     },
     secondary: {
       container: {
-        backgroundColor: theme.colors.surfaceAlt,
-        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.surface,
+        borderColor: theme.colors.borderMuted,
       },
       text: {
         color: theme.colors.textPrimary,
@@ -64,14 +70,14 @@ export default function PrimaryButton({
       style={({pressed}) => [
         styles.base,
         {
-          borderRadius: theme.radius.sm,
+          borderRadius: theme.radius.md,
           paddingVertical: theme.spacing.md,
           paddingHorizontal: theme.spacing.lg,
           opacity: disabled ? 0.5 : 1,
-          transform: [{scale: pressed ? 0.99 : 1}],
+          transform: [{scale: pressed ? 0.992 : 1}, {translateY: pressed ? 1 : 0}],
           width: fullWidth ? '100%' : undefined,
         },
-        theme.shadows.subtle,
+        variant !== 'ghost' ? theme.shadows.press : null,
         variantStyles[variant].container,
         style,
       ]}>
@@ -79,9 +85,12 @@ export default function PrimaryButton({
         style={[
           styles.text,
           {
-            fontFamily: theme.typography.brand,
-            fontSize: 22,
-            letterSpacing: 1,
+            fontFamily:
+              variant === 'primary'
+                ? theme.typography.brand
+                : theme.typography.body,
+            fontSize: variant === 'primary' ? 20 : 16,
+            letterSpacing: variant === 'primary' ? 1.2 : 0.8,
             textTransform: 'uppercase',
           },
           variantStyles[variant].text,
@@ -97,7 +106,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 54,
+    minHeight: 58,
   },
   text: {
     fontWeight: '700',

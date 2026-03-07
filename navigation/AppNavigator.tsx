@@ -25,6 +25,21 @@ import MessagesScreen from '../screens/MessagesScreen';
 import {useUnread} from '../components/providers/UnreadProvider';
 import {useTheme} from '../theme/Theme';
 
+// Simple event emitter for cross-component refresh signaling
+class RefreshEmitter {
+  private listeners: Array<() => void> = [];
+  subscribe(fn: () => void) {
+    this.listeners.push(fn);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== fn);
+    };
+  }
+  emit() {
+    this.listeners.forEach(fn => fn());
+  }
+}
+export const messagesRefreshEmitter = new RefreshEmitter();
+
 export type RootTabParamList = {
   Glimpses: undefined;
   Give: undefined;
@@ -240,10 +255,12 @@ function AppTabBar({
 function MainTabs({
   onOpenGiveFlow,
   navigationRef,
+  onTabChange,
 }: GiveFlowContextValue & {
   navigationRef: ReturnType<
     typeof createNavigationContainerRef<RootTabParamList>
   >;
+  onTabChange?: (name: string) => void;
 }) {
   const renderTabBar = useCallback(
     (props: BottomTabBarProps) => (
@@ -253,7 +270,14 @@ function MainTabs({
   );
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer
+      ref={navigationRef}
+      onStateChange={state => {
+        const route = state?.routes[state.index ?? 0];
+        if (route?.name && onTabChange) {
+          onTabChange(route.name);
+        }
+      }}>
       <Tab.Navigator
         initialRouteName="Glimpses"
         tabBar={renderTabBar}
@@ -275,6 +299,7 @@ export default function AppNavigator() {
   const {theme} = useTheme();
   const [entered, setEntered] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [activeTab, setActiveTab] = useState('Glimpses');
   const insets = useSafeAreaInsets();
   const navigationRef = React.useMemo(
     () => createNavigationContainerRef<RootTabParamList>(),
@@ -301,6 +326,7 @@ export default function AppNavigator() {
       navigationRef.navigate('Give');
     }
   }, [navigationRef]);
+  const showTopInfoButton = activeTab === 'Glimpses';
 
   if (!entered) {
     return (
@@ -314,34 +340,40 @@ export default function AppNavigator() {
 
   return (
     <View style={styles.root}>
-      <MainTabs onOpenGiveFlow={openGiveTab} navigationRef={navigationRef} />
+      <MainTabs
+        onOpenGiveFlow={openGiveTab}
+        navigationRef={navigationRef}
+        onTabChange={setActiveTab}
+      />
 
-      <TouchableOpacity
-        onPress={openGiveFlow}
-        style={[
-          styles.topHelpButton,
-          {
-            top: insets.top + 8,
-            borderColor: theme.colors.border,
-            backgroundColor: showHowItWorks
-              ? theme.colors.accent
-              : theme.colors.surface,
-          },
-        ]}
-        activeOpacity={0.86}>
-        <Text
+      {showTopInfoButton ? (
+        <TouchableOpacity
+          onPress={openGiveFlow}
           style={[
-            styles.topHelpText,
+            styles.topHelpButton,
             {
-              color: showHowItWorks
-                ? theme.colors.surface
-                : theme.colors.textPrimary,
-              fontFamily: theme.typography.brand,
+              top: insets.top + 8,
+              borderColor: theme.colors.border,
+              backgroundColor: showHowItWorks
+                ? theme.colors.accent
+                : theme.colors.surface,
             },
-          ]}>
-          ?
-        </Text>
-      </TouchableOpacity>
+          ]}
+          activeOpacity={0.86}>
+          <Text
+            style={[
+              styles.topHelpText,
+              {
+                color: showHowItWorks
+                  ? theme.colors.surface
+                  : theme.colors.textPrimary,
+                fontFamily: theme.typography.brand,
+              },
+            ]}>
+            i
+          </Text>
+        </TouchableOpacity>
+      ) : null}
 
       <HowItWorksCarousel
         visible={showHowItWorks}
@@ -500,15 +532,15 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    borderWidth: 2,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 30,
     elevation: 8,
     shadowColor: '#1A1125',
-    shadowOpacity: 0.22,
-    shadowRadius: 2,
-    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: {width: 0, height: 4},
   },
   topHelpText: {
     fontSize: 22,

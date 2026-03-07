@@ -10,29 +10,40 @@ import {
 } from 'react-native';
 import {useTheme} from '../theme/Theme';
 
-const TOTAL_STEPS = 3;
+const FLOW_STEPS = [
+  'Confirm the donation on-chain.',
+  'Your GiveGlimpse thread opens immediately.',
+  'Proof updates arrive in about 5 to 7 days.',
+] as const;
 
 const STEPS = [
   {
-    key: 'give',
-    label: 'GIVE',
-    headline: 'GoFundMe takes three percent. We take zero.',
-    body: 'Donate USDC in seconds to start a real thread tied to your on-chain transaction.',
+    key: 'intro',
+    label: 'HOW IT WORKS',
+    headline: 'One donation. One thread. Proof in the same place.',
+    body: 'Glimpse keeps the process simple: confirm one USDC donation, open a direct message thread, and receive proof in that same thread about 5 to 7 days later.',
   },
   {
-    key: 'confirm',
-    label: 'CONFIRM',
-    headline:
-      'This is not a whitepaper. This is working software on Solana mainnet.',
-    body: 'Your donation confirms on-chain and opens a conversation tied to that donation.',
+    key: 'flow',
+    label: 'EXAMPLE DONOR FLOW',
+    headline: 'What the donor sees after confirming.',
+    body: 'This is the exact path the donor follows from confirmation to proof.',
   },
   {
     key: 'proof',
-    label: 'SEE PROOF',
-    headline: "We're not asking you to trust us. We're showing you the proof.",
-    body: 'Every donation has a verifiable receipt and a visible update path.',
+    label: 'WHY GLIMPSE DOES THIS',
+    headline: 'Trust comes from seeing the full path of the donation.',
+    body: 'The system is designed so donors can verify the transaction, ask questions in context, and receive documented proof in the same place.',
+    trustTitle: 'WHAT YOU SHOULD EXPECT',
+    trustPoints: [
+      'Your donation is a real transaction on Solana mainnet.',
+      'The message thread stays tied to that donation.',
+      'Proof arrives in the same place you can ask questions or provide context.',
+    ],
   },
 ] as const;
+
+const TOTAL_STEPS = STEPS.length;
 
 export default function HowItWorksCarousel({
   visible,
@@ -48,7 +59,6 @@ export default function HowItWorksCarousel({
   const stepMotion = useRef(new Animated.Value(1)).current;
 
   const activeStep = STEPS[step];
-
   const stepTranslateY = stepMotion.interpolate({
     inputRange: [0, 1],
     outputRange: [6, 0],
@@ -162,7 +172,7 @@ export default function HowItWorksCarousel({
               {activeStep.body}
             </Text>
 
-            {step === TOTAL_STEPS - 1 ? (
+            {activeStep.key === 'flow' ? (
               <View
                 style={[
                   styles.nextCard,
@@ -179,29 +189,68 @@ export default function HowItWorksCarousel({
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
-                  WHAT HAPPENS NEXT
+                  EXAMPLE FLOW
                 </Text>
+                {FLOW_STEPS.map((line, index) => (
+                  <View key={line} style={styles.flowRow}>
+                    <View
+                      style={[
+                        styles.flowNumber,
+                        {
+                          borderColor: theme.colors.accent,
+                          backgroundColor: theme.colors.accent,
+                        },
+                      ]}>
+                      <Text
+                        style={[
+                          styles.flowNumberText,
+                          {
+                            color: '#F3EFFF',
+                            fontFamily: theme.typography.brand,
+                          },
+                        ]}>
+                        {index + 1}
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.flowText,
+                        {color: theme.colors.textPrimary},
+                      ]}>
+                      {line}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {activeStep.key === 'proof' ? (
+              <View
+                style={[
+                  styles.trustCard,
+                  {
+                    borderColor: theme.colors.borderMuted,
+                    backgroundColor: theme.colors.surfaceMuted,
+                  },
+                ]}>
                 <Text
                   style={[
-                    styles.nextLine,
-                    {color: theme.colors.textSecondary},
+                    styles.nextTitle,
+                    {
+                      color: theme.colors.textPrimary,
+                      fontFamily: theme.typography.brand,
+                    },
                   ]}>
-                  1. Your donation confirms on-chain.
+                  {activeStep.trustTitle}
                 </Text>
-                <Text
-                  style={[
-                    styles.nextLine,
-                    {color: theme.colors.textSecondary},
-                  ]}>
-                  2. Your message thread opens.
-                </Text>
-                <Text
-                  style={[
-                    styles.nextLine,
-                    {color: theme.colors.textSecondary},
-                  ]}>
-                  3. Proof updates appear in that thread.
-                </Text>
+                {activeStep.trustPoints.map(point => (
+                  <Text
+                    key={point}
+                    style={[styles.nextLine, {color: theme.colors.textSecondary}]}>
+                    {'•  '}
+                    {point}
+                  </Text>
+                ))}
               </View>
             ) : null}
           </Animated.View>
@@ -222,7 +271,7 @@ export default function HowItWorksCarousel({
                   styles.primaryText,
                   {fontFamily: theme.typography.brand, color: '#F3EFFF'},
                 ]}>
-                START DONATION
+                GO TO CONFIRM
               </Text>
             </TouchableOpacity>
 
@@ -294,9 +343,9 @@ const styles = StyleSheet.create({
     maxWidth: 460,
     borderRadius: 18,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 14,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 18,
   },
   headerRow: {
     minHeight: 28,
@@ -328,42 +377,74 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   content: {
-    minHeight: 230,
-    paddingTop: 10,
-    paddingHorizontal: 6,
+    minHeight: 320,
+    paddingTop: 18,
+    paddingHorizontal: 8,
   },
   kicker: {
     fontSize: 10,
     lineHeight: 12,
     letterSpacing: 1,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   headline: {
     fontSize: 23,
     lineHeight: 29,
     fontWeight: '600',
-    marginBottom: 9,
+    marginBottom: 14,
   },
   body: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   nextCard: {
-    marginTop: 14,
+    marginTop: 20,
     borderWidth: 1,
     borderRadius: 10,
-    paddingVertical: 9,
-    paddingHorizontal: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+  },
+  trustCard: {
+    marginTop: 20,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
   },
   nextTitle: {
     fontSize: 10,
     lineHeight: 12,
     letterSpacing: 1,
-    marginBottom: 6,
+    marginBottom: 10,
   },
   nextLine: {
     fontSize: 13,
-    lineHeight: 19,
+    lineHeight: 20,
+    marginTop: 4,
+  },
+  flowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  flowNumber: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  flowNumberText: {
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: '700',
+  },
+  flowText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
   },
   footer: {
     gap: 8,

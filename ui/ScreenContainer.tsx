@@ -1,5 +1,5 @@
 import React from 'react';
-import {ScrollView, StyleSheet, View, ViewStyle} from 'react-native';
+import {Platform, ScrollView, StyleSheet, View, ViewStyle} from 'react-native';
 import {useTheme} from '../theme/Theme';
 import GridBackground from './GridBackground';
 
@@ -30,6 +30,9 @@ export default function ScreenContainer({
       <GridBackground />
       <ScrollView
         style={styles.container}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
         contentContainerStyle={[
           {
             paddingHorizontal: theme.spacing.lg,

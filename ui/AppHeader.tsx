@@ -21,17 +21,27 @@ export default function AppHeader({title}: {title: string}) {
       ]}>
       <Text
         style={[
+          styles.eyebrow,
+          {
+            color: theme.colors.textTertiary,
+            fontFamily: theme.typography.body,
+          },
+        ]}>
+        GIVEGLIMPSE
+      </Text>
+      <Text
+        style={[
           styles.title,
           {
             color: theme.colors.textPrimary,
-            letterSpacing: 8,
+            letterSpacing: 5.5,
             fontFamily: theme.typography.brand,
           },
         ]}>
         {title}
       </Text>
       <View
-        style={[styles.rule, {backgroundColor: theme.colors.textPrimary}]}
+        style={[styles.ruleTrack, {backgroundColor: theme.colors.borderMuted}]}
       />
     </View>
   );
@@ -42,15 +52,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     alignItems: 'flex-start',
   },
-  title: {
-    fontSize: 44,
+  eyebrow: {
+    fontSize: 10,
+    lineHeight: 12,
+    letterSpacing: 2.4,
     fontWeight: '700',
-    lineHeight: 52,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  title: {
+    fontSize: 38,
+    fontWeight: '700',
+    lineHeight: 44,
     textTransform: 'uppercase',
   },
-  rule: {
-    marginTop: 8,
+  ruleTrack: {
+    marginTop: 10,
     width: '100%',
-    height: 3,
+    height: 1,
+    borderRadius: 999,
   },
 });

@@ -183,7 +183,7 @@ export default function CampaignsScreen() {
     <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
       <AppHeader title="Glimpses" />
       <ScreenContainer>
-        <SurfaceCard style={styles.panel}>
+        <SurfaceCard tone="hero" style={styles.panel}>
           <View
             style={[
               styles.toggle,
@@ -417,7 +417,9 @@ function renderDonationList({
               <Text
                 style={[
                   styles.historyAmount,
-                  {color: theme.colors.textPrimary},
+                  {
+                    color: theme.colors.textPrimary,
+                  },
                 ]}>
                 ${item.amount_usdc.toFixed(2)} USDC
               </Text>
@@ -510,6 +512,7 @@ function renderDonationList({
               {cardContent}
               {item.tx_signature ? (
                 <TouchableOpacity
+                  accessibilityRole="link"
                   activeOpacity={0.7}
                   onPress={() =>
                     Linking.openURL(getExplorerUrl(item.tx_signature))
@@ -517,9 +520,12 @@ function renderDonationList({
                   <Text
                     style={[
                       styles.explorerLink,
-                      {color: theme.colors.textTertiary},
+                      {
+                        color: theme.colors.accent,
+                        fontFamily: theme.typography.brand,
+                      },
                     ]}>
-                    View on Explorer {'\u2197'}
+                    VIEW ON EXPLORER {'\u2197'}
                   </Text>
                 </TouchableOpacity>
               ) : null}
@@ -543,39 +549,31 @@ function renderDonationList({
             style={[
               styles.historyCard,
               {
-                backgroundColor: theme.colors.surfaceMuted,
+                backgroundColor: theme.colors.surface,
                 borderColor: theme.colors.borderMuted,
               },
             ]}>
             {cardContent}
-            <View style={styles.historyActions}>
-              {item.tx_signature ? (
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={e => {
-                    e.stopPropagation();
-                    Linking.openURL(getExplorerUrl(item.tx_signature));
-                  }}>
-                  <Text
-                    style={[
-                      styles.explorerLink,
-                      {color: theme.colors.textTertiary},
-                    ]}>
-                    View on Explorer {'\u2197'}
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-              <Text
-                style={[
-                  styles.historyThreadLink,
-                  {
-                    color: theme.colors.accent,
-                    fontFamily: theme.typography.brand,
-                  },
-                ]}>
-                {item.conversation_id ? 'VIEW THREAD \u2192' : 'PROCESSING...'}
-              </Text>
-            </View>
+            {item.tx_signature ? (
+              <TouchableOpacity
+                accessibilityRole="link"
+                activeOpacity={0.7}
+                onPress={e => {
+                  e.stopPropagation();
+                  Linking.openURL(getExplorerUrl(item.tx_signature));
+                }}>
+                <Text
+                  style={[
+                    styles.explorerLink,
+                    {
+                      color: theme.colors.accent,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  VIEW ON EXPLORER {'\u2197'}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </TouchableOpacity>
         );
       })}
@@ -589,15 +587,14 @@ const styles = StyleSheet.create({
   },
   panel: {
     marginBottom: 18,
-    borderRadius: 16,
-    borderWidth: 2,
     paddingTop: 14,
     paddingHorizontal: 12,
     paddingBottom: 12,
   },
   toggle: {
-    borderWidth: 2,
-    borderRadius: 0,
+    borderWidth: 1.5,
+    borderRadius: 18,
+    padding: 4,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -605,6 +602,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 14,
     paddingVertical: 10,
   },
   toggleText: {
@@ -622,10 +620,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   historyCard: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 9,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
   },
   historyTopRow: {
     flexDirection: 'row',
@@ -670,22 +668,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 10,
   },
-  historyThreadLink: {
+  explorerLink: {
+    marginTop: 10,
     fontSize: 10,
     lineHeight: 14,
     letterSpacing: 0.8,
     fontWeight: '700',
-  },
-  historyActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 6,
-  },
-  explorerLink: {
-    fontSize: 10,
-    lineHeight: 14,
-    letterSpacing: 0.3,
   },
   statusRow: {
     flexDirection: 'row',
@@ -695,7 +683,7 @@ const styles = StyleSheet.create({
   verifiedBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 3,
+    borderRadius: 999,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',

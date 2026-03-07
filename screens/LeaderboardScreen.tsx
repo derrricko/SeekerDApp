@@ -12,7 +12,7 @@ export default function LeaderboardScreen() {
     <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
       <AppHeader title="Rank" />
       <ScreenContainer>
-        <SurfaceCard>
+        <SurfaceCard tone="hero">
           <View style={styles.innerList}>
             {[1, 2, 3, 4, 5].map(i => (
               <View key={i} style={styles.row}>

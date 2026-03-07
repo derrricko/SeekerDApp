@@ -2,8 +2,10 @@ import React, {useMemo, useRef, useState} from 'react';
 import {
   Animated,
   Easing,
+  KeyboardAvoidingView,
   Keyboard,
   Linking,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -322,18 +324,62 @@ export default function GiveScreen() {
 
   return (
     <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
-      <AppHeader title="Donate" />
-      <ScreenContainer contentStyle={styles.screenContent}>
-        <Animated.View
-          style={[
-            styles.stepContainer,
-            {
-              opacity: stepMotion,
-              transform: [{translateY: stepTranslateY}],
-            },
-          ]}>
-          {step === 'form' ? (
-            <View>
+      <AppHeader title="Confirm" />
+      <KeyboardAvoidingView
+        style={styles.keyboardRoot}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={96}>
+        <ScreenContainer contentStyle={styles.screenContent}>
+          <Animated.View
+            style={[
+              styles.stepContainer,
+              {
+                opacity: stepMotion,
+                transform: [{translateY: stepTranslateY}],
+              },
+            ]}>
+            {step === 'form' ? (
+              <View>
+                <SurfaceCard tone="hero" style={styles.infoCard}>
+                  <Text
+                    style={[
+                      styles.infoKicker,
+                      {
+                        color: theme.colors.accent,
+                        fontFamily: theme.typography.brand,
+                      },
+                    ]}>
+                    TRANSPARENCY
+                  </Text>
+                  <Text
+                    style={[
+                      styles.infoTitle,
+                      {color: theme.colors.textPrimary},
+                    ]}>
+                    Glimpse strives to be the most efficient and effective use
+                    of donation dollars in the world.
+                  </Text>
+                  <Text
+                    style={[
+                      styles.infoBody,
+                      {color: theme.colors.textSecondary},
+                    ]}>
+                    These campaigns were chosen because GiveGlimpse can fulfill
+                    them directly and document the results clearly in your
+                    Messages thread.
+                  </Text>
+                  <Text
+                    style={[
+                      styles.infoBody,
+                      styles.infoExample,
+                      {color: theme.colors.textSecondary},
+                    ]}>
+                    They are meant for real people with real needs, sourced from
+                    multiple areas without prior knowledge of Glimpse.
+                    Selection is merit-based. These are hand-ups, not handouts.
+                  </Text>
+                </SurfaceCard>
+
               <View style={styles.fieldBlock}>
                 <Text
                   style={[
@@ -484,18 +530,40 @@ export default function GiveScreen() {
                 ) : null}
 
                 {selectedCampaign ? (
-                  <Text
-                    style={[
-                      styles.helper,
-                      {color: theme.colors.textSecondary},
-                    ]}>
-                    {selectedCampaign.summary}
-                    {'\n'}
-                    Minimum donation: {selectedCampaign.minimumUSDC.toFixed(
-                      2,
-                    )}{' '}
-                    USDC.
-                  </Text>
+                  <SurfaceCard style={styles.campaignCard}>
+                    <Text
+                      style={[
+                        styles.campaignCardTitle,
+                        {
+                          color: theme.colors.textPrimary,
+                          fontFamily: theme.typography.brand,
+                        },
+                      ]}>
+                      {selectedCampaign.label}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.helper,
+                        {color: theme.colors.textSecondary},
+                      ]}>
+                      {selectedCampaign.summary}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.campaignExample,
+                        {color: theme.colors.textSecondary},
+                      ]}>
+                      Example use: {selectedCampaign.exampleUse}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.campaignMinimum,
+                        {color: theme.colors.textTertiary},
+                      ]}>
+                      Minimum donation:{' '}
+                      {selectedCampaign.minimumUSDC.toFixed(2)} USDC.
+                    </Text>
+                  </SurfaceCard>
                 ) : null}
               </View>
 
@@ -559,7 +627,7 @@ export default function GiveScreen() {
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
-                  NOTE FOR RECIPIENT
+                  NOTE OF ENCOURAGEMENT
                   <Text style={styles.optionalLabel}> (optional)</Text>
                 </Text>
                 <AnimatedTextInput
@@ -567,7 +635,7 @@ export default function GiveScreen() {
                   onChangeText={setRecipientNote}
                   onFocus={() => animateFieldFocus(noteFocusMotion, 1)}
                   onBlur={() => animateFieldFocus(noteFocusMotion, 0)}
-                  placeholder="Leave a note for the recipient."
+                  placeholder="Leave a note of encouragement for the recipient."
                   placeholderTextColor={theme.colors.textTertiary}
                   multiline
                   textAlignVertical="top"
@@ -593,9 +661,9 @@ export default function GiveScreen() {
                 onPress={handleContinue}
                 style={styles.reviewButton}
               />
-            </View>
-          ) : step === 'confirm' ? (
-            <View>
+              </View>
+            ) : step === 'confirm' ? (
+              <View>
               <View style={styles.reviewRows}>
                 <View
                   style={[
@@ -697,7 +765,7 @@ export default function GiveScreen() {
                           fontFamily: theme.typography.brand,
                         },
                       ]}>
-                      NOTE FOR RECIPIENT
+                      NOTE OF ENCOURAGEMENT
                     </Text>
                     <Text
                       style={[
@@ -710,30 +778,57 @@ export default function GiveScreen() {
                 )}
               </View>
 
-              <View style={styles.timelineList}>
+              <SurfaceCard style={styles.timelineCard}>
                 <Text
                   style={[
-                    styles.timelineItem,
+                    styles.timelineKicker,
+                    {
+                      color: theme.colors.accent,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  WHAT HAPPENS AFTER YOU CONFIRM
+                </Text>
+                <Text
+                  style={[
+                    styles.timelineLead,
                     {color: theme.colors.textSecondary},
                   ]}>
-                  {'—  '}On-chain confirmation is immediate
+                  You are not sending funds into a black box. This confirmation
+                  opens a clear donor trail:
                 </Text>
                 <Text
                   style={[
                     styles.timelineItem,
                     {color: theme.colors.textSecondary},
                   ]}>
-                  {'—  '}5-7 days: receipts, photos, and updates
+                  1. Your USDC donation confirms on Solana mainnet.
                 </Text>
                 <Text
                   style={[
                     styles.timelineItem,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  2. A message thread with GiveGlimpse opens immediately for
+                  this donation.
+                </Text>
+                <Text
+                  style={[
+                    styles.timelineItem,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  3. In about 5 to 7 days, you receive receipts, photos, and a
+                  written proof update in that thread.
+                </Text>
+                <Text
+                  style={[
+                    styles.timelineFootnote,
                     {color: theme.colors.textTertiary},
                   ]}>
-                  {'—  '}Network fee: {'<'}$0.01 SOL (paid to Solana validators,
-                  not Glimpse)
+                  Network fee: {'<'}$0.01 SOL paid to Solana validators, not
+                  Glimpse.
                 </Text>
-              </View>
+              </SurfaceCard>
 
               {!!error && (
                 <Text style={[styles.error, {color: theme.colors.danger}]}>
@@ -802,7 +897,7 @@ export default function GiveScreen() {
             </View>
           ) : step === 'processing' ? (
             <View>
-              <SurfaceCard style={styles.processingCard}>
+              <SurfaceCard tone="hero" style={styles.processingCard}>
                 <Text
                   style={[
                     styles.processingTitle,
@@ -828,8 +923,10 @@ export default function GiveScreen() {
                     styles.processingBody,
                     {color: theme.colors.textSecondary},
                   ]}>
-                  Your donation is confirmed on-chain. We are processing your
-                  message thread — it will appear in Messages shortly.
+                  Your donation is confirmed on-chain. We are opening your
+                  GiveGlimpse message thread now. If it takes a moment to
+                  appear, you can still verify the transaction below and check
+                  Messages shortly.
                 </Text>
               </SurfaceCard>
 
@@ -870,10 +967,11 @@ export default function GiveScreen() {
                 }}
                 style={styles.reviewButton}
               />
-            </View>
-          ) : null}
-        </Animated.View>
-      </ScreenContainer>
+              </View>
+            ) : null}
+          </Animated.View>
+        </ScreenContainer>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -887,12 +985,38 @@ const styles = StyleSheet.create<
   root: {
     flex: 1,
   },
+  keyboardRoot: {
+    flex: 1,
+  },
   screenContent: {
     paddingTop: 14,
-    paddingBottom: 64,
+    paddingBottom: 32,
+    flexGrow: 1,
   },
   stepContainer: {
     width: '100%',
+  },
+  infoCard: {
+    marginBottom: 16,
+  },
+  infoKicker: {
+    fontSize: 11,
+    lineHeight: 13,
+    letterSpacing: 1.1,
+    marginBottom: 8,
+  },
+  infoTitle: {
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  infoBody: {
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  infoExample: {
+    marginTop: 10,
   },
   fieldBlock: {
     marginBottom: 14,
@@ -912,11 +1036,12 @@ const styles = StyleSheet.create<
     fontSize: 11,
   },
   amountWrap: {
-    borderWidth: 2,
-    minHeight: 62,
+    borderWidth: 1.5,
+    borderRadius: 18,
+    minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
   amountPrefix: {
     fontSize: 28,
@@ -932,10 +1057,11 @@ const styles = StyleSheet.create<
     paddingVertical: 8,
   },
   dropdownTrigger: {
-    borderWidth: 2,
+    borderWidth: 1.5,
+    borderRadius: 18,
     minHeight: 68,
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -953,7 +1079,9 @@ const styles = StyleSheet.create<
   },
   dropdownList: {
     marginTop: 6,
-    borderWidth: 2,
+    borderWidth: 1.5,
+    borderRadius: 18,
+    overflow: 'hidden',
   },
   dropdownItem: {
     paddingHorizontal: 12,
@@ -966,15 +1094,36 @@ const styles = StyleSheet.create<
     lineHeight: 19,
   },
   helper: {
-    marginTop: 8,
     fontSize: 14,
     lineHeight: 20,
   },
+  campaignCard: {
+    marginTop: 10,
+    borderRadius: 14,
+  },
+  campaignCardTitle: {
+    fontSize: 17,
+    lineHeight: 21,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  campaignExample: {
+    marginTop: 10,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
+  campaignMinimum: {
+    marginTop: 8,
+    fontSize: 12,
+    lineHeight: 17,
+  },
   multilineInput: {
-    borderWidth: 2,
-    minHeight: 84,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderRadius: 18,
+    minHeight: 92,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     fontSize: 15,
     lineHeight: 21,
   },
@@ -991,9 +1140,10 @@ const styles = StyleSheet.create<
     gap: 10,
   },
   reviewRow: {
-    borderWidth: 2,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   reviewLabel: {
     fontSize: 11,
@@ -1014,19 +1164,37 @@ const styles = StyleSheet.create<
     fontSize: 15,
     lineHeight: 21,
   },
-  timelineList: {
+  timelineCard: {
     marginTop: 12,
-    gap: 4,
+    borderRadius: 14,
+  },
+  timelineKicker: {
+    fontSize: 11,
+    lineHeight: 13,
+    letterSpacing: 1.1,
+    marginBottom: 8,
+  },
+  timelineLead: {
+    fontSize: 14,
+    lineHeight: 21,
+    marginBottom: 10,
   },
   timelineItem: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 21,
+    marginTop: 4,
+  },
+  timelineFootnote: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 10,
   },
   backButton: {
     marginTop: 14,
     width: '100%',
     height: 48,
-    borderWidth: 2,
+    borderWidth: 1.5,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1040,15 +1208,15 @@ const styles = StyleSheet.create<
     marginTop: 10,
     width: '100%',
     minHeight: 64,
-    borderWidth: 3,
-    borderRadius: 0,
+    borderWidth: 2,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#1A1125',
-    shadowOpacity: 0.3,
-    shadowRadius: 0,
-    shadowOffset: {width: 2, height: 2},
-    elevation: 5,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: {width: 0, height: 8},
+    elevation: 6,
   },
   confirmButtonText: {
     color: '#FFFFFF',
@@ -1059,7 +1227,6 @@ const styles = StyleSheet.create<
   },
   processingCard: {
     marginBottom: 16,
-    borderRadius: 0,
   },
   processingTitle: {
     fontSize: 18,
@@ -1080,8 +1247,8 @@ const styles = StyleSheet.create<
     marginBottom: 16,
   },
   explorerLink: {
-    borderWidth: 2,
-    borderRadius: 10,
+    borderWidth: 1.5,
+    borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 10,
     alignSelf: 'flex-start',

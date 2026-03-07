@@ -26,6 +26,7 @@ import {
   useRoute,
   type RouteProp,
 } from '@react-navigation/native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   launchImageLibrary,
   launchCamera,
@@ -49,6 +50,7 @@ import {getExplorerUrl} from '../utils/explorer';
 import AppHeader from '../ui/AppHeader';
 import SurfaceCard from '../ui/SurfaceCard';
 import type {RootTabParamList} from '../navigation/AppNavigator';
+import {messagesRefreshEmitter} from '../navigation/AppNavigator';
 import {useUnread} from '../components/providers/UnreadProvider';
 
 const AnimatedTouchableOpacity =
@@ -252,22 +254,19 @@ export default function MessagesScreen() {
   const [activeGlimpseTag, setActiveGlimpseTag] = useState('#001');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch conversations from Supabase
-  useEffect(() => {
+  // Load conversations helper — called on mount and on tab focus
+  const loadConversations = useCallback(() => {
     if (!connected || !walletAddress) {
       setLoading(false);
       return;
     }
 
-    let cancelled = false;
     setLoading(true);
 
     fetchConversations(walletAddress)
       .then(convos => {
-        if (cancelled) {
-          return;
-        }
         setConversations(convos);
         if (conversationId) {
           const targetIndex = convos.findIndex(c => c.id === conversationId);
@@ -283,15 +282,36 @@ export default function MessagesScreen() {
         setLoading(false);
       })
       .catch(() => {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        setLoading(false);
       });
-
-    return () => {
-      cancelled = true;
-    };
   }, [conversationId, connected, walletAddress]);
+
+  // Fetch conversations on mount
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
+
+  // Refresh conversations every time the Messages tab gains focus
+  useFocusEffect(
+    useCallback(() => {
+      loadConversations();
+    }, [loadConversations]),
+  );
+
+  // Listen for refresh button tap from AppNavigator
+  useEffect(() => {
+    return messagesRefreshEmitter.subscribe(loadConversations);
+  }, [loadConversations]);
+
+  // Pull-to-refresh handler
+  const onPullRefresh = useCallback(() => {
+    if (!connected || !walletAddress) return;
+    setRefreshing(true);
+    fetchConversations(walletAddress)
+      .then(convos => setConversations(convos))
+      .catch(() => {})
+      .finally(() => setRefreshing(false));
+  }, [connected, walletAddress]);
 
   useEffect(() => {
     if (!conversation) {
@@ -340,7 +360,7 @@ export default function MessagesScreen() {
         <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
           <AppHeader title="Messages" />
           <View style={styles.emptyWrap}>
-            <SurfaceCard style={styles.stateCard}>
+            <SurfaceCard tone="muted" style={styles.stateCard}>
               <Text
                 style={[
                   styles.stateTitle,
@@ -368,6 +388,8 @@ export default function MessagesScreen() {
           data={conversations}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.conversationList}
+          refreshing={refreshing}
+          onRefresh={onPullRefresh}
           renderItem={({item, index}) => {
             const amount = Number(item.amount_usdc ?? 0).toFixed(2);
             const glimpseNumber = String(conversations.length - index).padStart(
@@ -454,7 +476,7 @@ export default function MessagesScreen() {
       <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
         <AppHeader title="Messages" />
         <View style={styles.emptyWrap}>
-          <SurfaceCard style={styles.stateCard}>
+          <SurfaceCard tone="muted" style={styles.stateCard}>
             <Text
               style={[
                 styles.stateTitle,
@@ -542,6 +564,7 @@ function ChatView({
   onStatusChange?: (status: DonationStatus) => void;
 }) {
   const {theme} = useTheme();
+  const insets = useSafeAreaInsets();
   const {isAdmin} = useWallet();
   const chat = useChatMessages(conversation.id);
   const messages = chat.messages;
@@ -743,22 +766,56 @@ function ChatView({
     senderWallet === ADMIN_WALLET || senderWallet === conversation.admin_wallet;
 
   return (
-    <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
-      <AppHeader title="Messages" />
+    <View
+      style={[
+        styles.root,
+        {
+          backgroundColor: theme.colors.background,
+          paddingTop: insets.top + 10,
+        },
+      ]}>
 
       <KeyboardAvoidingView
         style={styles.chatBody}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={90}>
-        <View
-          style={[
-            styles.chatTopCard,
-            {
-              backgroundColor: theme.colors.surfaceMuted,
-              borderColor: theme.colors.borderMuted,
-            },
-          ]}>
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+        <SurfaceCard tone="hero" style={styles.chatTopCard}>
           <View style={styles.chatMetaWrap}>
+            <View style={styles.chatLinkRow}>
+              <TouchableOpacity
+                onPress={onBackToThreads}
+                style={styles.backToThreadsButton}
+                activeOpacity={0.8}>
+                <Text
+                  style={[
+                    styles.backToThreadsText,
+                    {
+                      color: theme.colors.accent,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  {'\u2190'} {hasRouteConversationId ? 'Inbox' : 'Threads'}
+                </Text>
+              </TouchableOpacity>
+              {conversation.tx_signature ? (
+                <TouchableOpacity
+                  onPress={() =>
+                    Linking.openURL(getExplorerUrl(conversation.tx_signature!))
+                  }
+                  activeOpacity={0.7}>
+                  <Text
+                    style={[
+                      styles.explorerLink,
+                      {
+                        color: theme.colors.accent,
+                        fontFamily: theme.typography.brand,
+                      },
+                    ]}>
+                    VIEW ON EXPLORER {'\u2197'}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
             <Text
               style={[styles.chatRecipient, {color: theme.colors.textPrimary}]}>
               GLIMPSE {glimpseTag}
@@ -773,39 +830,6 @@ function ChatView({
               ]}>
               {amount} USDC • {shortThreadId(conversation.id)} • {recipientName}
             </Text>
-            <TouchableOpacity
-              onPress={onBackToThreads}
-              style={styles.backToThreadsButton}
-              activeOpacity={0.8}>
-              <Text
-                style={[
-                  styles.backToThreadsText,
-                  {
-                    color: theme.colors.accent,
-                    fontFamily: theme.typography.brand,
-                  },
-                ]}>
-                {hasRouteConversationId ? 'Go to inbox' : 'Back to threads'}
-              </Text>
-            </TouchableOpacity>
-            {conversation.tx_signature ? (
-              <TouchableOpacity
-                onPress={() =>
-                  Linking.openURL(getExplorerUrl(conversation.tx_signature!))
-                }
-                activeOpacity={0.7}>
-                <Text
-                  style={[
-                    styles.explorerLink,
-                    {
-                      color: theme.colors.accent,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  View on Explorer
-                </Text>
-              </TouchableOpacity>
-            ) : null}
             {isAdmin && donationStatus === 'confirmed' ? (
               <TouchableOpacity
                 onPress={handleMarkCompleted}
@@ -839,7 +863,7 @@ function ChatView({
               </Text>
             ) : null}
           </View>
-        </View>
+        </SurfaceCard>
 
         {chatLoading ? (
           <View style={styles.loaderWrap}>
@@ -998,8 +1022,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   stateCard: {
-    borderRadius: 14,
-    borderWidth: 2,
   },
   stateTitle: {
     fontSize: 16,
@@ -1018,20 +1040,24 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   chatTopCard: {
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   chatMetaWrap: {
     width: '100%',
   },
+  chatLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
   chatRecipient: {
-    fontSize: 18,
-    lineHeight: 21,
+    fontSize: 16,
+    lineHeight: 19,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   chatMeta: {
     fontSize: 10,
@@ -1044,16 +1070,18 @@ const styles = StyleSheet.create({
   },
   bubble: {
     maxWidth: '82%',
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 11,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    padding: 12,
     marginBottom: 8,
   },
   bubbleAdmin: {
     alignSelf: 'flex-start',
+    borderTopLeftRadius: 8,
   },
   bubbleDonor: {
     alignSelf: 'flex-end',
+    borderBottomRightRadius: 8,
   },
   bubbleText: {
     fontSize: 14,
@@ -1110,7 +1138,7 @@ const styles = StyleSheet.create({
   mediaButton: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     marginRight: 6,
     justifyContent: 'center',
@@ -1179,12 +1207,12 @@ const styles = StyleSheet.create({
   },
   chatInput: {
     flex: 1,
-    borderRadius: 14,
+    borderRadius: 18,
     paddingHorizontal: 14,
-    paddingVertical: 9,
+    paddingVertical: 11,
     fontSize: 14,
     maxHeight: 100,
-    borderWidth: 1,
+    borderWidth: 1.5,
   },
   sendIconButton: {
     width: 38,
@@ -1222,7 +1250,6 @@ const styles = StyleSheet.create({
   explorerLink: {
     fontSize: 11,
     letterSpacing: 0.5,
-    marginTop: 6,
   },
   markCompletedButton: {
     borderWidth: 2,
@@ -1249,10 +1276,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   conversationRow: {
-    borderWidth: 2,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderWidth: 1.5,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   conversationTopRow: {
     flexDirection: 'row',
