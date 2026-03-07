@@ -64,17 +64,17 @@ interface CampaignRule {
 const CAMPAIGN_RULES: CampaignRule[] = [
   {
     id: 'public-schools',
-    minimumUSDC: 25,
+    minimumUSDC: 1,
     causePreferences: ['education', 'public-schools'],
   },
   {
     id: 'single-moms-crisis',
-    minimumUSDC: 50,
+    minimumUSDC: 1,
     causePreferences: ['family-crisis', 'single-moms'],
   },
   {
     id: 'foster-care-after-school',
-    minimumUSDC: 100,
+    minimumUSDC: 1,
     causePreferences: ['foster-care', 'child-essentials', 'after-school'],
   },
 ];
@@ -818,7 +818,7 @@ async function upsertConversation(params: {
   const {error: messageError} = await supabase.from('messages').insert({
     conversation_id: inserted.id,
     sender_wallet: ADMIN_WALLET,
-    body: `This is Derek from GiveGlimpse. Your donation of ${amountUSDC} USDC is confirmed on-chain and this thread is now open. If you have any questions, ask me here anytime. Otherwise, I will follow up in about 5 to 7 days with receipts, photos, and a proof update showing where your donation went.`,
+    body: `This is Derrick from GiveGlimpse. Your donation of ${amountUSDC} USDC is confirmed on-chain and this thread is now open. If you have any questions, ask me here anytime. I will update this message thread with information, photos, and receipts as your donation gets implemented.`,
   });
 
   if (messageError) {

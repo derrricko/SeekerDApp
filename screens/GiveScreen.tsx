@@ -1,4 +1,4 @@
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   Animated,
   Easing,
@@ -20,7 +20,7 @@ import {CAMPAIGN_OPTIONS, MATCHING_POOL} from '../data/donationConfig';
 import {useConnection} from '../components/providers/ConnectionProvider';
 import {useWallet} from '../components/providers/WalletProvider';
 import {executeDonationSeamless} from '../services/donations';
-import {sendMessage} from '../services/chat';
+import {fetchConversations, sendMessage} from '../services/chat';
 import {useTheme} from '../theme/Theme';
 import {getExplorerUrl} from '../utils/explorer';
 import AppHeader from '../ui/AppHeader';
@@ -59,6 +59,8 @@ export default function GiveScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [processingTxSig, setProcessingTxSig] = useState('');
+  const [processingDonorWallet, setProcessingDonorWallet] = useState('');
+  const [pendingThreadMessage, setPendingThreadMessage] = useState('');
   const stepMotion = useRef(new Animated.Value(1)).current;
   const campaignMenuMotion = useRef(new Animated.Value(0)).current;
   const [campaignMenuVisible, setCampaignMenuVisible] = useState(false);
@@ -124,7 +126,10 @@ export default function GiveScreen() {
         })
       | null;
 
-    if (!inputNode || !scrollView?.scrollResponderScrollNativeHandleToKeyboard) {
+    if (
+      !inputNode ||
+      !scrollView?.scrollResponderScrollNativeHandleToKeyboard
+    ) {
       return;
     }
 
@@ -155,7 +160,7 @@ export default function GiveScreen() {
     return amount.toFixed(2);
   }, [amount]);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setAmountInput('');
     setCampaignId('');
     setCampaignOpen(false);
@@ -170,7 +175,86 @@ export default function GiveScreen() {
     setStep('form');
     setError('');
     setProcessingTxSig('');
-  };
+    setProcessingDonorWallet('');
+    setPendingThreadMessage('');
+  }, [
+    amountFocusMotion,
+    campaignFocusMotion,
+    campaignMenuMotion,
+    matchFocusMotion,
+    noteFocusMotion,
+  ]);
+
+  useEffect(() => {
+    if (step !== 'processing' || !processingTxSig || !processingDonorWallet) {
+      return;
+    }
+
+    let cancelled = false;
+    let requestInFlight = false;
+    let attempts = 0;
+
+    const tryOpenThread = async () => {
+      if (cancelled || requestInFlight) {
+        return;
+      }
+
+      requestInFlight = true;
+
+      try {
+        const conversations = await fetchConversations(processingDonorWallet);
+        const matchedConversation = conversations.find(
+          conversation => conversation.tx_signature === processingTxSig,
+        );
+
+        if (!matchedConversation) {
+          attempts += 1;
+          if (attempts >= 10) {
+            setError(
+              'Your donation is confirmed on-chain. We are still setting up your message thread.',
+            );
+          }
+          return;
+        }
+
+        if (pendingThreadMessage.trim()) {
+          await sendMessage(
+            matchedConversation.id,
+            processingDonorWallet,
+            pendingThreadMessage,
+          ).catch(() => {});
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        reset();
+        navigation.navigate('Messages', {
+          conversationId: matchedConversation.id,
+        });
+      } catch {
+        // Keep polling while the backend finishes recording the donation.
+      } finally {
+        requestInFlight = false;
+      }
+    };
+
+    tryOpenThread();
+    const intervalId = setInterval(tryOpenThread, 1500);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [
+    navigation,
+    pendingThreadMessage,
+    processingDonorWallet,
+    processingTxSig,
+    reset,
+    step,
+  ]);
 
   const validateForm = () => {
     if (amount <= 0 || amount > 10_000) {
@@ -310,21 +394,22 @@ export default function GiveScreen() {
         return;
       }
 
+      const payload: string[] = [];
+      if (matchContext.trim()) {
+        payload.push(`Donor context: ${matchContext.trim()}`);
+      }
+      if (recipientNote.trim()) {
+        payload.push(`Donor note: ${recipientNote.trim()}`);
+      }
+
+      const threadMessage = payload.join('\n\n');
       const conversationId = result.data.conversationId;
       if (conversationId) {
-        const payload: string[] = [];
-        if (matchContext.trim()) {
-          payload.push(`Donor context: ${matchContext.trim()}`);
-        }
-        if (recipientNote.trim()) {
-          payload.push(`Donor note: ${recipientNote.trim()}`);
-        }
-
-        if (payload.length > 0) {
+        if (threadMessage) {
           await sendMessage(
             conversationId,
             result.data.donorWallet,
-            payload.join('\n\n'),
+            threadMessage,
           ).catch(() => {});
         }
       }
@@ -335,6 +420,8 @@ export default function GiveScreen() {
       } else {
         // Backend failed but tx is on-chain — show processing state with error
         setProcessingTxSig(result.data.txSignature);
+        setProcessingDonorWallet(result.data.donorWallet);
+        setPendingThreadMessage(threadMessage);
         if (result.data.recordError) {
           console.error(
             '[give] Donation recorded on-chain but thread creation is delayed:',
@@ -359,9 +446,7 @@ export default function GiveScreen() {
     <ScreenContainer
       ref={screenScrollRef}
       contentStyle={
-        step === 'confirm'
-          ? styles.confirmScreenContent
-          : styles.screenContent
+        step === 'confirm' ? styles.confirmScreenContent : styles.screenContent
       }>
       <Animated.View
         style={[
@@ -385,21 +470,13 @@ export default function GiveScreen() {
                 TRANSPARENCY
               </Text>
               <Text
-                style={[
-                  styles.infoTitle,
-                  {color: theme.colors.textPrimary},
-                ]}>
-                Glimpse strives to be the most efficient and effective use of
-                donation dollars in the world.
+                style={[styles.infoTitle, {color: theme.colors.textPrimary}]}>
+                Every donation is recorded on-chain.
               </Text>
               <Text
-                style={[
-                  styles.infoBody,
-                  {color: theme.colors.textSecondary},
-                ]}>
-                These campaigns were chosen because GiveGlimpse can fulfill
-                them directly and document the results clearly in your Messages
-                thread.
+                style={[styles.infoBody, {color: theme.colors.textSecondary}]}>
+                Glimpse takes no platform fee. We work with trusted local
+                partners to identify real needs and document outcomes.
               </Text>
               <Text
                 style={[
@@ -407,9 +484,8 @@ export default function GiveScreen() {
                   styles.infoExample,
                   {color: theme.colors.textSecondary},
                 ]}>
-                They are meant for real people with real needs, sourced from
-                multiple areas without prior knowledge of Glimpse. Selection is
-                merit-based. These are hand-ups, not handouts.
+                Updates and proof are shared in your Messages thread in 5-7
+                days.
               </Text>
             </SurfaceCard>
 
@@ -580,13 +656,6 @@ export default function GiveScreen() {
                       {color: theme.colors.textSecondary},
                     ]}>
                     {selectedCampaign.summary}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.campaignExample,
-                      {color: theme.colors.textSecondary},
-                    ]}>
-                    Example use: {selectedCampaign.exampleUse}
                   </Text>
                   <Text
                     style={[
@@ -1160,12 +1229,6 @@ const styles = StyleSheet.create<
     lineHeight: 21,
     fontWeight: '700',
     marginBottom: 8,
-  },
-  campaignExample: {
-    marginTop: 10,
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '600',
   },
   campaignMinimum: {
     marginTop: 8,

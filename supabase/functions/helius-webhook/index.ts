@@ -185,7 +185,7 @@ async function processTransaction(
   await supabase.from('messages').insert({
     conversation_id: conversation.id,
     sender_wallet: ADMIN_WALLET,
-    body: `This is Derek from GiveGlimpse. Your donation of ${amountUSDC} USDC is confirmed on-chain and this thread is now open. If you have any questions, ask me here anytime. Otherwise, I will follow up in about 5 to 7 days with receipts, photos, and a proof update showing where your donation went.`,
+    body: `This is Derrick from GiveGlimpse. Your donation of ${amountUSDC} USDC is confirmed on-chain and this thread is now open. If you have any questions, ask me here anytime. I will update this message thread with information, photos, and receipts as your donation gets implemented.`,
   });
 
   console.log(

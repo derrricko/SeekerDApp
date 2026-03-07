@@ -48,6 +48,7 @@ import {ADMIN_WALLET} from '../config/env';
 import {getExplorerUrl} from '../utils/explorer';
 import AppHeader from '../ui/AppHeader';
 import SurfaceCard from '../ui/SurfaceCard';
+import PrimaryButton from '../ui/PrimaryButton';
 import type {RootTabParamList} from '../navigation/AppNavigator';
 import {messagesRefreshEmitter} from '../navigation/AppNavigator';
 import {useUnread} from '../components/providers/UnreadProvider';
@@ -243,7 +244,7 @@ export default function MessagesScreen() {
   const {theme} = useTheme();
   const navigation = useNavigation<any>();
   const route = useRoute<MessagesRouteProp>();
-  const {connected, publicKey, isAdmin} = useWallet();
+  const {connected, connecting, publicKey, isAdmin, connect} = useWallet();
   const {conversationUnreads, markRead, setActiveConversation} = useUnread();
 
   const conversationId: string | undefined = route.params?.conversationId;
@@ -304,7 +305,9 @@ export default function MessagesScreen() {
 
   // Pull-to-refresh handler
   const onPullRefresh = useCallback(() => {
-    if (!connected || !walletAddress) return;
+    if (!connected || !walletAddress) {
+      return;
+    }
     setRefreshing(true);
     fetchConversations(walletAddress)
       .then(convos => setConversations(convos))
@@ -355,11 +358,12 @@ export default function MessagesScreen() {
   // No conversationId param — show conversation list
   if (!conversationId && !conversation) {
     if (conversations.length === 0) {
+      const showConnectWallet = !connected || !walletAddress;
       return (
         <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
           <AppHeader title="Messages" />
           <View style={styles.emptyWrap}>
-            <SurfaceCard tone="muted" style={styles.stateCard}>
+            <View style={styles.emptyState}>
               <Text
                 style={[
                   styles.stateTitle,
@@ -368,13 +372,26 @@ export default function MessagesScreen() {
                     fontFamily: theme.typography.brand,
                   },
                 ]}>
-                NO CONVERSATIONS
+                {showConnectWallet ? 'CONNECT WALLET' : 'NO CONVERSATIONS'}
               </Text>
               <Text
                 style={[styles.stateBody, {color: theme.colors.textSecondary}]}>
-                Complete a donation to start a message thread.
+                {showConnectWallet
+                  ? 'Connect your wallet to view your message threads.'
+                  : 'Complete a donation to start a message thread.'}
               </Text>
-            </SurfaceCard>
+              {showConnectWallet ? (
+                <PrimaryButton
+                  label={connecting ? 'CONNECTING...' : 'CONNECT WALLET'}
+                  onPress={() => {
+                    connect().catch(() => {});
+                  }}
+                  disabled={connecting}
+                  fullWidth={false}
+                  style={styles.connectButton}
+                />
+              ) : null}
+            </View>
           </View>
         </View>
       );
@@ -772,7 +789,7 @@ function ChatView({
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
         <SurfaceCard tone="hero" style={styles.chatTopCard}>
           <View style={styles.chatMetaWrap}>
-            <View style={styles.chatLinkRow}>
+            <View style={styles.chatUtilityRow}>
               <TouchableOpacity
                 onPress={onBackToThreads}
                 style={styles.backToThreadsButton}
@@ -809,13 +826,23 @@ function ChatView({
             </View>
             <Text
               style={[
+                styles.chatRecipient,
+                {
+                  color: theme.colors.textPrimary,
+                  fontFamily: theme.typography.brand,
+                },
+              ]}>
+              {recipientName}
+            </Text>
+            <Text
+              style={[
                 styles.chatMeta,
                 {
                   color: theme.colors.textSecondary,
                   fontFamily: theme.typography.brand,
                 },
               ]}>
-              {amount} USDC • {shortThreadId(conversation.id)} • {recipientName}
+              {amount} USDC • THREAD {shortThreadId(conversation.id)}
             </Text>
             {isAdmin && donationStatus === 'confirmed' ? (
               <TouchableOpacity
@@ -1005,11 +1032,14 @@ const styles = StyleSheet.create({
   },
   emptyWrap: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
-  stateCard: {
+  emptyState: {
+    alignItems: 'flex-start',
+    maxWidth: 320,
   },
+  stateCard: {},
   stateTitle: {
     fontSize: 16,
     lineHeight: 18,
@@ -1020,6 +1050,10 @@ const styles = StyleSheet.create({
   stateBody: {
     fontSize: 15,
     lineHeight: 22,
+    marginBottom: 18,
+  },
+  connectButton: {
+    minWidth: 190,
   },
   chatBody: {
     flex: 1,
@@ -1027,14 +1061,14 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   chatTopCard: {
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     marginBottom: 8,
   },
   chatMetaWrap: {
     width: '100%',
   },
-  chatLinkRow: {
+  chatUtilityRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -1044,7 +1078,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 19,
     fontWeight: '700',
-    marginBottom: 3,
+    marginBottom: 4,
   },
   chatMeta: {
     fontSize: 10,
@@ -1235,13 +1269,13 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   explorerLink: {
-    fontSize: 11,
-    letterSpacing: 0.5,
+    fontSize: 10,
+    letterSpacing: 0.9,
   },
   markCompletedButton: {
     borderWidth: 2,
-    borderRadius: 0,
-    paddingHorizontal: 16,
+    borderRadius: 999,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     marginTop: 8,
     alignSelf: 'flex-start',
@@ -1310,16 +1344,14 @@ const styles = StyleSheet.create({
   },
   backToThreadsButton: {
     alignSelf: 'flex-start',
-    marginTop: 8,
-    marginBottom: 2,
     minHeight: 32,
     justifyContent: 'center',
-    paddingRight: 8,
+    paddingRight: 10,
   },
   backToThreadsText: {
-    fontSize: 13,
-    lineHeight: 16,
-    letterSpacing: 0.7,
+    fontSize: 12,
+    lineHeight: 14,
+    letterSpacing: 0.9,
     fontWeight: '700',
     textTransform: 'uppercase',
   },

@@ -286,52 +286,57 @@ async function confirmAndRecord(
     return {success: false, error: txError};
   }
 
-  // Record in backend
-  let conversationId: string | null = null;
-  let recordError: string | null = null;
+  const donorWallet = donorPubkey.toBase58();
   try {
-    conversationId = await recordAndCreateConversationSecure(
+    const conversationId = await recordAndCreateConversationSecure(
       txSignature,
       recipientId,
       causePreferences,
       donationMode,
     );
+
+    return ok({
+      txSignature,
+      memo: memo || {
+        d: '',
+        r: '',
+        a: amountUSDC,
+        t: 0,
+        app: 'glimpse',
+        tok: 'usdc',
+      },
+      conversationId,
+      donorWallet,
+      recordError: null,
+    });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error('[record-donation] FAILED:', errorMsg);
-    recordError = errorMsg;
-
-    if (error instanceof SGTVerificationError) {
-      return fail(
-        'SGT_REQUIRED',
-        'This app requires a Solana Seeker device. Your donation was sent on-chain but cannot be recorded.',
-      );
-    }
     await addPendingConversation({
       txSignature,
-      donorWallet: donorPubkey.toBase58(),
+      donorWallet,
       recipientId,
       amountUSDC,
       causePreferences,
       donationMode,
       timestamp: Date.now(),
     });
-  }
 
-  return ok({
-    txSignature,
-    memo: memo || {
-      d: '',
-      r: '',
-      a: amountUSDC,
-      t: 0,
-      app: 'glimpse',
-      tok: 'usdc',
-    },
-    conversationId,
-    donorWallet: donorPubkey.toBase58(),
-    recordError,
-  });
+    return ok({
+      txSignature,
+      memo: memo || {
+        d: '',
+        r: '',
+        a: amountUSDC,
+        t: 0,
+        app: 'glimpse',
+        tok: 'usdc',
+      },
+      conversationId: null,
+      donorWallet,
+      recordError: errorMsg,
+    });
+  }
 }
 
 // Max age for retry queue items — Solana RPC nodes only keep ~2 epochs of

@@ -14,7 +14,6 @@ export interface CampaignOption {
   label: string;
   glimpseTag: string;
   summary: string;
-  exampleUse: string;
   causePreferences: string[];
   minimumUSDC: number;
 }
@@ -34,11 +33,9 @@ export const CAMPAIGN_OPTIONS: CampaignOption[] = [
     label: 'Public Schools',
     glimpseTag: '#001',
     summary:
-      'Funds urgent needs at public schools — classroom supplies, transportation, and essentials that keep students and families supported.',
-    exampleUse:
-      'School supplies, student transportation, and urgent classroom essentials.',
+      'Funds classroom supplies, equipment, maintenance, transportation, and other school needs that keep students and families supported.',
     causePreferences: ['education', 'public-schools'],
-    minimumUSDC: 25,
+    minimumUSDC: 1,
   },
   {
     id: 'single-moms-crisis',
@@ -46,21 +43,17 @@ export const CAMPAIGN_OPTIONS: CampaignOption[] = [
     glimpseTag: '#002',
     summary:
       'Supports families facing immediate hardship with essentials like diapers, formula, tire replacement, groceries, and critical household stability.',
-    exampleUse:
-      'Diapers, formula, groceries, and emergency car or home stability needs.',
     causePreferences: ['family-crisis', 'single-moms'],
-    minimumUSDC: 50,
+    minimumUSDC: 1,
   },
   {
     id: 'foster-care-after-school',
     label: 'Foster Care / After School Programs',
     glimpseTag: '#003',
     summary:
-      'Helps foster and vulnerable children access after-school programs while covering essentials for younger kids in care.',
-    exampleUse:
-      'After-school access, child essentials, and support for kids in foster care.',
+      'Supports children in foster care and after-school programs with clothing, shoes, school items, and everyday essentials that help them feel prepared, included, and supported.',
     causePreferences: ['foster-care', 'child-essentials', 'after-school'],
-    minimumUSDC: 100,
+    minimumUSDC: 1,
   },
 ];
 

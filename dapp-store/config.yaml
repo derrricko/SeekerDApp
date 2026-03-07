@@ -56,12 +56,12 @@ release:
         5. Follow real updates in your message thread
 
         Zero platform fees. Built on Solana for the Seeker community. Glimpse is not a nonprofit or 501(c)(3). Donations are not tax-deductible.
-      new_in_version: First release. Direct USDC giving with on-chain transparency and impact messaging.
+      new_in_version: Version 1.1 improves donation reliability, automatic thread opening, campaign copy, and message-thread polish.
   android_details:
     cert_fingerprint: 575ffc40590f18d8008fbf4b8e7bd7db03ce5e8e358f61d07b09c95fe363b116
     min_sdk: 24
-    version: '1.0'
-    version_code: 1
+    version: '1.1'
+    version_code: 2
     locales:
       - en-US
 solana_mobile_dapp_publisher_portal:
