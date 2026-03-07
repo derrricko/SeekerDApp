@@ -35,16 +35,19 @@ serve(async req => {
     return json({error: 'Method not allowed'}, 405);
   }
 
+  if (!WEBHOOK_AUTH_TOKEN) {
+    console.error('[helius-webhook] HELIUS_WEBHOOK_AUTH_TOKEN is not set');
+    return json({error: 'Webhook auth not configured'}, 500);
+  }
+
   // Validate webhook auth token (Helius sends this in Authorization header)
-  if (WEBHOOK_AUTH_TOKEN) {
-    const authHeader = req.headers.get('authorization') || '';
-    if (
-      authHeader !== WEBHOOK_AUTH_TOKEN &&
-      authHeader !== `Bearer ${WEBHOOK_AUTH_TOKEN}`
-    ) {
-      console.warn('[helius-webhook] Invalid auth token');
-      return json({error: 'Unauthorized'}, 401);
-    }
+  const authHeader = req.headers.get('authorization') || '';
+  if (
+    authHeader !== WEBHOOK_AUTH_TOKEN &&
+    authHeader !== `Bearer ${WEBHOOK_AUTH_TOKEN}`
+  ) {
+    console.warn('[helius-webhook] Invalid auth token');
+    return json({error: 'Unauthorized'}, 401);
   }
 
   try {

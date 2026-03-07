@@ -44,6 +44,17 @@ export interface DonationHistoryItem {
   donor_wallet?: string;
 }
 
+function sanitizeUploadFileName(fileName: string): string {
+  const normalized = fileName
+    .replace(/[\\/]+/g, '-')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^\.+/, '')
+    .slice(0, 120);
+
+  return normalized || 'upload.jpg';
+}
+
 // ---------- Fetch conversations ----------
 
 export async function fetchConversations(
@@ -416,7 +427,8 @@ export async function uploadChatMedia(
   contentType: string,
 ): Promise<string> {
   const supabase = getSupabase();
-  const filePath = `${conversationId}/${Date.now()}-${fileName}`;
+  const safeFileName = sanitizeUploadFileName(fileName);
+  const filePath = `${conversationId}/${Date.now()}-${safeFileName}`;
 
   const bytes = decodeBase64(fileBase64);
   const {data, error} = await supabase.storage

@@ -26,7 +26,6 @@ import {
   useRoute,
   type RouteProp,
 } from '@react-navigation/native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   launchImageLibrary,
   launchCamera,
@@ -564,7 +563,6 @@ function ChatView({
   onStatusChange?: (status: DonationStatus) => void;
 }) {
   const {theme} = useTheme();
-  const insets = useSafeAreaInsets();
   const {isAdmin} = useWallet();
   const chat = useChatMessages(conversation.id);
   const messages = chat.messages;
@@ -766,15 +764,8 @@ function ChatView({
     senderWallet === ADMIN_WALLET || senderWallet === conversation.admin_wallet;
 
   return (
-    <View
-      style={[
-        styles.root,
-        {
-          backgroundColor: theme.colors.background,
-          paddingTop: insets.top + 10,
-        },
-      ]}>
-
+    <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+      <AppHeader title={`Glimpse ${glimpseTag}`} />
       <KeyboardAvoidingView
         style={styles.chatBody}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -816,10 +807,6 @@ function ChatView({
                 </TouchableOpacity>
               ) : null}
             </View>
-            <Text
-              style={[styles.chatRecipient, {color: theme.colors.textPrimary}]}>
-              GLIMPSE {glimpseTag}
-            </Text>
             <Text
               style={[
                 styles.chatMeta,
@@ -1325,11 +1312,14 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: 8,
     marginBottom: 2,
+    minHeight: 32,
+    justifyContent: 'center',
+    paddingRight: 8,
   },
   backToThreadsText: {
-    fontSize: 11,
-    lineHeight: 14,
-    letterSpacing: 0.4,
+    fontSize: 13,
+    lineHeight: 16,
+    letterSpacing: 0.7,
     fontWeight: '700',
     textTransform: 'uppercase',
   },

@@ -2,11 +2,13 @@ import React, {useMemo, useRef, useState} from 'react';
 import {
   Animated,
   Easing,
+  findNodeHandle,
   KeyboardAvoidingView,
   Keyboard,
   Linking,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -65,6 +67,9 @@ export default function GiveScreen() {
   const campaignFocusMotion = useRef(new Animated.Value(0)).current;
   const matchFocusMotion = useRef(new Animated.Value(0)).current;
   const noteFocusMotion = useRef(new Animated.Value(0)).current;
+  const screenScrollRef = useRef<ScrollView>(null);
+  const matchInputRef = useRef<TextInput>(null);
+  const noteInputRef = useRef<TextInput>(null);
 
   const stepTranslateY = stepMotion.interpolate({
     inputRange: [0, 1],
@@ -101,6 +106,35 @@ export default function GiveScreen() {
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
+  };
+
+  const scrollInputIntoView = (inputRef: React.RefObject<TextInput>) => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    const inputNode = findNodeHandle(inputRef.current);
+    const scrollView = screenScrollRef.current as
+      | (ScrollView & {
+          scrollResponderScrollNativeHandleToKeyboard?: (
+            nodeHandle: number,
+            additionalOffset?: number,
+            preventNegativeScrollOffset?: boolean,
+          ) => void;
+        })
+      | null;
+
+    if (!inputNode || !scrollView?.scrollResponderScrollNativeHandleToKeyboard) {
+      return;
+    }
+
+    setTimeout(() => {
+      scrollView.scrollResponderScrollNativeHandleToKeyboard?.(
+        inputNode,
+        96,
+        true,
+      );
+    }, 120);
   };
 
   const amount = useMemo(() => {
@@ -321,350 +355,412 @@ export default function GiveScreen() {
   };
 
   const inputSurface = '#FFFFFF';
+  const screenBody = (
+    <ScreenContainer
+      ref={screenScrollRef}
+      contentStyle={
+        step === 'confirm'
+          ? styles.confirmScreenContent
+          : styles.screenContent
+      }>
+      <Animated.View
+        style={[
+          styles.stepContainer,
+          {
+            opacity: stepMotion,
+            transform: [{translateY: stepTranslateY}],
+          },
+        ]}>
+        {step === 'form' ? (
+          <View>
+            <SurfaceCard tone="hero" style={styles.infoCard}>
+              <Text
+                style={[
+                  styles.infoKicker,
+                  {
+                    color: theme.colors.accent,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                TRANSPARENCY
+              </Text>
+              <Text
+                style={[
+                  styles.infoTitle,
+                  {color: theme.colors.textPrimary},
+                ]}>
+                Glimpse strives to be the most efficient and effective use of
+                donation dollars in the world.
+              </Text>
+              <Text
+                style={[
+                  styles.infoBody,
+                  {color: theme.colors.textSecondary},
+                ]}>
+                These campaigns were chosen because GiveGlimpse can fulfill
+                them directly and document the results clearly in your Messages
+                thread.
+              </Text>
+              <Text
+                style={[
+                  styles.infoBody,
+                  styles.infoExample,
+                  {color: theme.colors.textSecondary},
+                ]}>
+                They are meant for real people with real needs, sourced from
+                multiple areas without prior knowledge of Glimpse. Selection is
+                merit-based. These are hand-ups, not handouts.
+              </Text>
+            </SurfaceCard>
 
-  return (
-    <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
-      <AppHeader title="Confirm" />
-      <KeyboardAvoidingView
-        style={styles.keyboardRoot}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={96}>
-        <ScreenContainer contentStyle={styles.screenContent}>
-          <Animated.View
-            style={[
-              styles.stepContainer,
-              {
-                opacity: stepMotion,
-                transform: [{translateY: stepTranslateY}],
-              },
-            ]}>
-            {step === 'form' ? (
-              <View>
-                <SurfaceCard tone="hero" style={styles.infoCard}>
+            <View style={styles.fieldBlock}>
+              <Text
+                style={[
+                  styles.fieldLabel,
+                  {
+                    color: theme.colors.textTertiary,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                AMOUNT (USDC)
+                <Text style={styles.requiredMark}> *</Text>
+              </Text>
+              <Animated.View
+                style={[
+                  styles.amountWrap,
+                  {
+                    backgroundColor: inputSurface,
+                  },
+                  createFieldAnimatedStyle(amountFocusMotion),
+                ]}>
+                <Text
+                  style={[
+                    styles.amountPrefix,
+                    {
+                      color: theme.colors.textPrimary,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  $
+                </Text>
+                <TextInput
+                  value={amountInput}
+                  onChangeText={value =>
+                    setAmountInput(normalizeAmountInput(value))
+                  }
+                  onFocus={() => animateFieldFocus(amountFocusMotion, 1)}
+                  onBlur={() => animateFieldFocus(amountFocusMotion, 0)}
+                  keyboardType="decimal-pad"
+                  placeholder="0.00"
+                  placeholderTextColor={theme.colors.textTertiary}
+                  style={[
+                    styles.amountInput,
+                    {
+                      color: theme.colors.textPrimary,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}
+                />
+              </Animated.View>
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text
+                style={[
+                  styles.fieldLabel,
+                  {
+                    color: theme.colors.textTertiary,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                CAMPAIGN
+                <Text style={styles.requiredMark}> *</Text>
+              </Text>
+              <AnimatedPressable
+                onPress={toggleCampaignMenu}
+                style={[
+                  styles.dropdownTrigger,
+                  {
+                    backgroundColor: inputSurface,
+                  },
+                  createFieldAnimatedStyle(campaignFocusMotion),
+                ]}>
+                <Text
+                  style={[
+                    styles.dropdownValue,
+                    {
+                      color: selectedCampaign
+                        ? theme.colors.textPrimary
+                        : theme.colors.textTertiary,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail">
+                  {selectedCampaign
+                    ? selectedCampaign.label
+                    : 'Select a campaign'}
+                </Text>
+                <Text
+                  style={[
+                    styles.dropdownArrow,
+                    {
+                      color: theme.colors.textSecondary,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  {campaignOpen ? '˄' : '˅'}
+                </Text>
+              </AnimatedPressable>
+
+              {campaignMenuVisible ? (
+                <Animated.View
+                  style={[
+                    styles.dropdownList,
+                    {
+                      borderColor: theme.colors.border,
+                      backgroundColor: inputSurface,
+                      opacity: campaignMenuMotion,
+                      height: dropdownHeight,
+                      transform: [{translateY: dropdownTranslateY}],
+                    },
+                  ]}>
+                  {CAMPAIGN_OPTIONS.map((campaign, index) => {
+                    const active = campaign.id === campaignId;
+                    const isLast = index === CAMPAIGN_OPTIONS.length - 1;
+                    return (
+                      <TouchableOpacity
+                        key={campaign.id}
+                        onPress={() => {
+                          setCampaignId(campaign.id);
+                          closeCampaignMenu();
+                        }}
+                        activeOpacity={0.85}
+                        style={[
+                          styles.dropdownItem,
+                          {
+                            borderBottomWidth: isLast ? 0 : 1,
+                            borderBottomColor: 'rgba(26,17,37,0.2)',
+                            backgroundColor: active
+                              ? 'rgba(101,84,209,0.08)'
+                              : 'transparent',
+                          },
+                        ]}>
+                        <Text
+                          style={[
+                            styles.dropdownItemLabel,
+                            {
+                              color: theme.colors.textPrimary,
+                              fontFamily: theme.typography.brand,
+                            },
+                          ]}>
+                          {campaign.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </Animated.View>
+              ) : null}
+
+              {selectedCampaign ? (
+                <SurfaceCard style={styles.campaignCard}>
                   <Text
                     style={[
-                      styles.infoKicker,
+                      styles.campaignCardTitle,
                       {
-                        color: theme.colors.accent,
+                        color: theme.colors.textPrimary,
                         fontFamily: theme.typography.brand,
                       },
                     ]}>
-                    TRANSPARENCY
+                    {selectedCampaign.label}
                   </Text>
                   <Text
                     style={[
-                      styles.infoTitle,
-                      {color: theme.colors.textPrimary},
-                    ]}>
-                    Glimpse strives to be the most efficient and effective use
-                    of donation dollars in the world.
-                  </Text>
-                  <Text
-                    style={[
-                      styles.infoBody,
+                      styles.helper,
                       {color: theme.colors.textSecondary},
                     ]}>
-                    These campaigns were chosen because GiveGlimpse can fulfill
-                    them directly and document the results clearly in your
-                    Messages thread.
+                    {selectedCampaign.summary}
                   </Text>
                   <Text
                     style={[
-                      styles.infoBody,
-                      styles.infoExample,
+                      styles.campaignExample,
                       {color: theme.colors.textSecondary},
                     ]}>
-                    They are meant for real people with real needs, sourced from
-                    multiple areas without prior knowledge of Glimpse.
-                    Selection is merit-based. These are hand-ups, not handouts.
+                    Example use: {selectedCampaign.exampleUse}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.campaignMinimum,
+                      {color: theme.colors.textTertiary},
+                    ]}>
+                    Minimum donation: {selectedCampaign.minimumUSDC.toFixed(2)}{' '}
+                    USDC.
                   </Text>
                 </SurfaceCard>
+              ) : null}
+            </View>
 
-              <View style={styles.fieldBlock}>
+            <View style={styles.optionalDivider}>
+              <View
+                style={[
+                  styles.optionalDividerLine,
+                  {backgroundColor: theme.colors.borderMuted},
+                ]}
+              />
+              <Text
+                style={[
+                  styles.optionalSectionLabel,
+                  {
+                    color: theme.colors.textTertiary,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                OPTIONAL
+              </Text>
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text
+                style={[
+                  styles.fieldLabel,
+                  {
+                    color: theme.colors.textTertiary,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                MATCH CONTEXT
+                <Text style={styles.optionalLabel}> (optional)</Text>
+              </Text>
+              <AnimatedTextInput
+                ref={matchInputRef}
+                value={matchContext}
+                onChangeText={setMatchContext}
+                onFocus={() => {
+                  animateFieldFocus(matchFocusMotion, 1);
+                  scrollInputIntoView(matchInputRef);
+                }}
+                onBlur={() => animateFieldFocus(matchFocusMotion, 0)}
+                placeholder="Any details that help us match your donation to a cause or person."
+                placeholderTextColor={theme.colors.textTertiary}
+                multiline
+                textAlignVertical="top"
+                style={[
+                  styles.multilineInput,
+                  {
+                    backgroundColor: inputSurface,
+                    color: theme.colors.textPrimary,
+                  },
+                  createFieldAnimatedStyle(matchFocusMotion),
+                ]}
+              />
+            </View>
+
+            <View style={styles.fieldBlock}>
+              <Text
+                style={[
+                  styles.fieldLabel,
+                  {
+                    color: theme.colors.textTertiary,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                NOTE OF ENCOURAGEMENT
+                <Text style={styles.optionalLabel}> (optional)</Text>
+              </Text>
+              <AnimatedTextInput
+                ref={noteInputRef}
+                value={recipientNote}
+                onChangeText={setRecipientNote}
+                onFocus={() => {
+                  animateFieldFocus(noteFocusMotion, 1);
+                  scrollInputIntoView(noteInputRef);
+                }}
+                onBlur={() => animateFieldFocus(noteFocusMotion, 0)}
+                placeholder="Leave a note of encouragement for the recipient."
+                placeholderTextColor={theme.colors.textTertiary}
+                multiline
+                textAlignVertical="top"
+                style={[
+                  styles.multilineInput,
+                  {
+                    backgroundColor: inputSurface,
+                    color: theme.colors.textPrimary,
+                  },
+                  createFieldAnimatedStyle(noteFocusMotion),
+                ]}
+              />
+            </View>
+
+            {!!error && (
+              <Text style={[styles.error, {color: theme.colors.danger}]}>
+                {error}
+              </Text>
+            )}
+
+            <PrimaryButton
+              label="Review Donation"
+              onPress={handleContinue}
+              style={styles.reviewButton}
+            />
+          </View>
+        ) : step === 'confirm' ? (
+          <View>
+            <View style={styles.reviewRows}>
+              <View
+                style={[
+                  styles.reviewRow,
+                  {
+                    borderColor: theme.colors.border,
+                    backgroundColor: inputSurface,
+                  },
+                ]}>
                 <Text
                   style={[
-                    styles.fieldLabel,
+                    styles.reviewLabel,
                     {
                       color: theme.colors.textTertiary,
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
-                  AMOUNT (USDC)
-                  <Text style={styles.requiredMark}> *</Text>
+                  AMOUNT
                 </Text>
-                <Animated.View
-                  style={[
-                    styles.amountWrap,
-                    {
-                      backgroundColor: inputSurface,
-                    },
-                    createFieldAnimatedStyle(amountFocusMotion),
-                  ]}>
-                  <Text
-                    style={[
-                      styles.amountPrefix,
-                      {
-                        color: theme.colors.textPrimary,
-                        fontFamily: theme.typography.brand,
-                      },
-                    ]}>
-                    $
-                  </Text>
-                  <TextInput
-                    value={amountInput}
-                    onChangeText={value =>
-                      setAmountInput(normalizeAmountInput(value))
-                    }
-                    onFocus={() => animateFieldFocus(amountFocusMotion, 1)}
-                    onBlur={() => animateFieldFocus(amountFocusMotion, 0)}
-                    keyboardType="decimal-pad"
-                    placeholder="0.00"
-                    placeholderTextColor={theme.colors.textTertiary}
-                    style={[
-                      styles.amountInput,
-                      {
-                        color: theme.colors.textPrimary,
-                        fontFamily: theme.typography.brand,
-                      },
-                    ]}
-                  />
-                </Animated.View>
-              </View>
-
-              <View style={styles.fieldBlock}>
                 <Text
                   style={[
-                    styles.fieldLabel,
+                    styles.reviewValue,
+                    {color: theme.colors.textPrimary},
+                  ]}>
+                  {formattedAmount} USDC
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.reviewRow,
+                  {
+                    borderColor: theme.colors.border,
+                    backgroundColor: inputSurface,
+                  },
+                ]}>
+                <Text
+                  style={[
+                    styles.reviewLabel,
                     {
                       color: theme.colors.textTertiary,
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
                   CAMPAIGN
-                  <Text style={styles.requiredMark}> *</Text>
                 </Text>
-                <AnimatedPressable
-                  onPress={toggleCampaignMenu}
-                  style={[
-                    styles.dropdownTrigger,
-                    {
-                      backgroundColor: inputSurface,
-                    },
-                    createFieldAnimatedStyle(campaignFocusMotion),
-                  ]}>
-                  <Text
-                    style={[
-                      styles.dropdownValue,
-                      {
-                        color: selectedCampaign
-                          ? theme.colors.textPrimary
-                          : theme.colors.textTertiary,
-                        fontFamily: theme.typography.brand,
-                      },
-                    ]}
-                    numberOfLines={2}
-                    ellipsizeMode="tail">
-                    {selectedCampaign
-                      ? selectedCampaign.label
-                      : 'Select a campaign'}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.dropdownArrow,
-                      {
-                        color: theme.colors.textSecondary,
-                        fontFamily: theme.typography.brand,
-                      },
-                    ]}>
-                    {campaignOpen ? '˄' : '˅'}
-                  </Text>
-                </AnimatedPressable>
-
-                {campaignMenuVisible ? (
-                  <Animated.View
-                    style={[
-                      styles.dropdownList,
-                      {
-                        borderColor: theme.colors.border,
-                        backgroundColor: inputSurface,
-                        opacity: campaignMenuMotion,
-                        height: dropdownHeight,
-                        transform: [{translateY: dropdownTranslateY}],
-                      },
-                    ]}>
-                    {CAMPAIGN_OPTIONS.map((campaign, index) => {
-                      const active = campaign.id === campaignId;
-                      const isLast = index === CAMPAIGN_OPTIONS.length - 1;
-                      return (
-                        <TouchableOpacity
-                          key={campaign.id}
-                          onPress={() => {
-                            setCampaignId(campaign.id);
-                            closeCampaignMenu();
-                          }}
-                          activeOpacity={0.85}
-                          style={[
-                            styles.dropdownItem,
-                            {
-                              borderBottomWidth: isLast ? 0 : 1,
-                              borderBottomColor: 'rgba(26,17,37,0.2)',
-                              backgroundColor: active
-                                ? 'rgba(101,84,209,0.08)'
-                                : 'transparent',
-                            },
-                          ]}>
-                          <Text
-                            style={[
-                              styles.dropdownItemLabel,
-                              {
-                                color: theme.colors.textPrimary,
-                                fontFamily: theme.typography.brand,
-                              },
-                            ]}>
-                            {campaign.label}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </Animated.View>
-                ) : null}
-
-                {selectedCampaign ? (
-                  <SurfaceCard style={styles.campaignCard}>
-                    <Text
-                      style={[
-                        styles.campaignCardTitle,
-                        {
-                          color: theme.colors.textPrimary,
-                          fontFamily: theme.typography.brand,
-                        },
-                      ]}>
-                      {selectedCampaign.label}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.helper,
-                        {color: theme.colors.textSecondary},
-                      ]}>
-                      {selectedCampaign.summary}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.campaignExample,
-                        {color: theme.colors.textSecondary},
-                      ]}>
-                      Example use: {selectedCampaign.exampleUse}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.campaignMinimum,
-                        {color: theme.colors.textTertiary},
-                      ]}>
-                      Minimum donation:{' '}
-                      {selectedCampaign.minimumUSDC.toFixed(2)} USDC.
-                    </Text>
-                  </SurfaceCard>
-                ) : null}
-              </View>
-
-              <View style={styles.optionalDivider}>
-                <View
-                  style={[
-                    styles.optionalDividerLine,
-                    {backgroundColor: theme.colors.borderMuted},
-                  ]}
-                />
                 <Text
                   style={[
-                    styles.optionalSectionLabel,
-                    {
-                      color: theme.colors.textTertiary,
-                      fontFamily: theme.typography.brand,
-                    },
+                    styles.reviewCampaign,
+                    {color: theme.colors.textPrimary},
                   ]}>
-                  OPTIONAL
+                  {selectedCampaign?.label || '-'}
                 </Text>
               </View>
 
-              <View style={styles.fieldBlock}>
-                <Text
-                  style={[
-                    styles.fieldLabel,
-                    {
-                      color: theme.colors.textTertiary,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  MATCH CONTEXT
-                  <Text style={styles.optionalLabel}> (optional)</Text>
-                </Text>
-                <AnimatedTextInput
-                  value={matchContext}
-                  onChangeText={setMatchContext}
-                  onFocus={() => animateFieldFocus(matchFocusMotion, 1)}
-                  onBlur={() => animateFieldFocus(matchFocusMotion, 0)}
-                  placeholder="Any details that help us match your donation to a cause or person."
-                  placeholderTextColor={theme.colors.textTertiary}
-                  multiline
-                  textAlignVertical="top"
-                  style={[
-                    styles.multilineInput,
-                    {
-                      backgroundColor: inputSurface,
-                      color: theme.colors.textPrimary,
-                    },
-                    createFieldAnimatedStyle(matchFocusMotion),
-                  ]}
-                />
-              </View>
-
-              <View style={styles.fieldBlock}>
-                <Text
-                  style={[
-                    styles.fieldLabel,
-                    {
-                      color: theme.colors.textTertiary,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  NOTE OF ENCOURAGEMENT
-                  <Text style={styles.optionalLabel}> (optional)</Text>
-                </Text>
-                <AnimatedTextInput
-                  value={recipientNote}
-                  onChangeText={setRecipientNote}
-                  onFocus={() => animateFieldFocus(noteFocusMotion, 1)}
-                  onBlur={() => animateFieldFocus(noteFocusMotion, 0)}
-                  placeholder="Leave a note of encouragement for the recipient."
-                  placeholderTextColor={theme.colors.textTertiary}
-                  multiline
-                  textAlignVertical="top"
-                  style={[
-                    styles.multilineInput,
-                    {
-                      backgroundColor: inputSurface,
-                      color: theme.colors.textPrimary,
-                    },
-                    createFieldAnimatedStyle(noteFocusMotion),
-                  ]}
-                />
-              </View>
-
-              {!!error && (
-                <Text style={[styles.error, {color: theme.colors.danger}]}>
-                  {error}
-                </Text>
-              )}
-
-              <PrimaryButton
-                label="Review Donation"
-                onPress={handleContinue}
-                style={styles.reviewButton}
-              />
-              </View>
-            ) : step === 'confirm' ? (
-              <View>
-              <View style={styles.reviewRows}>
+              {!!matchContext.trim() && (
                 <View
                   style={[
                     styles.reviewRow,
@@ -681,17 +777,19 @@ export default function GiveScreen() {
                         fontFamily: theme.typography.brand,
                       },
                     ]}>
-                    AMOUNT
+                    MATCH CONTEXT
                   </Text>
                   <Text
                     style={[
-                      styles.reviewValue,
-                      {color: theme.colors.textPrimary},
+                      styles.reviewBody,
+                      {color: theme.colors.textSecondary},
                     ]}>
-                    {formattedAmount} USDC
+                    {matchContext.trim()}
                   </Text>
                 </View>
+              )}
 
+              {!!recipientNote.trim() && (
                 <View
                   style={[
                     styles.reviewRow,
@@ -708,270 +806,223 @@ export default function GiveScreen() {
                         fontFamily: theme.typography.brand,
                       },
                     ]}>
-                    CAMPAIGN
+                    NOTE OF ENCOURAGEMENT
                   </Text>
                   <Text
                     style={[
-                      styles.reviewCampaign,
-                      {color: theme.colors.textPrimary},
+                      styles.reviewBody,
+                      {color: theme.colors.textSecondary},
                     ]}>
-                    {selectedCampaign?.label || '-'}
+                    {recipientNote.trim()}
                   </Text>
                 </View>
-
-                {!!matchContext.trim() && (
-                  <View
-                    style={[
-                      styles.reviewRow,
-                      {
-                        borderColor: theme.colors.border,
-                        backgroundColor: inputSurface,
-                      },
-                    ]}>
-                    <Text
-                      style={[
-                        styles.reviewLabel,
-                        {
-                          color: theme.colors.textTertiary,
-                          fontFamily: theme.typography.brand,
-                        },
-                      ]}>
-                      MATCH CONTEXT
-                    </Text>
-                    <Text
-                      style={[
-                        styles.reviewBody,
-                        {color: theme.colors.textSecondary},
-                      ]}>
-                      {matchContext.trim()}
-                    </Text>
-                  </View>
-                )}
-
-                {!!recipientNote.trim() && (
-                  <View
-                    style={[
-                      styles.reviewRow,
-                      {
-                        borderColor: theme.colors.border,
-                        backgroundColor: inputSurface,
-                      },
-                    ]}>
-                    <Text
-                      style={[
-                        styles.reviewLabel,
-                        {
-                          color: theme.colors.textTertiary,
-                          fontFamily: theme.typography.brand,
-                        },
-                      ]}>
-                      NOTE OF ENCOURAGEMENT
-                    </Text>
-                    <Text
-                      style={[
-                        styles.reviewBody,
-                        {color: theme.colors.textSecondary},
-                      ]}>
-                      {recipientNote.trim()}
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              <SurfaceCard style={styles.timelineCard}>
-                <Text
-                  style={[
-                    styles.timelineKicker,
-                    {
-                      color: theme.colors.accent,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  WHAT HAPPENS AFTER YOU CONFIRM
-                </Text>
-                <Text
-                  style={[
-                    styles.timelineLead,
-                    {color: theme.colors.textSecondary},
-                  ]}>
-                  You are not sending funds into a black box. This confirmation
-                  opens a clear donor trail:
-                </Text>
-                <Text
-                  style={[
-                    styles.timelineItem,
-                    {color: theme.colors.textSecondary},
-                  ]}>
-                  1. Your USDC donation confirms on Solana mainnet.
-                </Text>
-                <Text
-                  style={[
-                    styles.timelineItem,
-                    {color: theme.colors.textSecondary},
-                  ]}>
-                  2. A message thread with GiveGlimpse opens immediately for
-                  this donation.
-                </Text>
-                <Text
-                  style={[
-                    styles.timelineItem,
-                    {color: theme.colors.textSecondary},
-                  ]}>
-                  3. In about 5 to 7 days, you receive receipts, photos, and a
-                  written proof update in that thread.
-                </Text>
-                <Text
-                  style={[
-                    styles.timelineFootnote,
-                    {color: theme.colors.textTertiary},
-                  ]}>
-                  Network fee: {'<'}$0.01 SOL paid to Solana validators, not
-                  Glimpse.
-                </Text>
-              </SurfaceCard>
-
-              {!!error && (
-                <Text style={[styles.error, {color: theme.colors.danger}]}>
-                  {error}
-                </Text>
               )}
-
-              <Pressable
-                onPress={() => transitionToStep('form')}
-                disabled={loading || connecting}
-                style={({pressed}) => [
-                  styles.backButton,
-                  {
-                    borderColor: theme.colors.border,
-                    backgroundColor: 'transparent',
-                    opacity: loading || connecting ? 0.6 : 1,
-                    transform: [
-                      {scale: pressed ? 0.985 : 1},
-                      {translateY: pressed ? 1 : 0},
-                    ],
-                  },
-                ]}>
-                <Text
-                  style={[
-                    styles.backButtonText,
-                    {
-                      color: theme.colors.textPrimary,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  BACK
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={runDonation}
-                disabled={loading || connecting}
-                style={({pressed}) => [
-                  styles.confirmButton,
-                  {
-                    backgroundColor: theme.colors.accent,
-                    borderColor: theme.colors.border,
-                    opacity: loading || connecting ? 0.7 : 1,
-                    transform: [
-                      {scale: pressed ? 0.985 : 1},
-                      {translateY: pressed ? 2 : 0},
-                    ],
-                    shadowOpacity: pressed ? 0.18 : 0.3,
-                    shadowOffset: {
-                      width: pressed ? 1 : 2,
-                      height: pressed ? 1 : 2,
-                    },
-                    elevation: pressed ? 3 : 5,
-                  },
-                ]}>
-                <Text
-                  style={[
-                    styles.confirmButtonText,
-                    {fontFamily: theme.typography.brand},
-                  ]}>
-                  {loading || connecting
-                    ? 'Authorizing...'
-                    : 'Confirm and Sign'}
-                </Text>
-              </Pressable>
             </View>
-          ) : step === 'processing' ? (
-            <View>
-              <SurfaceCard tone="hero" style={styles.processingCard}>
+
+            <SurfaceCard style={styles.timelineCard}>
+              <Text
+                style={[
+                  styles.timelineKicker,
+                  {
+                    color: theme.colors.accent,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                WHAT HAPPENS AFTER YOU CONFIRM
+              </Text>
+              <Text
+                style={[
+                  styles.timelineLead,
+                  {color: theme.colors.textSecondary},
+                ]}>
+                You are not sending funds into a black box. This confirmation
+                opens a clear donor trail:
+              </Text>
+              <Text
+                style={[
+                  styles.timelineItem,
+                  {color: theme.colors.textSecondary},
+                ]}>
+                1. Your USDC donation confirms on Solana mainnet.
+              </Text>
+              <Text
+                style={[
+                  styles.timelineItem,
+                  {color: theme.colors.textSecondary},
+                ]}>
+                2. A message thread with GiveGlimpse opens immediately for this
+                donation.
+              </Text>
+              <Text
+                style={[
+                  styles.timelineItem,
+                  {color: theme.colors.textSecondary},
+                ]}>
+                3. In about 5 to 7 days, you receive receipts, photos, and a
+                written proof update in that thread.
+              </Text>
+              <Text
+                style={[
+                  styles.timelineFootnote,
+                  {color: theme.colors.textTertiary},
+                ]}>
+                Network fee: {'<'}$0.01 SOL paid to Solana validators, not
+                Glimpse.
+              </Text>
+            </SurfaceCard>
+
+            {!!error && (
+              <Text style={[styles.error, {color: theme.colors.danger}]}>
+                {error}
+              </Text>
+            )}
+
+            <Pressable
+              onPress={() => transitionToStep('form')}
+              disabled={loading || connecting}
+              style={({pressed}) => [
+                styles.backButton,
+                {
+                  borderColor: theme.colors.border,
+                  backgroundColor: 'transparent',
+                  opacity: loading || connecting ? 0.6 : 1,
+                  transform: [
+                    {scale: pressed ? 0.985 : 1},
+                    {translateY: pressed ? 1 : 0},
+                  ],
+                },
+              ]}>
+              <Text
+                style={[
+                  styles.backButtonText,
+                  {
+                    color: theme.colors.textPrimary,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                BACK
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={runDonation}
+              disabled={loading || connecting}
+              style={({pressed}) => [
+                styles.confirmButton,
+                {
+                  backgroundColor: theme.colors.accent,
+                  borderColor: theme.colors.border,
+                  opacity: loading || connecting ? 0.7 : 1,
+                  transform: [
+                    {scale: pressed ? 0.985 : 1},
+                    {translateY: pressed ? 2 : 0},
+                  ],
+                  shadowOpacity: pressed ? 0.18 : 0.3,
+                  shadowOffset: {
+                    width: pressed ? 1 : 2,
+                    height: pressed ? 1 : 2,
+                  },
+                  elevation: pressed ? 3 : 5,
+                },
+              ]}>
+              <Text
+                style={[
+                  styles.confirmButtonText,
+                  {fontFamily: theme.typography.brand},
+                ]}>
+                {loading || connecting ? 'Authorizing...' : 'Confirm and Sign'}
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View>
+            <SurfaceCard tone="hero" style={styles.processingCard}>
+              <Text
+                style={[
+                  styles.processingTitle,
+                  {
+                    color: theme.colors.textPrimary,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                DONATION CONFIRMED
+              </Text>
+              <Text
+                style={[
+                  styles.processingAmount,
+                  {
+                    color: theme.colors.accent,
+                    fontFamily: theme.typography.brand,
+                  },
+                ]}>
+                {formattedAmount} USDC
+              </Text>
+              <Text
+                style={[
+                  styles.processingBody,
+                  {color: theme.colors.textSecondary},
+                ]}>
+                Your donation is confirmed on-chain. We are opening your
+                GiveGlimpse message thread now. If it takes a moment to appear,
+                you can still verify the transaction below and check Messages
+                shortly.
+              </Text>
+            </SurfaceCard>
+
+            {!!error && (
+              <Text style={[styles.error, {color: theme.colors.danger}]}>
+                {error}
+              </Text>
+            )}
+
+            {!!processingTxSig && (
+              <TouchableOpacity
+                onPress={() => Linking.openURL(getExplorerUrl(processingTxSig))}
+                activeOpacity={0.7}
+                style={[
+                  styles.explorerLink,
+                  {borderColor: theme.colors.border},
+                ]}>
                 <Text
                   style={[
-                    styles.processingTitle,
-                    {
-                      color: theme.colors.textPrimary,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  DONATION CONFIRMED
-                </Text>
-                <Text
-                  style={[
-                    styles.processingAmount,
+                    styles.explorerLinkText,
                     {
                       color: theme.colors.accent,
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
-                  {formattedAmount} USDC
+                  View on Solana Explorer
                 </Text>
-                <Text
-                  style={[
-                    styles.processingBody,
-                    {color: theme.colors.textSecondary},
-                  ]}>
-                  Your donation is confirmed on-chain. We are opening your
-                  GiveGlimpse message thread now. If it takes a moment to
-                  appear, you can still verify the transaction below and check
-                  Messages shortly.
-                </Text>
-              </SurfaceCard>
+              </TouchableOpacity>
+            )}
 
-              {!!error && (
-                <Text style={[styles.error, {color: theme.colors.danger}]}>
-                  {error}
-                </Text>
-              )}
+            <PrimaryButton
+              label="Done"
+              onPress={() => {
+                reset();
+                navigation.navigate('Messages');
+              }}
+              style={styles.reviewButton}
+            />
+          </View>
+        )}
+      </Animated.View>
+    </ScreenContainer>
+  );
 
-              {!!processingTxSig && (
-                <TouchableOpacity
-                  onPress={() =>
-                    Linking.openURL(getExplorerUrl(processingTxSig))
-                  }
-                  activeOpacity={0.7}
-                  style={[
-                    styles.explorerLink,
-                    {borderColor: theme.colors.border},
-                  ]}>
-                  <Text
-                    style={[
-                      styles.explorerLinkText,
-                      {
-                        color: theme.colors.accent,
-                        fontFamily: theme.typography.brand,
-                      },
-                    ]}>
-                    View on Solana Explorer
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              <PrimaryButton
-                label="Done"
-                onPress={() => {
-                  reset();
-                  navigation.navigate('Messages');
-                }}
-                style={styles.reviewButton}
-              />
-              </View>
-            ) : null}
-          </Animated.View>
-        </ScreenContainer>
-      </KeyboardAvoidingView>
+  return (
+    <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
+      <AppHeader title={step === 'form' ? 'Donate' : 'Confirm'} />
+      {Platform.OS === 'ios' ? (
+        <KeyboardAvoidingView
+          style={styles.keyboardRoot}
+          behavior={step === 'form' ? 'padding' : undefined}
+          keyboardVerticalOffset={step === 'form' ? 96 : 0}>
+          {screenBody}
+        </KeyboardAvoidingView>
+      ) : (
+        <View style={styles.keyboardRoot}>{screenBody}</View>
+      )}
     </View>
   );
 }
@@ -990,8 +1041,11 @@ const styles = StyleSheet.create<
   },
   screenContent: {
     paddingTop: 14,
-    paddingBottom: 32,
-    flexGrow: 1,
+    paddingBottom: 12,
+  },
+  confirmScreenContent: {
+    paddingTop: 14,
+    paddingBottom: 48,
   },
   stepContainer: {
     width: '100%',
