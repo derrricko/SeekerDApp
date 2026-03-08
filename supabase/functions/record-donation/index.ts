@@ -60,21 +60,21 @@ interface CampaignRule {
   causePreferences: string[];
 }
 
-// SYNC: campaign rules must match CAMPAIGN_OPTIONS in data/donationConfig.ts
+// SYNC: campaign rules must match CAMPAIGN_OPTIONS in config/donationConfig.ts
 const CAMPAIGN_RULES: CampaignRule[] = [
   {
     id: 'public-schools',
-    minimumUSDC: 1,
+    minimumUSDC: 25,
     causePreferences: ['education', 'public-schools'],
   },
   {
     id: 'single-moms-crisis',
-    minimumUSDC: 1,
+    minimumUSDC: 50,
     causePreferences: ['family-crisis', 'single-moms'],
   },
   {
     id: 'foster-care-after-school',
-    minimumUSDC: 1,
+    minimumUSDC: 100,
     causePreferences: ['foster-care', 'child-essentials', 'after-school'],
   },
 ];
