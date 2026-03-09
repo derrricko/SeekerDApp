@@ -15,6 +15,7 @@ export interface PendingConversation {
   causePreferences: string[];
   donationMode: DonationMode;
   timestamp: number;
+  classroomNeedId?: string;
 }
 
 export async function addPendingConversation(

@@ -44,6 +44,8 @@ export interface DonationMemo {
   tok: string;
   /** Donation cadence */
   c?: 'one_time' | 'daily';
+  /** Classroom need ID (full UUID) — present only for need-mode donations */
+  cn?: string;
 }
 
 /**
@@ -58,6 +60,7 @@ export async function buildDonationTransaction(
   recipientAddress: string,
   amountUSDC: number,
   cadence: 'one_time' | 'daily',
+  classroomNeedId?: string,
 ): Promise<{
   transaction: Transaction;
   memo: DonationMemo;
@@ -149,6 +152,7 @@ export async function buildDonationTransaction(
     app: 'glimpse',
     tok: 'usdc',
     c: cadence,
+    ...(classroomNeedId ? {cn: classroomNeedId} : {}),
   };
 
   const memoData = JSON.stringify(memo);

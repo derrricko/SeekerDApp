@@ -39,6 +39,8 @@ export interface DonationResult {
   donorWallet: string;
   /** Non-null when backend recording failed (tx is on-chain but not in Supabase). */
   recordError: string | null;
+  /** Present for need-mode donations — enables success navigation. */
+  classroomNeedId?: string | null;
 }
 
 /** Thrown when the server returns 4xx — permanent failure, do not retry. */
@@ -80,6 +82,7 @@ export async function executeDonationSeamless(
   ) => Promise<WalletSignResult>,
   causePreferences: string[] = [],
   donationMode: DonationMode = 'solo',
+  classroomNeedId?: string,
 ): Promise<Result<DonationResult>> {
   if (donationMutex) {
     return fail(
@@ -111,6 +114,7 @@ export async function executeDonationSeamless(
           recipientWallet,
           amountUSDC,
           cadence,
+          classroomNeedId,
         );
         memo = built.memo;
         blockhash = built.blockhash;
@@ -157,6 +161,7 @@ export async function executeDonationSeamless(
           donationMode,
           memo,
           amountUSDC,
+          classroomNeedId,
         );
       }
 
@@ -240,6 +245,7 @@ export async function executeDonationSeamless(
       donationMode,
       memo,
       amountUSDC,
+      classroomNeedId,
     );
   } finally {
     donationMutex = false;
@@ -258,6 +264,7 @@ async function confirmAndRecord(
   donationMode: DonationMode,
   memo: DonationMemo | null,
   amountUSDC: number,
+  classroomNeedId?: string,
 ): Promise<Result<DonationResult>> {
   // Confirm on-chain
   try {
@@ -281,6 +288,7 @@ async function confirmAndRecord(
       causePreferences,
       donationMode,
       timestamp: Date.now(),
+      classroomNeedId,
     });
     const txError = handleTransactionError(error);
     return {success: false, error: txError};
@@ -293,6 +301,7 @@ async function confirmAndRecord(
       recipientId,
       causePreferences,
       donationMode,
+      classroomNeedId,
     );
 
     return ok({
@@ -308,6 +317,7 @@ async function confirmAndRecord(
       conversationId,
       donorWallet,
       recordError: null,
+      classroomNeedId: classroomNeedId || null,
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -320,6 +330,7 @@ async function confirmAndRecord(
       causePreferences,
       donationMode,
       timestamp: Date.now(),
+      classroomNeedId,
     });
 
     return ok({
@@ -335,6 +346,7 @@ async function confirmAndRecord(
       conversationId: null,
       donorWallet,
       recordError: errorMsg,
+      classroomNeedId: classroomNeedId || null,
     });
   }
 }
@@ -369,6 +381,7 @@ export async function retryPendingConversations(): Promise<void> {
         item.recipientId,
         item.causePreferences,
         item.donationMode,
+        item.classroomNeedId,
       );
       await removePendingConversation(item.txSignature);
     } catch (error) {
@@ -386,6 +399,7 @@ async function recordAndCreateConversationSecure(
   recipientId: string,
   causePreferences: string[],
   donationMode: DonationMode,
+  classroomNeedId?: string,
 ): Promise<string> {
   const token = getSupabaseAccessToken();
   if (!token) {
@@ -409,6 +423,7 @@ async function recordAndCreateConversationSecure(
         recipientId,
         causePreferences,
         donationMode,
+        ...(classroomNeedId ? {classroomNeedId} : {}),
       }),
       signal: controller.signal,
     });
