@@ -9,6 +9,25 @@ export const DONATION_STATUS_LABELS: Record<DonationStatus, string> = {
   completed: 'COMPLETED',
 };
 
+export type NeedStatus =
+  | 'open'
+  | 'funded'
+  | 'under_review'
+  | 'purchased'
+  | 'delivered'
+  | 'classroom_photo_added'
+  | 'failed';
+
+export const NEED_STATUS_LABELS: Record<NeedStatus, string> = {
+  open: 'OPEN',
+  funded: 'FUNDED',
+  under_review: 'UNDER REVIEW',
+  purchased: 'PURCHASED',
+  delivered: 'DELIVERED',
+  classroom_photo_added: 'CLASSROOM PHOTO ADDED',
+  failed: 'ISSUE',
+};
+
 export interface CampaignOption {
   id: string;
   label: string;
@@ -55,6 +74,10 @@ export const CAMPAIGN_OPTIONS: CampaignOption[] = [
     causePreferences: ['foster-care', 'child-essentials', 'after-school'],
     minimumUSDC: 100,
   },
+  // NOTE: 'classroom-needs' is intentionally NOT in this array.
+  // Classroom needs are funded via route-driven need mode (Milestone 2),
+  // not the generic campaign dropdown. Server-side CAMPAIGN_RULES in
+  // record-donation/index.ts has the rule for validation.
 ];
 
 const NAME_BY_RECIPIENT_ID: Record<string, string> = {
