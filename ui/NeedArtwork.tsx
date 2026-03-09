@@ -5,6 +5,11 @@ import type {ClassroomNeed} from '../services/classroomNeeds';
 
 type NeedArtworkVariant = 'card' | 'hero';
 type ArtworkKind = 'notebooks' | 'markers' | 'calculators' | 'generic';
+type ArtworkMeta = {
+  kind: ArtworkKind;
+  quantityLabel: string;
+  itemLabel: string;
+};
 
 export default function NeedArtwork({
   need,
@@ -14,7 +19,7 @@ export default function NeedArtwork({
   variant?: NeedArtworkVariant;
 }) {
   const {theme} = useTheme();
-  const kind = getArtworkKind(need.title, need.description);
+  const meta = getArtworkMeta(need.title, need.description);
   const isHero = variant === 'hero';
 
   return (
@@ -63,52 +68,120 @@ export default function NeedArtwork({
       </View>
 
       <View style={styles.artStage}>
-        {kind === 'notebooks' ? (
-          <NotebookArtwork />
-        ) : kind === 'markers' ? (
-          <MarkerArtwork />
-        ) : kind === 'calculators' ? (
-          <CalculatorArtwork />
+        {meta.kind === 'notebooks' ? (
+          <NotebookArtwork quantityLabel={meta.quantityLabel} />
+        ) : meta.kind === 'markers' ? (
+          <MarkerArtwork quantityLabel={meta.quantityLabel} />
+        ) : meta.kind === 'calculators' ? (
+          <CalculatorArtwork quantityLabel={meta.quantityLabel} />
         ) : (
-          <GenericArtwork />
+          <GenericArtwork itemLabel={meta.itemLabel} />
         )}
+      </View>
+
+      <View style={styles.captionRow}>
+        <View
+          style={[
+            styles.captionBadge,
+            {
+              backgroundColor: theme.colors.surface + 'ED',
+              borderColor: theme.colors.borderMuted,
+            },
+          ]}>
+          <Text
+            style={[
+              styles.captionText,
+              {
+                color: theme.colors.textPrimary,
+                fontFamily: theme.typography.brand,
+              },
+            ]}>
+            {meta.itemLabel}
+          </Text>
+        </View>
       </View>
     </View>
   );
 }
 
-function getArtworkKind(
+function getArtworkMeta(
   title: string,
   description: string | null | undefined,
-): ArtworkKind {
+): ArtworkMeta {
   const haystack = `${title} ${description ?? ''}`.toLowerCase();
+  const quantityLabel = getQuantityLabel(title);
 
   if (
     haystack.includes('notebook') ||
     haystack.includes('composition') ||
     haystack.includes('journal')
   ) {
-    return 'notebooks';
+    return {
+      kind: 'notebooks',
+      quantityLabel,
+      itemLabel: 'COMPOSITION NOTEBOOKS',
+    };
   }
   if (
     haystack.includes('marker') ||
     haystack.includes('markers') ||
     haystack.includes('art')
   ) {
-    return 'markers';
+    return {
+      kind: 'markers',
+      quantityLabel,
+      itemLabel: 'CLASSROOM MARKERS',
+    };
   }
   if (
     haystack.includes('calculator') ||
     haystack.includes('pre-algebra') ||
     haystack.includes('math')
   ) {
-    return 'calculators';
+    return {
+      kind: 'calculators',
+      quantityLabel,
+      itemLabel: 'SCIENTIFIC CALCULATORS',
+    };
   }
 
-  return 'generic';
+  return {
+    kind: 'generic',
+    quantityLabel,
+    itemLabel: normalizeItemLabel(title),
+  };
 }
 
-function NotebookArtwork() {
+function getQuantityLabel(title: string) {
+  const packMatch = title.match(/(\d+)\s*[- ]?(pack|count)/i);
+  if (packMatch) {
+    return `${packMatch[1]} ${packMatch[2].toUpperCase()}`;
+  }
+
+  const boxesMatch = title.match(/(\d+)\s*boxes?/i);
+  if (boxesMatch) {
+    return `${boxesMatch[1]} BOXES`;
+  }
+
+  const numberMatch = title.match(/(\d+)/);
+  if (numberMatch) {
+    return `${numberMatch[1]} ITEMS`;
+  }
+
+  return 'CLASSROOM ITEM';
+}
+
+function normalizeItemLabel(title: string) {
+  return title
+    .replace(/\([^)]*\)/g, '')
+    .replace(/\b\d+\s*[- ]?(pack|count|boxes?)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase()
+    .slice(0, 28);
+}
+
+function NotebookArtwork({quantityLabel}: {quantityLabel: string}) {
   return (
     <View style={styles.notebookCluster}>
       <View style={[styles.shadowPlate, styles.shadowLeft]} />
@@ -117,6 +190,7 @@ function NotebookArtwork() {
       <View style={[styles.notebook, styles.notebookBack]}>
         <View style={styles.binding} />
         <View style={styles.ruleGroup}>
+          <View style={styles.coverStripe} />
           <View style={styles.rule} />
           <View style={styles.rule} />
           <View style={styles.rule} />
@@ -127,41 +201,57 @@ function NotebookArtwork() {
       <View style={[styles.notebook, styles.notebookFront]}>
         <View style={styles.binding} />
         <View style={styles.ruleGroup}>
+          <View style={styles.coverStripe} />
           <View style={styles.rule} />
           <View style={styles.rule} />
           <View style={styles.rule} />
           <View style={styles.ruleShort} />
         </View>
       </View>
+
+      <View style={styles.quantityChip}>
+        <Text style={styles.quantityChipText}>{quantityLabel}</Text>
+      </View>
     </View>
   );
 }
 
-function MarkerArtwork() {
+function MarkerArtwork({quantityLabel}: {quantityLabel: string}) {
   return (
     <View style={styles.markerCluster}>
-      <View style={[styles.marker, styles.markerTiltOne]}>
-        <View style={[styles.markerCap, {backgroundColor: '#F08A5D'}]} />
-        <View style={styles.markerBody} />
+      <View style={styles.markerBoxShadow} />
+      <View style={styles.markerBox}>
+        <View style={styles.markerBoxHeader}>
+          <Text style={styles.markerBoxLabel}>{quantityLabel}</Text>
+        </View>
+        <View style={styles.markerPreviewRow}>
+          <View style={[styles.marker, styles.markerTiltOne]}>
+            <View style={[styles.markerCap, {backgroundColor: '#F08A5D'}]} />
+            <View style={styles.markerBody} />
+          </View>
+          <View style={[styles.marker, styles.markerTiltTwo]}>
+            <View style={[styles.markerCap, {backgroundColor: '#47CBCD'}]} />
+            <View style={styles.markerBody} />
+          </View>
+          <View style={[styles.marker, styles.markerTiltThree]}>
+            <View style={[styles.markerCap, {backgroundColor: '#6554D1'}]} />
+            <View style={styles.markerBody} />
+          </View>
+        </View>
       </View>
-      <View style={[styles.marker, styles.markerTiltTwo]}>
-        <View style={[styles.markerCap, {backgroundColor: '#47CBCD'}]} />
-        <View style={styles.markerBody} />
-      </View>
-      <View style={[styles.marker, styles.markerTiltThree]}>
-        <View style={[styles.markerCap, {backgroundColor: '#6554D1'}]} />
-        <View style={styles.markerBody} />
-      </View>
-      <View style={[styles.markerTray, styles.markerTrayBack]} />
-      <View style={[styles.markerTray, styles.markerTrayFront]} />
     </View>
   );
 }
 
-function CalculatorArtwork() {
+function CalculatorArtwork({quantityLabel}: {quantityLabel: string}) {
   return (
     <View style={styles.calculatorWrap}>
+      <View style={[styles.calculatorBody, styles.calculatorStackBack]} />
+      <View style={[styles.calculatorBody, styles.calculatorStackMid]} />
       <View style={styles.calculatorBody}>
+        <View style={styles.calculatorTopBar}>
+          <Text style={styles.calculatorTopBarText}>{quantityLabel}</Text>
+        </View>
         <View style={styles.calculatorScreen}>
           <Text style={styles.calculatorDigits}>42.00</Text>
         </View>
@@ -183,7 +273,7 @@ function CalculatorArtwork() {
   );
 }
 
-function GenericArtwork() {
+function GenericArtwork({itemLabel}: {itemLabel: string}) {
   return (
     <View style={styles.genericWrap}>
       <View style={[styles.genericCard, styles.genericLeft]}>
@@ -191,6 +281,7 @@ function GenericArtwork() {
         <View style={styles.genericRule} />
       </View>
       <View style={[styles.genericCard, styles.genericCenter]}>
+        <Text style={styles.genericLabel}>{itemLabel}</Text>
         <View style={styles.genericRule} />
         <View style={styles.genericRule} />
         <View style={styles.genericRuleShort} />
@@ -253,11 +344,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 18,
-    paddingBottom: 18,
+    paddingBottom: 8,
+  },
+  captionRow: {
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+  },
+  captionBadge: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  captionText: {
+    fontSize: 9,
+    letterSpacing: 0.7,
   },
   notebookCluster: {
     width: 190,
-    height: 110,
+    height: 118,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -312,6 +418,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
+  coverStripe: {
+    width: '48%',
+    height: 8,
+    borderRadius: 99,
+    backgroundColor: 'rgba(101,84,209,0.6)',
+    marginBottom: 4,
+  },
   rule: {
     height: 3,
     borderRadius: 99,
@@ -323,50 +436,84 @@ const styles = StyleSheet.create({
     borderRadius: 99,
     backgroundColor: 'rgba(71,203,205,0.34)',
   },
+  quantityChip: {
+    position: 'absolute',
+    right: 10,
+    bottom: 8,
+    backgroundColor: '#1A1125',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  quantityChipText: {
+    color: '#F4EEFF',
+    fontSize: 9,
+    letterSpacing: 0.7,
+    fontWeight: '700',
+  },
   markerCluster: {
     width: 210,
     height: 112,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  markerTray: {
+  markerBoxShadow: {
     position: 'absolute',
-    width: 164,
-    height: 42,
-    borderRadius: 18,
+    width: 170,
+    height: 92,
+    borderRadius: 20,
+    backgroundColor: 'rgba(26,17,37,0.08)',
+    top: 18,
+    transform: [{rotate: '-5deg'}],
   },
-  markerTrayBack: {
-    bottom: 16,
-    backgroundColor: 'rgba(101,84,209,0.12)',
-    transform: [{rotate: '-8deg'}],
-  },
-  markerTrayFront: {
-    bottom: 24,
+  markerBox: {
+    width: 170,
+    height: 92,
+    borderRadius: 20,
     backgroundColor: '#FFFDF8',
     borderWidth: 1,
     borderColor: 'rgba(26,17,37,0.12)',
+    overflow: 'hidden',
+    transform: [{rotate: '-3deg'}],
+  },
+  markerBoxHeader: {
+    height: 28,
+    backgroundColor: 'rgba(101,84,209,0.12)',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  markerBoxLabel: {
+    color: '#1A1125',
+    fontSize: 10,
+    letterSpacing: 0.7,
+    fontWeight: '700',
+  },
+  markerPreviewRow: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
   },
   marker: {
     position: 'absolute',
-    width: 122,
+    width: 108,
     height: 18,
     borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
   },
   markerTiltOne: {
-    top: 16,
-    left: 32,
+    top: 6,
+    left: 0,
     transform: [{rotate: '-16deg'}],
   },
   markerTiltTwo: {
-    top: 40,
-    left: 48,
+    top: 22,
+    left: 28,
     transform: [{rotate: '8deg'}],
   },
   markerTiltThree: {
-    top: 64,
-    left: 40,
+    top: 40,
+    left: 12,
     transform: [{rotate: '-4deg'}],
   },
   markerCap: {
@@ -401,6 +548,34 @@ const styles = StyleSheet.create({
     padding: 14,
     justifyContent: 'space-between',
     transform: [{rotate: '-6deg'}],
+  },
+  calculatorStackBack: {
+    position: 'absolute',
+    backgroundColor: 'rgba(255,253,248,0.72)',
+    top: 10,
+    left: 18,
+    transform: [{rotate: '-11deg'}],
+  },
+  calculatorStackMid: {
+    position: 'absolute',
+    backgroundColor: 'rgba(255,253,248,0.86)',
+    top: 6,
+    right: 14,
+    transform: [{rotate: '-8deg'}],
+  },
+  calculatorTopBar: {
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: 'rgba(101,84,209,0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  calculatorTopBarText: {
+    color: '#1A1125',
+    fontSize: 9,
+    letterSpacing: 0.7,
+    fontWeight: '700',
   },
   calculatorScreen: {
     height: 26,
@@ -481,6 +656,13 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 99,
     backgroundColor: 'rgba(101,84,209,0.2)',
+  },
+  genericLabel: {
+    color: '#1A1125',
+    fontSize: 9,
+    letterSpacing: 0.6,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   genericRuleShort: {
     width: '62%',

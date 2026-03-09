@@ -59,6 +59,9 @@ export default function HowItWorksCarousel({
   const stepMotion = useRef(new Animated.Value(1)).current;
 
   const activeStep = STEPS[step];
+  const isLastStep = step === TOTAL_STEPS - 1;
+  const contentMinHeight =
+    activeStep.key === 'intro' ? 228 : activeStep.key === 'flow' ? 286 : 268;
   const stepTranslateY = stepMotion.interpolate({
     inputRange: [0, 1],
     outputRange: [6, 0],
@@ -90,6 +93,15 @@ export default function HowItWorksCarousel({
       return;
     }
     onClose();
+  };
+
+  const handleNext = () => {
+    if (isLastStep) {
+      complete();
+      return;
+    }
+
+    setStep(current => Math.min(TOTAL_STEPS - 1, current + 1));
   };
 
   const progressDots = useMemo(
@@ -153,6 +165,7 @@ export default function HowItWorksCarousel({
           <Animated.View
             style={[
               styles.content,
+              {minHeight: contentMinHeight},
               {opacity: stepMotion, transform: [{translateY: stepTranslateY}]},
             ]}>
             <Text
@@ -173,52 +186,45 @@ export default function HowItWorksCarousel({
             </Text>
 
             {activeStep.key === 'flow' ? (
-              <View
-                style={[
-                  styles.nextCard,
-                  {
-                    borderColor: theme.colors.borderMuted,
-                    backgroundColor: theme.colors.surfaceMuted,
-                  },
-                ]}>
-                <Text
-                  style={[
-                    styles.nextTitle,
-                    {
-                      color: theme.colors.textPrimary,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}>
-                  EXAMPLE FLOW
-                </Text>
+              <View style={styles.flowStack}>
                 {FLOW_STEPS.map((line, index) => (
-                  <View key={line} style={styles.flowRow}>
-                    <View
-                      style={[
-                        styles.flowNumber,
-                        {
-                          borderColor: theme.colors.accent,
-                          backgroundColor: theme.colors.accent,
-                        },
-                      ]}>
-                      <Text
+                  <View
+                    key={line}
+                    style={[
+                      styles.flowCard,
+                      {
+                        borderColor: theme.colors.borderMuted,
+                        backgroundColor: theme.colors.surfaceMuted,
+                      },
+                    ]}>
+                    <View style={styles.flowRow}>
+                      <View
                         style={[
-                          styles.flowNumberText,
+                          styles.flowNumber,
                           {
-                            color: '#F3EFFF',
-                            fontFamily: theme.typography.brand,
+                            borderColor: theme.colors.accent,
+                            backgroundColor: theme.colors.accent,
                           },
                         ]}>
-                        {index + 1}
+                        <Text
+                          style={[
+                            styles.flowNumberText,
+                            {
+                              color: '#F3EFFF',
+                              fontFamily: theme.typography.brand,
+                            },
+                          ]}>
+                          {index + 1}
+                        </Text>
+                      </View>
+                      <Text
+                        style={[
+                          styles.flowText,
+                          {color: theme.colors.textPrimary},
+                        ]}>
+                        {line}
                       </Text>
                     </View>
-                    <Text
-                      style={[
-                        styles.flowText,
-                        {color: theme.colors.textPrimary},
-                      ]}>
-                      {line}
-                    </Text>
                   </View>
                 ))}
               </View>
@@ -244,37 +250,27 @@ export default function HowItWorksCarousel({
                   {activeStep.trustTitle}
                 </Text>
                 {activeStep.trustPoints.map(point => (
-                  <Text
-                    key={point}
-                    style={[styles.nextLine, {color: theme.colors.textSecondary}]}>
-                    {'•  '}
-                    {point}
-                  </Text>
+                  <View key={point} style={styles.trustRow}>
+                    <View
+                      style={[
+                        styles.trustDot,
+                        {backgroundColor: theme.colors.teal},
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.nextLine,
+                        {color: theme.colors.textSecondary},
+                      ]}>
+                      {point}
+                    </Text>
+                  </View>
                 ))}
               </View>
             ) : null}
           </Animated.View>
 
           <View style={styles.footer}>
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                {
-                  backgroundColor: theme.colors.accent,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-              activeOpacity={0.9}
-              onPress={complete}>
-              <Text
-                style={[
-                  styles.primaryText,
-                  {fontFamily: theme.typography.brand, color: '#F3EFFF'},
-                ]}>
-                GO TO CONFIRM
-              </Text>
-            </TouchableOpacity>
-
             <View style={styles.navRow}>
               <TouchableOpacity
                 onPress={() => setStep(current => Math.max(0, current - 1))}
@@ -300,27 +296,24 @@ export default function HowItWorksCarousel({
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() =>
-                  setStep(current => Math.min(TOTAL_STEPS - 1, current + 1))
-                }
-                disabled={step === TOTAL_STEPS - 1}
-                activeOpacity={0.85}
+                onPress={handleNext}
+                activeOpacity={0.9}
                 style={[
-                  styles.navButton,
+                  styles.nextButton,
                   {
-                    borderColor: theme.colors.borderMuted,
-                    opacity: step === TOTAL_STEPS - 1 ? 0.45 : 1,
+                    borderColor: theme.colors.border,
+                    backgroundColor: theme.colors.accent,
                   },
                 ]}>
                 <Text
                   style={[
-                    styles.navButtonText,
+                    styles.nextButtonText,
                     {
-                      color: theme.colors.textSecondary,
+                      color: '#F3EFFF',
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
-                  NEXT
+                  {isLastStep ? 'CONTINUE' : 'NEXT'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -377,7 +370,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   content: {
-    minHeight: 320,
     paddingTop: 18,
     paddingHorizontal: 8,
   },
@@ -397,19 +389,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
   },
-  nextCard: {
-    marginTop: 20,
+  flowStack: {
+    marginTop: 18,
+    gap: 10,
+  },
+  flowCard: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 12,
   },
   trustCard: {
     marginTop: 20,
     borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
   },
   nextTitle: {
     fontSize: 10,
@@ -420,12 +415,10 @@ const styles = StyleSheet.create({
   nextLine: {
     fontSize: 13,
     lineHeight: 20,
-    marginTop: 4,
   },
   flowRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
+    alignItems: 'flex-start',
   },
   flowNumber: {
     width: 22,
@@ -444,33 +437,20 @@ const styles = StyleSheet.create({
   flowText: {
     flex: 1,
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 19,
   },
   footer: {
-    gap: 8,
-  },
-  primaryButton: {
-    borderWidth: 2,
-    borderRadius: 11,
-    minHeight: 46,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryText: {
-    fontSize: 12,
-    lineHeight: 14,
-    letterSpacing: 1.1,
-    fontWeight: '700',
+    paddingTop: 14,
   },
   navRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   navButton: {
     flex: 1,
-    minHeight: 36,
+    minHeight: 40,
     borderWidth: 1,
-    borderRadius: 9,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -479,5 +459,31 @@ const styles = StyleSheet.create({
     lineHeight: 12,
     letterSpacing: 0.9,
     fontWeight: '700',
+  },
+  nextButton: {
+    flex: 1,
+    minHeight: 46,
+    borderWidth: 2,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nextButtonText: {
+    fontSize: 12,
+    lineHeight: 14,
+    letterSpacing: 1.1,
+    fontWeight: '700',
+  },
+  trustRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 10,
+  },
+  trustDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 6,
+    marginRight: 10,
   },
 });

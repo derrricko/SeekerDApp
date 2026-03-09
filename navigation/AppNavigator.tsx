@@ -255,9 +255,7 @@ function AppTabBar({
           {
             backgroundColor: isGiveTab
               ? theme.colors.accentPressed
-              : isGlimpsesTab
-                ? theme.colors.accent + 'F0'
-                : theme.colors.accent,
+              : theme.colors.accent,
             borderColor: theme.colors.border,
           },
         ]}
