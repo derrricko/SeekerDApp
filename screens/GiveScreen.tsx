@@ -15,7 +15,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import type {RouteProp} from '@react-navigation/native';
+import type {RootTabParamList, GiveNeedParams} from '../navigation/AppNavigator';
 import {CAMPAIGN_OPTIONS, MATCHING_POOL} from '../config/donationConfig';
 import {useConnection} from '../components/providers/ConnectionProvider';
 import {useWallet} from '../components/providers/WalletProvider';
@@ -47,8 +49,16 @@ function normalizeAmountInput(value: string) {
 export default function GiveScreen() {
   const {theme} = useTheme();
   const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<RootTabParamList, 'Give'>>();
   const connection = useConnection();
   const {connecting, authorizeSignAndBuildTransaction} = useWallet();
+
+  // Detect need mode from route params
+  const routeParams = route.params;
+  const needMode =
+    routeParams && 'mode' in routeParams && routeParams.mode === 'need'
+      ? (routeParams as GiveNeedParams)
+      : null;
 
   const [amountInput, setAmountInput] = useState('');
   const [campaignId, setCampaignId] = useState('');
@@ -257,6 +267,12 @@ export default function GiveScreen() {
   ]);
 
   const validateForm = () => {
+    if (needMode) {
+      // Need mode: amount is locked, no campaign selection needed
+      setError('');
+      return true;
+    }
+
     if (amount <= 0 || amount > 10_000) {
       setError('Enter a USDC amount between 0.01 and 10,000.');
       return false;
@@ -368,7 +384,7 @@ export default function GiveScreen() {
     if (donationInFlight.current || loading) {
       return;
     }
-    if (!validateForm() || !selectedCampaign) {
+    if (!validateForm() || (!needMode && !selectedCampaign)) {
       transitionToStep('form');
       return;
     }
@@ -378,15 +394,22 @@ export default function GiveScreen() {
     setError('');
 
     try {
+      const donationAmount = needMode ? needMode.amountUSDC : amount;
+      const recipientId = needMode ? 'classroom-needs' : MATCHING_POOL.id;
+      const causePrefs = needMode
+        ? ['education', 'classroom-needs']
+        : selectedCampaign?.causePreferences ?? [];
+
       const result = await executeDonationSeamless(
         connection,
         MATCHING_POOL.wallet,
-        MATCHING_POOL.id,
-        amount,
+        recipientId,
+        donationAmount,
         'one_time',
         authorizeSignAndBuildTransaction,
-        selectedCampaign.causePreferences,
+        causePrefs,
         'solo',
+        needMode?.classroomNeedId,
       );
 
       if (!result.success) {
@@ -458,216 +481,272 @@ export default function GiveScreen() {
         ]}>
         {step === 'form' ? (
           <View>
-            <SurfaceCard tone="hero" style={styles.infoCard}>
-              <Text
-                style={[
-                  styles.infoKicker,
-                  {
-                    color: theme.colors.accent,
-                    fontFamily: theme.typography.brand,
-                  },
-                ]}>
-                TRANSPARENCY
-              </Text>
-              <Text
-                style={[styles.infoTitle, {color: theme.colors.textPrimary}]}>
-                Every donation is recorded on-chain.
-              </Text>
-              <Text
-                style={[styles.infoBody, {color: theme.colors.textSecondary}]}>
-                Glimpse takes no platform fee. We work with trusted local
-                partners to identify real needs and document outcomes.
-              </Text>
-              <Text
-                style={[
-                  styles.infoBody,
-                  styles.infoExample,
-                  {color: theme.colors.textSecondary},
-                ]}>
-                Updates and proof are shared in your Messages thread in 5-7
-                days.
-              </Text>
-            </SurfaceCard>
-
-            <View style={styles.fieldBlock}>
-              <Text
-                style={[
-                  styles.fieldLabel,
-                  {
-                    color: theme.colors.textTertiary,
-                    fontFamily: theme.typography.brand,
-                  },
-                ]}>
-                AMOUNT (USDC)
-                <Text style={styles.requiredMark}> *</Text>
-              </Text>
-              <Animated.View
-                style={[
-                  styles.amountWrap,
-                  {
-                    backgroundColor: inputSurface,
-                  },
-                  createFieldAnimatedStyle(amountFocusMotion),
-                ]}>
+            {needMode ? (
+              <SurfaceCard tone="hero" style={styles.infoCard}>
                 <Text
                   style={[
-                    styles.amountPrefix,
+                    styles.infoKicker,
+                    {
+                      color: theme.colors.accent,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  FUND A CLASSROOM NEED
+                </Text>
+                <Text
+                  style={[styles.infoTitle, {color: theme.colors.textPrimary}]}>
+                  {needMode.title}
+                </Text>
+                <Text
+                  style={[
+                    styles.infoBody,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  {needMode.teacherFirstName}'s class at {needMode.schoolName}
+                  {needMode.schoolCity || needMode.schoolState
+                    ? ` \u00B7 ${[needMode.schoolCity, needMode.schoolState].filter(Boolean).join(', ')}`
+                    : ''}
+                </Text>
+                <Text
+                  style={[
+                    styles.needAmount,
                     {
                       color: theme.colors.textPrimary,
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
-                  $
-                </Text>
-                <TextInput
-                  value={amountInput}
-                  onChangeText={value =>
-                    setAmountInput(normalizeAmountInput(value))
-                  }
-                  onFocus={() => animateFieldFocus(amountFocusMotion, 1)}
-                  onBlur={() => animateFieldFocus(amountFocusMotion, 0)}
-                  keyboardType="decimal-pad"
-                  placeholder="0.00"
-                  placeholderTextColor={theme.colors.textTertiary}
-                  style={[
-                    styles.amountInput,
-                    {
-                      color: theme.colors.textPrimary,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}
-                />
-              </Animated.View>
-            </View>
-
-            <View style={styles.fieldBlock}>
-              <Text
-                style={[
-                  styles.fieldLabel,
-                  {
-                    color: theme.colors.textTertiary,
-                    fontFamily: theme.typography.brand,
-                  },
-                ]}>
-                CAMPAIGN
-                <Text style={styles.requiredMark}> *</Text>
-              </Text>
-              <AnimatedPressable
-                onPress={toggleCampaignMenu}
-                style={[
-                  styles.dropdownTrigger,
-                  {
-                    backgroundColor: inputSurface,
-                  },
-                  createFieldAnimatedStyle(campaignFocusMotion),
-                ]}>
-                <Text
-                  style={[
-                    styles.dropdownValue,
-                    {
-                      color: selectedCampaign
-                        ? theme.colors.textPrimary
-                        : theme.colors.textTertiary,
-                      fontFamily: theme.typography.brand,
-                    },
-                  ]}
-                  numberOfLines={2}
-                  ellipsizeMode="tail">
-                  {selectedCampaign
-                    ? selectedCampaign.label
-                    : 'Select a campaign'}
+                  ${needMode.amountUSDC.toFixed(2)} USDC
                 </Text>
                 <Text
                   style={[
-                    styles.dropdownArrow,
+                    styles.infoBody,
+                    styles.infoExample,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  100% of your funding goes to this exact item. Glimpse
+                  reviews, purchases, and shares delivery proof in your message
+                  thread.
+                </Text>
+              </SurfaceCard>
+            ) : (
+              <SurfaceCard tone="hero" style={styles.infoCard}>
+                <Text
+                  style={[
+                    styles.infoKicker,
                     {
-                      color: theme.colors.textSecondary,
+                      color: theme.colors.accent,
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
-                  {campaignOpen ? '˄' : '˅'}
+                  TRANSPARENCY
                 </Text>
-              </AnimatedPressable>
-
-              {campaignMenuVisible ? (
-                <Animated.View
+                <Text
+                  style={[styles.infoTitle, {color: theme.colors.textPrimary}]}>
+                  Every donation is recorded on-chain.
+                </Text>
+                <Text
                   style={[
-                    styles.dropdownList,
-                    {
-                      borderColor: theme.colors.border,
-                      backgroundColor: inputSurface,
-                      opacity: campaignMenuMotion,
-                      height: dropdownHeight,
-                      transform: [{translateY: dropdownTranslateY}],
-                    },
+                    styles.infoBody,
+                    {color: theme.colors.textSecondary},
                   ]}>
-                  {CAMPAIGN_OPTIONS.map((campaign, index) => {
-                    const active = campaign.id === campaignId;
-                    const isLast = index === CAMPAIGN_OPTIONS.length - 1;
-                    return (
-                      <TouchableOpacity
-                        key={campaign.id}
-                        onPress={() => {
-                          setCampaignId(campaign.id);
-                          closeCampaignMenu();
-                        }}
-                        activeOpacity={0.85}
-                        style={[
-                          styles.dropdownItem,
-                          {
-                            borderBottomWidth: isLast ? 0 : 1,
-                            borderBottomColor: 'rgba(26,17,37,0.2)',
-                            backgroundColor: active
-                              ? 'rgba(101,84,209,0.08)'
-                              : 'transparent',
-                          },
-                        ]}>
-                        <Text
-                          style={[
-                            styles.dropdownItemLabel,
-                            {
-                              color: theme.colors.textPrimary,
-                              fontFamily: theme.typography.brand,
-                            },
-                          ]}>
-                          {campaign.label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </Animated.View>
-              ) : null}
+                  Glimpse takes no platform fee. We work with trusted local
+                  partners to identify real needs and document outcomes.
+                </Text>
+                <Text
+                  style={[
+                    styles.infoBody,
+                    styles.infoExample,
+                    {color: theme.colors.textSecondary},
+                  ]}>
+                  Updates and proof are shared in your Messages thread in 5-7
+                  days.
+                </Text>
+              </SurfaceCard>
+            )}
 
-              {selectedCampaign ? (
-                <SurfaceCard style={styles.campaignCard}>
+            {!needMode && (
+              <>
+                <View style={styles.fieldBlock}>
                   <Text
                     style={[
-                      styles.campaignCardTitle,
+                      styles.fieldLabel,
                       {
-                        color: theme.colors.textPrimary,
+                        color: theme.colors.textTertiary,
                         fontFamily: theme.typography.brand,
                       },
                     ]}>
-                    {selectedCampaign.label}
+                    AMOUNT (USDC)
+                    <Text style={styles.requiredMark}> *</Text>
                   </Text>
+                  <Animated.View
+                    style={[
+                      styles.amountWrap,
+                      {
+                        backgroundColor: inputSurface,
+                      },
+                      createFieldAnimatedStyle(amountFocusMotion),
+                    ]}>
+                    <Text
+                      style={[
+                        styles.amountPrefix,
+                        {
+                          color: theme.colors.textPrimary,
+                          fontFamily: theme.typography.brand,
+                        },
+                      ]}>
+                      $
+                    </Text>
+                    <TextInput
+                      value={amountInput}
+                      onChangeText={value =>
+                        setAmountInput(normalizeAmountInput(value))
+                      }
+                      onFocus={() => animateFieldFocus(amountFocusMotion, 1)}
+                      onBlur={() => animateFieldFocus(amountFocusMotion, 0)}
+                      keyboardType="decimal-pad"
+                      placeholder="0.00"
+                      placeholderTextColor={theme.colors.textTertiary}
+                      style={[
+                        styles.amountInput,
+                        {
+                          color: theme.colors.textPrimary,
+                          fontFamily: theme.typography.brand,
+                        },
+                      ]}
+                    />
+                  </Animated.View>
+                </View>
+
+                <View style={styles.fieldBlock}>
                   <Text
                     style={[
-                      styles.helper,
-                      {color: theme.colors.textSecondary},
+                      styles.fieldLabel,
+                      {
+                        color: theme.colors.textTertiary,
+                        fontFamily: theme.typography.brand,
+                      },
                     ]}>
-                    {selectedCampaign.summary}
+                    CAMPAIGN
+                    <Text style={styles.requiredMark}> *</Text>
                   </Text>
-                  <Text
+                  <AnimatedPressable
+                    onPress={toggleCampaignMenu}
                     style={[
-                      styles.campaignMinimum,
-                      {color: theme.colors.textTertiary},
+                      styles.dropdownTrigger,
+                      {
+                        backgroundColor: inputSurface,
+                      },
+                      createFieldAnimatedStyle(campaignFocusMotion),
                     ]}>
-                    Minimum donation: {selectedCampaign.minimumUSDC.toFixed(2)}{' '}
-                    USDC.
-                  </Text>
-                </SurfaceCard>
-              ) : null}
-            </View>
+                    <Text
+                      style={[
+                        styles.dropdownValue,
+                        {
+                          color: selectedCampaign
+                            ? theme.colors.textPrimary
+                            : theme.colors.textTertiary,
+                          fontFamily: theme.typography.brand,
+                        },
+                      ]}
+                      numberOfLines={2}
+                      ellipsizeMode="tail">
+                      {selectedCampaign
+                        ? selectedCampaign.label
+                        : 'Select a campaign'}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.dropdownArrow,
+                        {
+                          color: theme.colors.textSecondary,
+                          fontFamily: theme.typography.brand,
+                        },
+                      ]}>
+                      {campaignOpen ? '˄' : '˅'}
+                    </Text>
+                  </AnimatedPressable>
+
+                  {campaignMenuVisible ? (
+                    <Animated.View
+                      style={[
+                        styles.dropdownList,
+                        {
+                          borderColor: theme.colors.border,
+                          backgroundColor: inputSurface,
+                          opacity: campaignMenuMotion,
+                          height: dropdownHeight,
+                          transform: [{translateY: dropdownTranslateY}],
+                        },
+                      ]}>
+                      {CAMPAIGN_OPTIONS.map((campaign, index) => {
+                        const active = campaign.id === campaignId;
+                        const isLast = index === CAMPAIGN_OPTIONS.length - 1;
+                        return (
+                          <TouchableOpacity
+                            key={campaign.id}
+                            onPress={() => {
+                              setCampaignId(campaign.id);
+                              closeCampaignMenu();
+                            }}
+                            activeOpacity={0.85}
+                            style={[
+                              styles.dropdownItem,
+                              {
+                                borderBottomWidth: isLast ? 0 : 1,
+                                borderBottomColor: 'rgba(26,17,37,0.2)',
+                                backgroundColor: active
+                                  ? 'rgba(101,84,209,0.08)'
+                                  : 'transparent',
+                              },
+                            ]}>
+                            <Text
+                              style={[
+                                styles.dropdownItemLabel,
+                                {
+                                  color: theme.colors.textPrimary,
+                                  fontFamily: theme.typography.brand,
+                                },
+                              ]}>
+                              {campaign.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </Animated.View>
+                  ) : null}
+
+                  {selectedCampaign ? (
+                    <SurfaceCard style={styles.campaignCard}>
+                      <Text
+                        style={[
+                          styles.campaignCardTitle,
+                          {
+                            color: theme.colors.textPrimary,
+                            fontFamily: theme.typography.brand,
+                          },
+                        ]}>
+                        {selectedCampaign.label}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.helper,
+                          {color: theme.colors.textSecondary},
+                        ]}>
+                        {selectedCampaign.summary}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.campaignMinimum,
+                          {color: theme.colors.textTertiary},
+                        ]}>
+                        Minimum donation:{' '}
+                        {selectedCampaign.minimumUSDC.toFixed(2)} USDC.
+                      </Text>
+                    </SurfaceCard>
+                  ) : null}
+                </View>
+              </>
+            )}
 
             <View style={styles.optionalDivider}>
               <View
@@ -767,7 +846,11 @@ export default function GiveScreen() {
             )}
 
             <PrimaryButton
-              label="Review Donation"
+              label={
+                needMode
+                  ? `Review \u2014 $${needMode.amountUSDC.toFixed(2)} USDC`
+                  : 'Review Donation'
+              }
               onPress={handleContinue}
               style={styles.reviewButton}
             />
@@ -798,7 +881,9 @@ export default function GiveScreen() {
                     styles.reviewValue,
                     {color: theme.colors.textPrimary},
                   ]}>
-                  {formattedAmount} USDC
+                  {needMode
+                    ? `${needMode.amountUSDC.toFixed(2)} USDC`
+                    : `${formattedAmount} USDC`}
                 </Text>
               </View>
 
@@ -818,14 +903,14 @@ export default function GiveScreen() {
                       fontFamily: theme.typography.brand,
                     },
                   ]}>
-                  CAMPAIGN
+                  {needMode ? 'CLASSROOM NEED' : 'CAMPAIGN'}
                 </Text>
                 <Text
                   style={[
                     styles.reviewCampaign,
                     {color: theme.colors.textPrimary},
                   ]}>
-                  {selectedCampaign?.label || '-'}
+                  {needMode ? needMode.title : selectedCampaign?.label || '-'}
                 </Text>
               </View>
 
@@ -897,39 +982,71 @@ export default function GiveScreen() {
                     fontFamily: theme.typography.brand,
                   },
                 ]}>
-                WHAT HAPPENS AFTER YOU CONFIRM
+                {needMode
+                  ? 'WHAT HAPPENS AFTER YOU FUND'
+                  : 'WHAT HAPPENS AFTER YOU CONFIRM'}
               </Text>
               <Text
                 style={[
                   styles.timelineLead,
                   {color: theme.colors.textSecondary},
                 ]}>
-                You are not sending funds into a black box. This confirmation
-                opens a clear donor trail:
+                {needMode
+                  ? 'Your funding goes directly to this exact item:'
+                  : 'You are not sending funds into a black box. This confirmation opens a clear donor trail:'}
               </Text>
-              <Text
-                style={[
-                  styles.timelineItem,
-                  {color: theme.colors.textSecondary},
-                ]}>
-                1. Your USDC donation confirms on Solana mainnet.
-              </Text>
-              <Text
-                style={[
-                  styles.timelineItem,
-                  {color: theme.colors.textSecondary},
-                ]}>
-                2. A message thread with GiveGlimpse opens immediately for this
-                donation.
-              </Text>
-              <Text
-                style={[
-                  styles.timelineItem,
-                  {color: theme.colors.textSecondary},
-                ]}>
-                3. In about 5 to 7 days, you receive receipts, photos, and a
-                written proof update in that thread.
-              </Text>
+              {needMode ? (
+                <>
+                  <Text
+                    style={[
+                      styles.timelineItem,
+                      {color: theme.colors.textSecondary},
+                    ]}>
+                    1. Your USDC funding confirms on Solana mainnet.
+                  </Text>
+                  <Text
+                    style={[
+                      styles.timelineItem,
+                      {color: theme.colors.textSecondary},
+                    ]}>
+                    2. Glimpse reviews the request and purchases the item.
+                  </Text>
+                  <Text
+                    style={[
+                      styles.timelineItem,
+                      {color: theme.colors.textSecondary},
+                    ]}>
+                    3. Purchase receipt, shipping, and delivery proof are shared
+                    in your message thread.
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text
+                    style={[
+                      styles.timelineItem,
+                      {color: theme.colors.textSecondary},
+                    ]}>
+                    1. Your USDC donation confirms on Solana mainnet.
+                  </Text>
+                  <Text
+                    style={[
+                      styles.timelineItem,
+                      {color: theme.colors.textSecondary},
+                    ]}>
+                    2. A message thread with GiveGlimpse opens immediately for
+                    this donation.
+                  </Text>
+                  <Text
+                    style={[
+                      styles.timelineItem,
+                      {color: theme.colors.textSecondary},
+                    ]}>
+                    3. In about 5 to 7 days, you receive receipts, photos, and a
+                    written proof update in that thread.
+                  </Text>
+                </>
+              )}
               <Text
                 style={[
                   styles.timelineFootnote,
@@ -999,7 +1116,11 @@ export default function GiveScreen() {
                   styles.confirmButtonText,
                   {fontFamily: theme.typography.brand},
                 ]}>
-                {loading || connecting ? 'Authorizing...' : 'Confirm and Sign'}
+                {loading || connecting
+                  ? 'Authorizing...'
+                  : needMode
+                    ? 'Fund This Need'
+                    : 'Confirm and Sign'}
               </Text>
             </Pressable>
           </View>
@@ -1014,7 +1135,7 @@ export default function GiveScreen() {
                     fontFamily: theme.typography.brand,
                   },
                 ]}>
-                DONATION CONFIRMED
+                {needMode ? 'NEED FUNDED' : 'DONATION CONFIRMED'}
               </Text>
               <Text
                 style={[
@@ -1024,17 +1145,18 @@ export default function GiveScreen() {
                     fontFamily: theme.typography.brand,
                   },
                 ]}>
-                {formattedAmount} USDC
+                {needMode
+                  ? `${needMode.amountUSDC.toFixed(2)} USDC`
+                  : `${formattedAmount} USDC`}
               </Text>
               <Text
                 style={[
                   styles.processingBody,
                   {color: theme.colors.textSecondary},
                 ]}>
-                Your donation is confirmed on-chain. We are opening your
-                GiveGlimpse message thread now. If it takes a moment to appear,
-                you can still verify the transaction below and check Messages
-                shortly.
+                {needMode
+                  ? `Your funding for "${needMode.title}" is confirmed on-chain. We are opening your message thread now where you'll receive purchase proof and delivery updates.`
+                  : 'Your donation is confirmed on-chain. We are opening your GiveGlimpse message thread now. If it takes a moment to appear, you can still verify the transaction below and check Messages shortly.'}
               </Text>
             </SurfaceCard>
 
@@ -1081,7 +1203,17 @@ export default function GiveScreen() {
 
   return (
     <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
-      <AppHeader title={step === 'form' ? 'Donate' : 'Confirm'} />
+      <AppHeader
+        title={
+          needMode
+            ? step === 'form'
+              ? 'Fund Need'
+              : 'Confirm'
+            : step === 'form'
+              ? 'Donate'
+              : 'Confirm'
+        }
+      />
       {Platform.OS === 'ios' ? (
         <KeyboardAvoidingView
           style={styles.keyboardRoot}
@@ -1140,6 +1272,13 @@ const styles = StyleSheet.create<
   },
   infoExample: {
     marginTop: 10,
+  },
+  needAmount: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '700',
+    marginTop: 10,
+    marginBottom: 4,
   },
   fieldBlock: {
     marginBottom: 14,
