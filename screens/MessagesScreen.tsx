@@ -38,12 +38,18 @@ import {
   Message,
   fetchConversations,
   getMediaSignedUrl,
+  parseProofEvent,
   sendMessage,
   updateDonationStatus,
   uploadChatMedia,
   useChatMessages,
+  type ProofEventBody,
 } from '../services/chat';
-import {getRecipientLabel, type DonationStatus} from '../config/donationConfig';
+import {
+  fetchClassroomNeedById,
+  type ClassroomNeed,
+} from '../services/classroomNeeds';
+import {getRecipientLabel, NEED_STATUS_LABELS, type DonationStatus} from '../config/donationConfig';
 import {ADMIN_WALLET} from '../config/env';
 import {getExplorerUrl} from '../utils/explorer';
 import AppHeader from '../ui/AppHeader';
@@ -218,6 +224,126 @@ function MessageBubble({
   );
 }
 
+function ProofEventBubble({
+  proof,
+  item,
+}: {
+  proof: ProofEventBody;
+  item: Message;
+}) {
+  const {theme} = useTheme();
+  const enterMotion = React.useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(enterMotion, {
+      toValue: 1,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [enterMotion]);
+
+  const eventColor =
+    proof.event === 'funded'
+      ? theme.colors.success
+      : proof.event === 'delivered' || proof.event === 'classroom_photo_added'
+        ? theme.colors.teal
+        : proof.event === 'failed'
+          ? theme.colors.danger
+          : theme.colors.accent;
+
+  const [resolvedMediaUri, setResolvedMediaUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!item.media_url || item.media_url.startsWith('http')) {
+      setResolvedMediaUri(null);
+      return;
+    }
+    let cancelled = false;
+    getMediaSignedUrl(item.media_url)
+      .then(url => {
+        if (!cancelled) {
+          setResolvedMediaUri(url);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [item.media_url]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.proofBubble,
+        {
+          borderColor: eventColor + '40',
+          backgroundColor: eventColor + '0A',
+          opacity: enterMotion,
+          transform: [
+            {
+              translateY: enterMotion.interpolate({
+                inputRange: [0, 1],
+                outputRange: [8, 0],
+              }),
+            },
+          ],
+        },
+      ]}>
+      <View
+        style={[styles.proofAccentBar, {backgroundColor: eventColor}]}
+      />
+      <View style={styles.proofContent}>
+        <View style={styles.proofTopRow}>
+          <View
+            style={[
+              styles.proofBadge,
+              {backgroundColor: eventColor + '18', borderColor: eventColor + '50'},
+            ]}>
+            <Text
+              style={[
+                styles.proofBadgeText,
+                {color: eventColor, fontFamily: theme.typography.brand},
+              ]}>
+              {proof.label}
+            </Text>
+          </View>
+          <Text style={[styles.proofTime, {color: theme.colors.textTertiary}]}>
+            {new Date(item.created_at).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Text>
+        </View>
+        {proof.detail ? (
+          <Text
+            style={[styles.proofDetail, {color: theme.colors.textSecondary}]}>
+            {proof.detail}
+          </Text>
+        ) : null}
+        {resolvedMediaUri ? (
+          <View style={styles.proofMediaWrap}>
+            <Image
+              source={{uri: resolvedMediaUri}}
+              style={styles.proofMediaImage}
+              resizeMode="cover"
+            />
+          </View>
+        ) : null}
+        {item.media_type === 'receipt' ? (
+          <Text
+            style={[
+              styles.proofReceiptTag,
+              {color: theme.colors.accent, fontFamily: theme.typography.brand},
+            ]}>
+            RECEIPT
+          </Text>
+        ) : null}
+      </View>
+    </Animated.View>
+  );
+}
+
 function GalleryGlyph({color}: {color: string}) {
   return (
     <View style={[styles.glyphFrame, {borderColor: color}]}>
@@ -255,6 +381,7 @@ export default function MessagesScreen() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [needTitles, setNeedTitles] = useState<Record<string, string>>({});
 
   // Load conversations helper — called on mount and on tab focus
   const loadConversations = useCallback(() => {
@@ -297,6 +424,41 @@ export default function MessagesScreen() {
       loadConversations();
     }, [loadConversations]),
   );
+
+  // Fetch need titles for classroom need conversations
+  useEffect(() => {
+    const needIds = conversations
+      .map(c => c.classroom_need_id)
+      .filter((id): id is string => !!id && !needTitles[id]);
+
+    if (needIds.length === 0) {
+      return;
+    }
+
+    const uniqueIds = [...new Set(needIds)];
+    let cancelled = false;
+
+    Promise.all(uniqueIds.map(id => fetchClassroomNeedById(id)))
+      .then(results => {
+        if (cancelled) {
+          return;
+        }
+        const titles: Record<string, string> = {};
+        for (const need of results) {
+          if (need) {
+            titles[need.id] = need.title;
+          }
+        }
+        if (Object.keys(titles).length > 0) {
+          setNeedTitles(prev => ({...prev, ...titles}));
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [conversations, needTitles]);
 
   // Listen for refresh button tap from AppNavigator
   useEffect(() => {
@@ -432,7 +594,7 @@ export default function MessagesScreen() {
                   setActiveGlimpseTag(glimpseTag);
                 }}>
                 <View style={styles.conversationTopRow}>
-                  <View>
+                  <View style={styles.conversationTitleGroup}>
                     <Text
                       style={[
                         styles.conversationTitle,
@@ -441,8 +603,20 @@ export default function MessagesScreen() {
                           fontFamily: theme.typography.brand,
                         },
                       ]}>
-                      GLIMPSE {glimpseTag}
+                      {item.classroom_need_id
+                        ? 'CLASSROOM NEED'
+                        : `GLIMPSE ${glimpseTag}`}
                     </Text>
+                    {item.classroom_need_id ? (
+                      <Text
+                        style={[
+                          styles.conversationNeedTitle,
+                          {color: theme.colors.textSecondary},
+                        ]}
+                        numberOfLines={1}>
+                        {needTitles[item.classroom_need_id] || 'Loading...'}
+                      </Text>
+                    ) : null}
                     {isAdmin && item.donor_wallet ? (
                       <Text
                         style={[
@@ -618,7 +792,32 @@ function ChatView({
     markingRef.current = false;
   }, [conversation.donation_id, onStatusChange]);
 
-  const recipientName = getRecipientLabel(conversation.recipient_id);
+  const [classroomNeed, setClassroomNeed] = useState<ClassroomNeed | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (!conversation.classroom_need_id) {
+      setClassroomNeed(null);
+      return;
+    }
+    let cancelled = false;
+    fetchClassroomNeedById(conversation.classroom_need_id)
+      .then(need => {
+        if (!cancelled) {
+          setClassroomNeed(need);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [conversation.classroom_need_id]);
+
+  const isNeedThread = !!conversation.classroom_need_id;
+  const recipientName = isNeedThread
+    ? classroomNeed?.title || 'Classroom Need'
+    : getRecipientLabel(conversation.recipient_id);
   const displayAmount = conversation.amount_usdc ?? 0;
   const amount = Number(displayAmount).toFixed(2);
 
@@ -834,6 +1033,19 @@ function ChatView({
               ]}>
               {recipientName}
             </Text>
+            {isNeedThread && classroomNeed ? (
+              <Text
+                style={[
+                  styles.chatNeedMeta,
+                  {color: theme.colors.textSecondary},
+                ]}>
+                {classroomNeed.teacher_first_name}'s class at{' '}
+                {classroomNeed.school_name}
+                {classroomNeed.status
+                  ? ` • ${NEED_STATUS_LABELS[classroomNeed.status] || classroomNeed.status}`
+                  : ''}
+              </Text>
+            ) : null}
             <Text
               style={[
                 styles.chatMeta,
@@ -901,6 +1113,11 @@ function ChatView({
             windowSize={11}
             renderItem={({item}) => {
               const fromAdmin = isSenderAdmin(item.sender_wallet);
+              // Only render proof events from admin — prevents donor spoofing
+              const proof = fromAdmin ? parseProofEvent(item.body) : null;
+              if (proof) {
+                return <ProofEventBubble proof={proof} item={item} />;
+              }
               return (
                 <MessageBubble
                   item={item}
@@ -1078,6 +1295,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 19,
     fontWeight: '700',
+    marginBottom: 4,
+  },
+  chatNeedMeta: {
+    fontSize: 12,
+    lineHeight: 17,
     marginBottom: 4,
   },
   chatMeta: {
@@ -1312,6 +1534,11 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: '700',
   },
+  conversationNeedTitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
+  },
   conversationDonorWallet: {
     fontSize: 10,
     letterSpacing: 0.5,
@@ -1354,5 +1581,64 @@ const styles = StyleSheet.create({
     letterSpacing: 0.9,
     fontWeight: '700',
     textTransform: 'uppercase',
+  },
+  conversationTitleGroup: {
+    flexShrink: 1,
+  },
+  proofBubble: {
+    alignSelf: 'stretch',
+    borderWidth: 1.5,
+    borderRadius: 16,
+    marginBottom: 10,
+    overflow: 'hidden',
+    flexDirection: 'row',
+  },
+  proofAccentBar: {
+    width: 4,
+  },
+  proofContent: {
+    flex: 1,
+    padding: 12,
+  },
+  proofTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  proofBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  proofBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  proofTime: {
+    fontSize: 10,
+  },
+  proofDetail: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 4,
+  },
+  proofMediaWrap: {
+    marginTop: 8,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  proofMediaImage: {
+    width: '100%',
+    aspectRatio: 4 / 3,
+    borderRadius: 10,
+  },
+  proofReceiptTag: {
+    marginTop: 6,
+    fontSize: 9,
+    letterSpacing: 0.7,
+    fontWeight: '700',
   },
 });

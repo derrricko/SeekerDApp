@@ -29,6 +29,41 @@ export interface Conversation {
   tx_signature?: string;
   unread_count?: number;
   donation_status?: DonationStatus;
+  classroom_need_id?: string | null;
+}
+
+// ---------- Proof event types ----------
+
+export type ProofEventKind =
+  | 'funded'
+  | 'under_review'
+  | 'purchased'
+  | 'delivered'
+  | 'classroom_photo_added'
+  | 'failed';
+
+export interface ProofEventBody {
+  kind: 'proof_event';
+  event: ProofEventKind;
+  label: string;
+  detail?: string;
+  meta?: Record<string, string | number | boolean | null>;
+}
+
+/** Try to parse a message body as a proof event. Returns null for plain text. */
+export function parseProofEvent(body: string | null): ProofEventBody | null {
+  if (!body) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(body);
+    if (parsed && parsed.kind === 'proof_event' && parsed.event && parsed.label) {
+      return parsed as ProofEventBody;
+    }
+  } catch {
+    // Not JSON — plain text message
+  }
+  return null;
 }
 
 export interface DonationHistoryItem {
@@ -63,7 +98,7 @@ export async function fetchConversations(
   const supabase = getSupabase();
   const {data, error} = await supabase
     .from('conversations')
-    .select('*, donations(amount_usdc, recipient_id, tx_signature, status)')
+    .select('*, donations(amount_usdc, recipient_id, tx_signature, status, classroom_need_id)')
     .or(`donor_wallet.eq.${walletAddress},admin_wallet.eq.${walletAddress}`)
     .order('created_at', {ascending: false});
 
@@ -77,6 +112,7 @@ export async function fetchConversations(
     recipient_id: c.donations?.recipient_id,
     tx_signature: c.donations?.tx_signature,
     donation_status: (c.donations?.status || 'confirmed') as DonationStatus,
+    classroom_need_id: c.donations?.classroom_need_id ?? null,
   }));
 
   const conversationIds = conversations.map(c => c.id);
