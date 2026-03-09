@@ -140,6 +140,18 @@ async function processTransaction(
   // Determine cadence from memo
   const cadence = memo.c === 'daily' ? 'daily' : 'one_time';
 
+  // Detect classroom need from memo (full UUID in cn field)
+  const classroomNeedId =
+    typeof memo.cn === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(memo.cn)
+      ? memo.cn
+      : null;
+
+  const recipientId = classroomNeedId ? 'classroom-needs' : 'general';
+  const causePreferences = classroomNeedId
+    ? ['education', 'classroom-needs']
+    : []; // Unknown from webhook — client retry fills in actual preferences
+
   // Insert donation
   const {data: donation, error: donationError} = await supabase
     .from('donations')
@@ -147,12 +159,13 @@ async function processTransaction(
       tx_signature: signature,
       donor_wallet: donorWallet,
       recipient_wallet: MATCHING_POOL_WALLET,
-      recipient_id: 'general', // Webhook lacks campaign context — client retry overwrites with real data
+      recipient_id: recipientId,
       amount_usdc: amountUSDC,
       cadence,
       donation_mode: 'solo',
-      cause_preferences: [], // Unknown from webhook — client retry fills in actual preferences
+      cause_preferences: causePreferences,
       status: 'confirmed',
+      ...(classroomNeedId ? {classroom_need_id: classroomNeedId} : {}),
     })
     .select('id')
     .single();
@@ -163,6 +176,32 @@ async function processTransaction(
       return 'skipped';
     }
     throw donationError;
+  }
+
+  // Claim the classroom need (idempotent — safe if client already claimed)
+  if (classroomNeedId) {
+    const {data: claimResult} = await supabase.rpc('claim_classroom_need', {
+      p_need_id: classroomNeedId,
+      p_donation_id: donation.id,
+      p_donor_wallet: donorWallet,
+    });
+
+    if (claimResult === 'conflict') {
+      console.warn(
+        `[helius-webhook] Need ${classroomNeedId} already funded by different donor — donation ${donation.id} recorded but need not claimed. No purchase order created.`,
+      );
+    } else {
+      // Only create fulfillment tracking for successful claims ('claimed' or 'already_claimed_same')
+      await supabase.from('purchase_orders').upsert(
+        {
+          classroom_need_id: classroomNeedId,
+          donation_id: donation.id,
+          amount_usdc: amountUSDC,
+          status: 'pending',
+        },
+        {onConflict: 'donation_id', ignoreDuplicates: true},
+      );
+    }
   }
 
   // Create conversation + welcome message
@@ -181,15 +220,43 @@ async function processTransaction(
     return 'processed'; // Donation recorded, conversation can be created later
   }
 
-  // Welcome message
-  await supabase.from('messages').insert({
-    conversation_id: conversation.id,
-    sender_wallet: ADMIN_WALLET,
-    body: `This is Derrick from GiveGlimpse. Your donation of ${amountUSDC} USDC is confirmed on-chain and this thread is now open. If you have any questions, ask me here anytime. I will update this message thread with information, photos, and receipts as your donation gets implemented.`,
-  });
+  // Welcome message — different for need-mode vs general
+  if (classroomNeedId) {
+    // Fetch need title for the welcome message
+    const {data: need} = await supabase
+      .from('classroom_needs')
+      .select('title')
+      .eq('id', classroomNeedId)
+      .maybeSingle();
+
+    const title = need?.title || 'this classroom need';
+    await supabase.from('messages').insert({
+      conversation_id: conversation.id,
+      sender_wallet: ADMIN_WALLET,
+      body: `Your funding for '${title}' is confirmed on-chain. Glimpse is now reviewing the request before purchase. We'll update this thread with purchase proof, shipping, and delivery.`,
+    });
+
+    // Insert funded proof event
+    await supabase.from('messages').insert({
+      conversation_id: conversation.id,
+      sender_wallet: ADMIN_WALLET,
+      body: JSON.stringify({
+        kind: 'proof_event',
+        event: 'funded',
+        label: 'FUNDED',
+        detail: 'Your funding is confirmed on-chain.',
+      }),
+    });
+  } else {
+    await supabase.from('messages').insert({
+      conversation_id: conversation.id,
+      sender_wallet: ADMIN_WALLET,
+      body: `This is Derrick from GiveGlimpse. Your donation of ${amountUSDC} USDC is confirmed on-chain and this thread is now open. If you have any questions, ask me here anytime. I will update this message thread with information, photos, and receipts as your donation gets implemented.`,
+    });
+  }
 
   console.log(
-    `[helius-webhook] Recorded donation: ${signature} — ${amountUSDC} USDC from ${donorWallet.slice(0, 8)}`,
+    `[helius-webhook] Recorded donation: ${signature} — ${amountUSDC} USDC from ${donorWallet.slice(0, 8)}${classroomNeedId ? ` (need: ${classroomNeedId.slice(0, 8)})` : ''}`,
   );
 
   return 'processed';

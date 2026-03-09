@@ -52,7 +52,8 @@ const TOKEN_2022_PROGRAM_ID = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
 type CampaignId =
   | 'public-schools'
   | 'single-moms-crisis'
-  | 'foster-care-after-school';
+  | 'foster-care-after-school'
+  | 'classroom-needs';
 
 interface CampaignRule {
   id: CampaignId;
@@ -76,6 +77,11 @@ const CAMPAIGN_RULES: CampaignRule[] = [
     id: 'foster-care-after-school',
     minimumUSDC: 100,
     causePreferences: ['foster-care', 'child-essentials', 'after-school'],
+  },
+  {
+    id: 'classroom-needs',
+    minimumUSDC: 1,
+    causePreferences: ['education', 'classroom-needs'],
   },
 ];
 
@@ -150,11 +156,133 @@ serve(async req => {
       typeof body?.txSignature === 'string' ? body.txSignature.trim() : '';
     const causePreferences = normalizeCausePreferences(body?.causePreferences);
     const donationMode = body?.donationMode === 'group' ? 'group' : 'solo';
+    const classroomNeedId =
+      typeof body?.classroomNeedId === 'string'
+        ? body.classroomNeedId.trim()
+        : null;
 
     if (!txSignature) {
       return json({error: 'txSignature is required'}, 400);
     }
 
+    // Validate classroomNeedId format if present (must be UUID)
+    if (
+      classroomNeedId &&
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        classroomNeedId,
+      )
+    ) {
+      return json({error: 'Invalid classroom need ID format'}, 400);
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {persistSession: false, autoRefreshToken: false},
+    });
+
+    const parsed = await fetchAndValidateUSDCTransaction(txSignature, wallet);
+
+    // --- Classroom Need Mode ---
+    if (classroomNeedId) {
+      // Validate: on-chain memo.cn must match the request body classroomNeedId.
+      // This prevents a modified client from claiming any open need at the same price
+      // by sending a valid transfer with one need in the memo and a different need in the body.
+      if (parsed.memoCn !== classroomNeedId) {
+        return json(
+          {error: 'Memo classroom need ID does not match request'},
+          422,
+        );
+      }
+
+      // Fetch the need to validate it exists and is open
+      const {data: need, error: needError} = await supabase
+        .from('classroom_needs')
+        .select('id, title, price_usdc, status')
+        .eq('id', classroomNeedId)
+        .maybeSingle();
+
+      if (needError) {
+        throw needError;
+      }
+      if (!need) {
+        return json({error: 'Classroom need not found'}, 404);
+      }
+
+      // Exact amount match (Correction #4) — ±1 microUSDC tolerance for float rounding only
+      const needPriceRaw = Math.round(Number(need.price_usdc) * 10 ** USDC_DECIMALS);
+      const txAmountRaw = Math.round(parsed.amountUSDC * 10 ** USDC_DECIMALS);
+      const amountDiff = Math.abs(needPriceRaw - txAmountRaw);
+      if (amountDiff > 1) {
+        return json(
+          {
+            error: `Amount must be exactly ${Number(need.price_usdc).toFixed(2)} USDC for this classroom need.`,
+          },
+          422,
+        );
+      }
+
+      const donationId = await upsertDonation({
+        supabase,
+        txSignature,
+        donorWallet: parsed.authority,
+        recipientWallet: MATCHING_POOL_WALLET,
+        recipientId: 'classroom-needs',
+        amountUSDC: parsed.amountUSDC,
+        cadence: parsed.cadence,
+        causePreferences: ['education', 'classroom-needs'],
+        donationMode,
+        classroomNeedId,
+      });
+
+      // Idempotent atomic claim (Correction #3)
+      const {data: claimResult} = await supabase.rpc('claim_classroom_need', {
+        p_need_id: classroomNeedId,
+        p_donation_id: donationId,
+        p_donor_wallet: parsed.authority,
+      });
+
+      if (claimResult === 'not_found') {
+        return json({error: 'Classroom need not found'}, 404);
+      }
+      if (claimResult === 'conflict') {
+        return json({error: 'This classroom need has already been funded by another donor'}, 409);
+      }
+      // 'claimed' or 'already_claimed_same' are both success
+
+      // Upsert purchase_orders row (idempotent on donation_id unique constraint)
+      await supabase.from('purchase_orders').upsert(
+        {
+          classroom_need_id: classroomNeedId,
+          donation_id: donationId,
+          amount_usdc: parsed.amountUSDC,
+          status: 'pending',
+        },
+        {onConflict: 'donation_id', ignoreDuplicates: true},
+      );
+
+      const conversationId = await upsertConversation({
+        supabase,
+        donationId,
+        donorWallet: parsed.authority,
+        amountUSDC: parsed.amountUSDC,
+        classroomNeedTitle: need.title,
+      });
+
+      return json(
+        {
+          txSignature,
+          donationId,
+          conversationId,
+          donorWallet: parsed.authority,
+          recipientWallet: MATCHING_POOL_WALLET,
+          amountUSDC: parsed.amountUSDC,
+          campaignId: 'classroom-needs',
+          classroomNeedId,
+        },
+        200,
+      );
+    }
+
+    // --- Standard Donation Mode ---
     if (causePreferences.length < 2 || causePreferences.length > 3) {
       return json(
         {error: 'Between 2 and 3 cause preferences are required.'},
@@ -163,7 +291,6 @@ serve(async req => {
     }
 
     const selectedCampaign = resolveCampaignFromCauses(causePreferences);
-    const parsed = await fetchAndValidateUSDCTransaction(txSignature, wallet);
     if (parsed.amountUSDC < selectedCampaign.minimumUSDC) {
       return json(
         {
@@ -174,10 +301,6 @@ serve(async req => {
         400,
       );
     }
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: {persistSession: false, autoRefreshToken: false},
-    });
 
     const donationId = await upsertDonation({
       supabase,
@@ -243,7 +366,8 @@ serve(async req => {
       lc.includes('campaign') ||
       lc.includes('minimum') ||
       lc.includes('exceeds maximum') ||
-      lc.includes('txsignature is required')
+      lc.includes('txsignature is required') ||
+      lc.includes('classroom need')
     ) {
       return json({error: message}, 422);
     }
@@ -314,6 +438,8 @@ interface ParsedUSDCTransaction {
   mint: string;
   amountUSDC: number;
   cadence: 'one_time' | 'daily';
+  /** Classroom need ID from on-chain memo (full UUID or null) */
+  memoCn: string | null;
 }
 
 function normalizeCausePreferences(raw: unknown): string[] {
@@ -514,12 +640,20 @@ async function fetchAndValidateUSDCTransaction(
   const cadence =
     memo?.c === 'daily' || memo?.c === 'one_time' ? memo.c : 'one_time';
 
+  // Extract classroom need ID from memo (full UUID)
+  const memoCn =
+    typeof memo?.cn === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(memo.cn)
+      ? memo.cn
+      : null;
+
   return {
     authority,
     destination,
     mint,
     amountUSDC,
     cadence,
+    memoCn,
   };
 }
 
@@ -722,6 +856,7 @@ async function upsertDonation(params: {
   cadence: 'one_time' | 'daily';
   causePreferences: string[];
   donationMode: string;
+  classroomNeedId?: string | null;
 }): Promise<string> {
   const {
     supabase,
@@ -733,6 +868,7 @@ async function upsertDonation(params: {
     cadence,
     causePreferences,
     donationMode,
+    classroomNeedId,
   } = params;
 
   const {data: existing, error: existingError} = await supabase
@@ -767,6 +903,7 @@ async function upsertDonation(params: {
       donation_mode: donationMode,
       cause_preferences: causePreferences,
       status: 'confirmed',
+      ...(classroomNeedId ? {classroom_need_id: classroomNeedId} : {}),
     })
     .select('id')
     .single();
@@ -783,8 +920,9 @@ async function upsertConversation(params: {
   donationId: string;
   donorWallet: string;
   amountUSDC: number;
+  classroomNeedTitle?: string;
 }): Promise<string> {
-  const {supabase, donationId, donorWallet, amountUSDC} = params;
+  const {supabase, donationId, donorWallet, amountUSDC, classroomNeedTitle} = params;
 
   const {data: existing, error: existingError} = await supabase
     .from('conversations')
@@ -814,11 +952,15 @@ async function upsertConversation(params: {
     throw insertError;
   }
 
-  // Welcome message with timeline + next-steps copy
+  // Welcome message — different copy for need-mode vs general donations
+  const welcomeBody = classroomNeedTitle
+    ? `Your funding for '${classroomNeedTitle}' is confirmed on-chain. Glimpse is now reviewing the request before purchase. We'll update this thread with purchase proof, shipping, and delivery.`
+    : `This is Derrick from GiveGlimpse. Your donation of ${amountUSDC} USDC is confirmed on-chain and this thread is now open. If you have any questions, ask me here anytime. I will update this message thread with information, photos, and receipts as your donation gets implemented.`;
+
   const {error: messageError} = await supabase.from('messages').insert({
     conversation_id: inserted.id,
     sender_wallet: ADMIN_WALLET,
-    body: `This is Derrick from GiveGlimpse. Your donation of ${amountUSDC} USDC is confirmed on-chain and this thread is now open. If you have any questions, ask me here anytime. I will update this message thread with information, photos, and receipts as your donation gets implemented.`,
+    body: welcomeBody,
   });
 
   if (messageError) {
@@ -826,6 +968,21 @@ async function upsertConversation(params: {
       '[record-donation] welcome message insert failed:',
       messageError,
     );
+  }
+
+  // For need-mode: also insert the initial "funded" proof event
+  if (classroomNeedTitle) {
+    const proofEvent = JSON.stringify({
+      kind: 'proof_event',
+      event: 'funded',
+      label: 'FUNDED',
+      detail: `Your funding is confirmed on-chain.`,
+    });
+    await supabase.from('messages').insert({
+      conversation_id: inserted.id,
+      sender_wallet: ADMIN_WALLET,
+      body: proofEvent,
+    });
   }
 
   return inserted.id;
