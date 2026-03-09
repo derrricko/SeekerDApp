@@ -22,8 +22,10 @@ import HomeScreen from '../screens/HomeScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import HowItWorksCarousel from '../screens/HowItWorksCarousel';
 import MessagesScreen from '../screens/MessagesScreen';
+import NeedDetailScreen from '../screens/NeedDetailScreen';
 import {useUnread} from '../components/providers/UnreadProvider';
 import {useTheme} from '../theme/Theme';
+import type {NeedStatus} from '../config/donationConfig';
 
 // Simple event emitter for cross-component refresh signaling
 class RefreshEmitter {
@@ -40,9 +42,27 @@ class RefreshEmitter {
 }
 export const messagesRefreshEmitter = new RefreshEmitter();
 
+export type GiveNeedParams = {
+  mode: 'need';
+  classroomNeedId: string;
+  title: string;
+  imageUrl?: string | null;
+  teacherFirstName: string;
+  schoolName: string;
+  schoolCity?: string | null;
+  schoolState?: string | null;
+  amountUSDC: number;
+  status: NeedStatus;
+};
+
+export type GiveDefaultParams = {
+  mode?: 'general';
+};
+
 export type RootTabParamList = {
   Glimpses: undefined;
-  Give: undefined;
+  Give: GiveNeedParams | GiveDefaultParams | undefined;
+  NeedDetail: {needId: string};
   Messages: {conversationId?: string; demoMode?: boolean} | undefined;
   Rank: undefined;
 };
@@ -103,6 +123,7 @@ function AppTabBar({
     | undefined;
   const isGlimpsesTab = activeRouteName === 'Glimpses';
   const isGiveTab = activeRouteName === 'Give';
+  const isNeedDetailTab = activeRouteName === 'NeedDetail';
   const isMessagesTab = activeRouteName === 'Messages';
   const isMessagesThreadOpen = isMessagesTab && Boolean(activeConversationId);
   const glimpsesIndicator = useRef(
@@ -145,9 +166,41 @@ function AppTabBar({
     ],
   });
 
-  if (isMessagesThreadOpen || isGiveTab) {
+  if (isMessagesThreadOpen || isGiveTab || isNeedDetailTab) {
     return <View style={styles.messagesBarHidden} />;
   }
+
+  const centerButtonStyle = isGlimpsesTab
+    ? {
+        width: 114,
+        height: 114,
+        borderRadius: 57,
+        borderWidth: 2.5,
+        marginTop: -36,
+        shadowOpacity: 0.16,
+        shadowOffset: {width: 1, height: 2},
+        elevation: 2,
+      }
+    : {
+        width: 132,
+        height: 132,
+        borderRadius: 66,
+        borderWidth: 3,
+        marginTop: -62,
+        shadowOpacity: 0.3,
+        shadowOffset: {width: 2, height: 2},
+        elevation: 4,
+      };
+
+  const centerTextStyle = isGlimpsesTab
+    ? {
+        fontSize: 17,
+        letterSpacing: 1.1,
+      }
+    : {
+        fontSize: 19,
+        letterSpacing: 1.5,
+      };
 
   return (
     <View
@@ -198,15 +251,23 @@ function AppTabBar({
         onPress={onOpenGiveFlow}
         style={[
           styles.centerButton,
+          centerButtonStyle,
           {
             backgroundColor: isGiveTab
               ? theme.colors.accentPressed
-              : theme.colors.accent,
+              : isGlimpsesTab
+                ? theme.colors.accent + 'F0'
+                : theme.colors.accent,
             borderColor: theme.colors.border,
           },
         ]}
         activeOpacity={0.9}>
-        <Text style={[styles.centerText, {fontFamily: theme.typography.brand}]}>
+        <Text
+          style={[
+            styles.centerText,
+            centerTextStyle,
+            {fontFamily: theme.typography.brand},
+          ]}>
           DONATE
         </Text>
       </TouchableOpacity>
@@ -284,6 +345,11 @@ function MainTabs({
         screenOptions={{headerShown: false}}>
         <Tab.Screen name="Glimpses" component={CampaignsScreen} />
         <Tab.Screen name="Give" component={GiveScreen} />
+        <Tab.Screen
+          name="NeedDetail"
+          component={NeedDetailScreen}
+          options={{tabBarButton: () => null}}
+        />
         <Tab.Screen name="Messages" component={MessagesScreen} />
         <Tab.Screen
           name="Rank"
@@ -312,7 +378,7 @@ export default function AppNavigator() {
 
   const openGiveTab = useCallback(() => {
     if (navigationRef.isReady()) {
-      navigationRef.navigate('Give');
+      navigationRef.navigate('Give', {mode: 'general'});
     }
   }, [navigationRef]);
 
@@ -323,7 +389,7 @@ export default function AppNavigator() {
   const completeGiveFlow = useCallback(() => {
     setShowHowItWorks(false);
     if (navigationRef.isReady()) {
-      navigationRef.navigate('Give');
+      navigationRef.navigate('Give', {mode: 'general'});
     }
   }, [navigationRef]);
   const showTopInfoButton = activeTab === 'Glimpses';
@@ -507,24 +573,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   centerButton: {
-    width: 132,
-    height: 132,
-    borderRadius: 66,
-    borderWidth: 3,
-    marginTop: -62,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#1A1125',
-    shadowOpacity: 0.3,
     shadowRadius: 0,
-    shadowOffset: {width: 2, height: 2},
-    elevation: 4,
   },
   centerText: {
     color: '#F3EFFF',
-    fontSize: 19,
     fontWeight: '700',
-    letterSpacing: 1.5,
   },
   topHelpButton: {
     position: 'absolute',

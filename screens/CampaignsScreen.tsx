@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -7,10 +7,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {useWallet} from '../components/providers/WalletProvider';
 import {useTheme} from '../theme/Theme';
 import AppHeader from '../ui/AppHeader';
+import NeedCard from '../ui/NeedCard';
 import ScreenContainer from '../ui/ScreenContainer';
 import SurfaceCard from '../ui/SurfaceCard';
 import {
@@ -27,8 +28,14 @@ import {
   fetchEnhancedTransactions,
   type EnhancedDonation,
 } from '../services/helius';
+import {
+  fetchClassroomNeeds,
+  groupNeedsBySection,
+  type ClassroomNeed,
+} from '../services/classroomNeeds';
+import type {GiveNeedParams} from '../navigation/AppNavigator';
 
-type ViewMode = 'feed' | 'my_glimpses';
+type ViewMode = 'needs' | 'feed' | 'my_glimpses';
 
 const STALE_MS = 30_000;
 
@@ -36,7 +43,14 @@ export default function CampaignsScreen() {
   const {theme} = useTheme();
   const navigation = useNavigation<any>();
   const {publicKey, connect} = useWallet();
-  const [viewMode, setViewMode] = useState<ViewMode>('feed');
+  const [viewMode, setViewMode] = useState<ViewMode>('needs');
+
+  // Needs state
+  const [needs, setNeeds] = useState<ClassroomNeed[]>([]);
+  const [needsLoading, setNeedsLoading] = useState(false);
+  const [needsError, setNeedsError] = useState<string | null>(null);
+  const [needsImpactCount, setNeedsImpactCount] = useState<number | null>(null);
+  const lastNeedsImpactFetchAtByWallet = useRef<Record<string, number>>({});
 
   // Feed state (all donations)
   const [feedDonations, setFeedDonations] = useState<DonationHistoryItem[]>([]);
@@ -59,6 +73,85 @@ export default function CampaignsScreen() {
   >(new Map());
 
   const walletAddress = publicKey?.toBase58() ?? null;
+
+  // Bump on screen focus to refetch needs (funded needs should disappear from OPEN)
+  const [needsFocusKey, setNeedsFocusKey] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      setNeedsFocusKey(k => k + 1);
+    }, []),
+  );
+
+  // Needs tab — classroom needs
+  useEffect(() => {
+    if (viewMode !== 'needs') {
+      return;
+    }
+
+    let cancelled = false;
+    setNeedsLoading(true);
+    setNeedsError(null);
+
+    fetchClassroomNeeds()
+      .then(rows => {
+        if (!cancelled) {
+          setNeeds(rows);
+          setNeedsLoading(false);
+        }
+      })
+      .catch(err => {
+        if (!cancelled) {
+          setNeedsError(
+            err instanceof Error
+              ? err.message
+              : 'Unable to load classroom needs right now.',
+          );
+          setNeedsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [viewMode, needsFocusKey]);
+
+  useEffect(() => {
+    if (viewMode !== 'needs') {
+      return;
+    }
+
+    if (!walletAddress) {
+      setNeedsImpactCount(0);
+      return;
+    }
+
+    const lastFetchAt = lastNeedsImpactFetchAtByWallet.current[walletAddress] ?? 0;
+    if (lastFetchAt > 0 && Date.now() - lastFetchAt < STALE_MS) {
+      return;
+    }
+
+    let cancelled = false;
+
+    fetchDonationHistory(walletAddress)
+      .then(rows => {
+        if (!cancelled) {
+          const count = rows.filter(
+            row => row.recipient_id === 'classroom-needs',
+          ).length;
+          setNeedsImpactCount(count);
+          lastNeedsImpactFetchAtByWallet.current[walletAddress] = Date.now();
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setNeedsImpactCount(0);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [viewMode, walletAddress]);
 
   // Feed tab — all donations
   useEffect(() => {
@@ -131,6 +224,7 @@ export default function CampaignsScreen() {
       setDonationHistory([]);
       setHistoryError(null);
       setHistoryLoading(false);
+      setNeedsImpactCount(walletAddress ? null : 0);
     }
   }, [walletAddress]);
 
@@ -179,6 +273,12 @@ export default function CampaignsScreen() {
     };
   }, [viewMode, walletAddress]);
 
+  const handleNeedPress = (need: ClassroomNeed) => {
+    navigation.navigate('NeedDetail', {needId: need.id});
+  };
+
+  const groupedNeeds = groupNeedsBySection(needs);
+
   return (
     <View style={[styles.root, {backgroundColor: theme.colors.background}]}>
       <AppHeader title="Glimpses" />
@@ -192,56 +292,37 @@ export default function CampaignsScreen() {
                 backgroundColor: theme.colors.surface,
               },
             ]}>
-            <TouchableOpacity
-              style={[
-                styles.togglePill,
-                {
-                  backgroundColor:
-                    viewMode === 'feed' ? theme.colors.accent : 'transparent',
-                },
-              ]}
-              onPress={() => setViewMode('feed')}
-              activeOpacity={0.85}>
-              <Text
+            {(['needs', 'feed', 'my_glimpses'] as ViewMode[]).map(mode => (
+              <TouchableOpacity
+                key={mode}
                 style={[
-                  styles.toggleText,
+                  styles.togglePill,
                   {
-                    color:
-                      viewMode === 'feed'
-                        ? '#F3EFFF'
-                        : theme.colors.textSecondary,
-                    fontFamily: theme.typography.brand,
+                    backgroundColor:
+                      viewMode === mode ? theme.colors.accent : 'transparent',
                   },
-                ]}>
-                FEED
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.togglePill,
-                {
-                  backgroundColor:
-                    viewMode === 'my_glimpses'
-                      ? theme.colors.accent
-                      : 'transparent',
-                },
-              ]}
-              onPress={() => setViewMode('my_glimpses')}
-              activeOpacity={0.85}>
-              <Text
-                style={[
-                  styles.toggleText,
-                  {
-                    color:
-                      viewMode === 'my_glimpses'
-                        ? '#F3EFFF'
-                        : theme.colors.textSecondary,
-                    fontFamily: theme.typography.brand,
-                  },
-                ]}>
-                MY GLIMPSES
-              </Text>
-            </TouchableOpacity>
+                ]}
+                onPress={() => setViewMode(mode)}
+                activeOpacity={0.85}>
+                <Text
+                  style={[
+                    styles.toggleText,
+                    {
+                      color:
+                        viewMode === mode
+                          ? '#F3EFFF'
+                          : theme.colors.textSecondary,
+                      fontFamily: theme.typography.brand,
+                    },
+                  ]}>
+                  {mode === 'needs'
+                    ? 'NEEDS'
+                    : mode === 'feed'
+                      ? 'FEED'
+                      : 'MY GLIMPSES'}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
           <View
@@ -251,7 +332,17 @@ export default function CampaignsScreen() {
             ]}
           />
 
-          {viewMode === 'feed'
+          {viewMode === 'needs'
+            ? renderNeedsFeed({
+                loading: needsLoading,
+                error: needsError,
+                grouped: groupedNeeds,
+                theme,
+                onNeedPress: handleNeedPress,
+                impactCount: needsImpactCount ?? 0,
+                onOpenMessages: () => navigation.navigate('Messages'),
+              })
+            : viewMode === 'feed'
             ? renderDonationList({
                 requiresWallet: false,
                 walletConnected: !!walletAddress,
@@ -281,6 +372,203 @@ export default function CampaignsScreen() {
       </ScreenContainer>
     </View>
   );
+}
+
+function renderNeedsFeed({
+  loading,
+  error,
+  grouped,
+  theme,
+  onNeedPress,
+  impactCount,
+  onOpenMessages,
+}: {
+  loading: boolean;
+  error: string | null;
+  grouped: ReturnType<typeof groupNeedsBySection>;
+  theme: ReturnType<typeof useTheme>['theme'];
+  onNeedPress: (need: ClassroomNeed) => void;
+  impactCount: number;
+  onOpenMessages: () => void;
+}) {
+  if (loading) {
+    return (
+      <View
+        style={[
+          styles.stateCard,
+          styles.centeredState,
+          {
+            borderColor: theme.colors.borderMuted,
+            backgroundColor: theme.colors.surfaceMuted,
+          },
+        ]}>
+        <ActivityIndicator size="small" color={theme.colors.accent} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View
+        style={[
+          styles.stateCard,
+          styles.centeredState,
+          {
+            borderColor: theme.colors.borderMuted,
+            backgroundColor: theme.colors.surfaceMuted,
+          },
+        ]}>
+        <Text style={[styles.stateText, {color: theme.colors.danger}]}>
+          {error}
+        </Text>
+      </View>
+    );
+  }
+
+  const totalNeeds =
+    grouped.open.length + grouped.inMotion.length + grouped.delivered.length;
+  const proofNeeds = [...grouped.delivered, ...grouped.inMotion].sort(
+    (a, b) => getProofPriority(a.status) - getProofPriority(b.status),
+  );
+
+  if (totalNeeds === 0) {
+    return (
+      <View
+        style={[
+          styles.stateCard,
+          styles.centeredState,
+          {
+            borderColor: theme.colors.borderMuted,
+            backgroundColor: theme.colors.surfaceMuted,
+          },
+        ]}>
+        <Text style={[styles.stateText, {color: theme.colors.textSecondary}]}>
+          No classroom needs right now. Check back soon.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.needsFeed}>
+      {impactCount > 0 && (
+        <TouchableOpacity
+          activeOpacity={0.84}
+          onPress={onOpenMessages}
+          style={[
+            styles.impactCard,
+            {
+              backgroundColor: theme.colors.surfaceAlt,
+              borderColor: theme.colors.borderMuted,
+            },
+          ]}>
+          <View style={styles.impactTopRow}>
+            <Text
+              style={[
+                styles.impactLabel,
+                {color: theme.colors.accent, fontFamily: theme.typography.brand},
+              ]}>
+              YOUR IMPACT
+            </Text>
+            <View
+              style={[
+                styles.impactBadge,
+                {
+                  backgroundColor: theme.colors.accent + '14',
+                  borderColor: theme.colors.accent + '40',
+                },
+              ]}>
+              <Text
+                style={[
+                  styles.impactBadgeText,
+                  {color: theme.colors.accent, fontFamily: theme.typography.brand},
+                ]}>
+                {impactCount} {impactCount === 1 ? 'NEED' : 'NEEDS'}
+              </Text>
+            </View>
+          </View>
+          <Text style={[styles.impactTitle, {color: theme.colors.textPrimary}]}>
+            {impactCount === 1
+              ? 'You already funded a classroom need.'
+              : `You already funded ${impactCount} classroom needs.`}
+          </Text>
+          <Text
+            style={[styles.impactBody, {color: theme.colors.textSecondary}]}>
+            Open Messages to see proof, status updates, and delivery progress.
+          </Text>
+          <Text
+            style={[
+              styles.impactLink,
+              {color: theme.colors.teal, fontFamily: theme.typography.brand},
+            ]}>
+            VIEW UPDATES {'\u2192'}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {grouped.open.length > 0 && (
+        <View style={styles.sectionBlock}>
+          <Text
+            style={[
+              styles.sectionHeader,
+              {color: theme.colors.accent, fontFamily: theme.typography.brand},
+            ]}>
+            OPEN NEEDS
+          </Text>
+          <Text
+            style={[styles.sectionIntro, {color: theme.colors.textSecondary}]}>
+            Fund the exact item a teacher asked for.
+          </Text>
+          {grouped.open.map(need => (
+            <View key={need.id} style={styles.needCardWrap}>
+              <NeedCard need={need} onPress={onNeedPress} />
+            </View>
+          ))}
+        </View>
+      )}
+
+      {proofNeeds.length > 0 && (
+        <View style={styles.sectionBlock}>
+          <Text
+            style={[
+              styles.sectionHeader,
+              {color: theme.colors.teal, fontFamily: theme.typography.brand},
+            ]}>
+            PROOF
+          </Text>
+          <Text
+            style={[styles.sectionIntro, {color: theme.colors.textSecondary}]}>
+            See what funded classroom needs look like after Glimpse steps in.
+          </Text>
+          {proofNeeds.map(need => (
+            <View key={need.id} style={styles.needCardWrap}>
+              <NeedCard need={need} onPress={onNeedPress} />
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function getProofPriority(status: ClassroomNeed['status']) {
+  switch (status) {
+    case 'classroom_photo_added':
+      return 0;
+    case 'delivered':
+      return 1;
+    case 'purchased':
+      return 2;
+    case 'under_review':
+      return 3;
+    case 'funded':
+      return 4;
+    case 'failed':
+      return 5;
+    case 'open':
+    default:
+      return 6;
+  }
 }
 
 function renderDonationList({
@@ -614,6 +902,70 @@ const styles = StyleSheet.create({
   panelRule: {
     height: 1,
     marginTop: 12,
+    marginBottom: 10,
+  },
+  needsFeed: {
+    gap: 0,
+  },
+  impactCard: {
+    borderWidth: 1.5,
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 14,
+  },
+  impactTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  impactLabel: {
+    fontSize: 10,
+    letterSpacing: 1,
+    fontWeight: '700',
+  },
+  impactBadge: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  impactBadgeText: {
+    fontSize: 9,
+    letterSpacing: 0.7,
+  },
+  impactTitle: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  impactBody: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  impactLink: {
+    fontSize: 10,
+    lineHeight: 14,
+    letterSpacing: 0.9,
+    marginTop: 12,
+  },
+  sectionBlock: {
+    marginBottom: 12,
+  },
+  sectionHeader: {
+    fontSize: 11,
+    letterSpacing: 1.2,
+    fontWeight: '700',
+    marginTop: 14,
+    marginBottom: 4,
+  },
+  sectionIntro: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  needCardWrap: {
     marginBottom: 10,
   },
   historyWrap: {
